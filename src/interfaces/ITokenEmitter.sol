@@ -24,6 +24,11 @@ interface ITokenEmitter {
     error SLIPPAGE_EXCEEDED();
 
     /**
+     * @dev Error thrown when the function is not implemented
+     */
+    error NOT_IMPLEMENTED();
+
+    /**
      * @dev Error thrown when the address is zero
      */
     error ADDRESS_ZERO();
@@ -80,10 +85,10 @@ interface ITokenEmitter {
     event TokensSold(address indexed seller, uint256 amount, uint256 payment);
 
     /**
-     * @dev Event emitted when ETH is withdrawn from the VRGDACap
-     * @param amount The amount of ETH withdrawn
+     * @dev Event emitted when payment is withdrawn from the VRGDACap
+     * @param amount The amount of payment withdrawn
      */
-    event VRGDACapETHWithdrawn(uint256 amount);
+    event VRGDACapPaymentWithdrawn(uint256 amount);
 
     /**
      * @dev Initializes the TokenEmitter contract

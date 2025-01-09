@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import { Test } from "forge-std/Test.sol";
-import { TokenEmitter } from "../../src/TokenEmitter.sol";
+import { TokenEmitterETH } from "../../src/token-issuance/TokenEmitterETH.sol";
 import { ERC20VotesMintable } from "../../src/ERC20VotesMintable.sol";
 import { ITokenEmitter } from "../../src/interfaces/ITokenEmitter.sol";
 import { ProtocolRewards } from "../../src/protocol-rewards/ProtocolRewards.sol";
@@ -26,7 +26,7 @@ contract TokenEmitterTest is Test {
     TestToken internal underlyingToken;
 
     // Contracts
-    TokenEmitter public tokenEmitter;
+    TokenEmitterETH public tokenEmitter;
     ERC20VotesMintable public erc20;
     ProtocolRewards public protocolRewards;
     MockWETH public weth;
@@ -65,7 +65,7 @@ contract TokenEmitterTest is Test {
 
         // Deploy implementation contracts
         protocolRewards = new ProtocolRewards();
-        TokenEmitter tokenEmitterImpl = new TokenEmitter(address(protocolRewards), protocolFeeRecipient);
+        TokenEmitterETH tokenEmitterImpl = new TokenEmitterETH(address(protocolRewards), protocolFeeRecipient);
 
         // Deploy RewardPool
         RewardPool rewardPoolImpl = new RewardPool();
@@ -82,7 +82,7 @@ contract TokenEmitterTest is Test {
 
         // Deploy TokenEmitter proxy
         ERC1967Proxy proxy = new ERC1967Proxy(address(tokenEmitterImpl), "");
-        tokenEmitter = TokenEmitter(address(proxy));
+        tokenEmitter = TokenEmitterETH(address(proxy));
 
         // Initialize RewardPool
         rewardPool.initialize(ISuperToken(address(superToken)), address(erc20), address(tokenEmitter));
@@ -694,9 +694,9 @@ contract TokenEmitterTest is Test {
 
     function testFounderRewardWithZeroAddress() public {
         // Deploy new token emitter with zero founder reward address
-        TokenEmitter tokenEmitterImpl = new TokenEmitter(address(protocolRewards), protocolFeeRecipient);
+        TokenEmitterETH tokenEmitterImpl = new TokenEmitterETH(address(protocolRewards), protocolFeeRecipient);
         ERC1967Proxy proxy = new ERC1967Proxy(address(tokenEmitterImpl), "");
-        TokenEmitter newTokenEmitter = TokenEmitter(address(proxy));
+        TokenEmitterETH newTokenEmitter = TokenEmitterETH(address(proxy));
 
         // Initialize with zero address for founder rewards
         vm.startPrank(owner);

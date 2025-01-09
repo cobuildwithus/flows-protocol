@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.28;
 
-import { BondingSCurve } from "./token-issuance/BondingSCurve.sol";
-import { VRGDACap } from "./token-issuance/VRGDACap.sol";
-import { ERC20VotesMintable } from "./ERC20VotesMintable.sol";
-import { ITokenEmitter } from "./interfaces/ITokenEmitter.sol";
-import { IWETH } from "./interfaces/IWETH.sol";
-import { FlowProtocolRewards } from "./protocol-rewards/abstract/FlowProtocolRewards.sol";
-import { toDaysWadUnsafe, wadDiv } from "./libs/SignedWadMath.sol";
+import { BondingSCurve } from "../token-issuance/BondingSCurve.sol";
+import { VRGDACap } from "../token-issuance/VRGDACap.sol";
+import { ERC20VotesMintable } from "../ERC20VotesMintable.sol";
+import { ITokenEmitter } from "../interfaces/ITokenEmitter.sol";
+import { IWETH } from "../interfaces/IWETH.sol";
+import { FlowProtocolRewards } from "../protocol-rewards/abstract/FlowProtocolRewards.sol";
+import { toDaysWadUnsafe, wadDiv } from "../libs/SignedWadMath.sol";
 
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -17,7 +17,7 @@ import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/O
  * @title TokenEmitter
  * @dev Contract for emitting tokens using a bonding curve mechanism
  */
-contract TokenEmitter is
+contract TokenEmitterETH is
     ITokenEmitter,
     BondingSCurve,
     VRGDACap,

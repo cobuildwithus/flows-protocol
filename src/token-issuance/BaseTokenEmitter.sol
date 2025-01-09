@@ -171,16 +171,20 @@ abstract contract BaseTokenEmitter is
     /**
      * @notice Collects payment from the user
      * @dev Must be implemented in the child contract
+     * @param totalPaymentRequired The total payment amount required
+     * @param payment The number of payment tokens the user has sent to pay
      */
-    function checkPayment(uint256 amount) external payable virtual {
+    function checkPayment(uint256 totalPaymentRequired, uint256 payment) internal virtual {
         revert NOT_IMPLEMENTED();
     }
 
     /**
      * @notice Handles overpayment
      * @dev Must be implemented in the child contract
+     * @param totalPaymentRequired The total payment amount required
+     * @param payment The number of payment tokens the user has sent to pay
      */
-    function handleOverpayment(uint256 totalPayment) internal virtual {
+    function handleOverpayment(uint256 totalPaymentRequired, uint256 payment) internal virtual {
         revert NOT_IMPLEMENTED();
     }
 
@@ -196,7 +200,7 @@ abstract contract BaseTokenEmitter is
         uint256 amount,
         uint256 maxCost,
         ProtocolRewardAddresses calldata protocolRewardsRecipients
-    ) public payable virtual nonReentrant {
+    ) public payable virtual {
         revert NOT_IMPLEMENTED();
     }
 
@@ -224,21 +228,8 @@ abstract contract BaseTokenEmitter is
      * @param amount The number of tokens to sell
      * @param minPayment The minimum acceptable payment in wei
      */
-    function sellToken(uint256 amount, uint256 minPayment) public nonReentrant {
-        int256 paymentInt = sellTokenQuote(amount);
-        if (paymentInt < 0) revert INVALID_PAYMENT();
-        if (amount == 0) revert INVALID_AMOUNT();
-        uint256 payment = uint256(paymentInt);
-
-        if (payment < minPayment) revert SLIPPAGE_EXCEEDED();
-        if (payment > address(this).balance) revert INSUFFICIENT_CONTRACT_BALANCE();
-        if (erc20.balanceOf(_msgSender()) < amount) revert INSUFFICIENT_TOKEN_BALANCE();
-
-        erc20.burn(_msgSender(), amount);
-
-        _transferPaymentTokenWithFallback(_msgSender(), payment);
-
-        emit TokensSold(_msgSender(), amount, payment);
+    function sellToken(uint256 amount, uint256 minPayment) public virtual {
+        revert NOT_IMPLEMENTED();
     }
 
     /**
@@ -250,7 +241,7 @@ abstract contract BaseTokenEmitter is
         if (amount > 0) {
             vrgdaCapExtraPayment = 0;
             emit VRGDACapPaymentWithdrawn(amount);
-            _transferPaymentTokenWithFallback(owner(), amount);
+            _transferPaymentWithFallback(owner(), amount);
         }
     }
 
@@ -260,7 +251,7 @@ abstract contract BaseTokenEmitter is
      * @param _to The recipient address
      * @param _amount The amount transferring
      */
-    function _transferPaymentTokenWithFallback(address _to, uint256 _amount) internal virtual {}
+    function _transferPaymentWithFallback(address _to, uint256 _amount) internal virtual {}
 
     /// @notice Ensures the caller is authorized to upgrade the contract
     /// @dev This function is called in `upgradeTo` & `upgradeToAndCall`

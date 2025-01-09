@@ -174,7 +174,15 @@ contract TokenEmitterTest is Test {
         uint256 founderReward = getFounderReward(amountToBuy);
 
         vm.expectEmit(true, true, true, true);
-        emit ITokenEmitter.TokensBought(user, user, amountToBuy, costWithoutRewards, protocolRewardsFee, founderReward);
+        emit ITokenEmitter.TokensBought(
+            user,
+            user,
+            amountToBuy,
+            costWithoutRewards,
+            protocolRewardsFee,
+            founderReward,
+            addedSurgeCost
+        );
 
         tokenEmitter.buyToken{ value: sentValue }(user, amountToBuy, maxCost, rewardAddresses);
 
@@ -451,7 +459,15 @@ contract TokenEmitterTest is Test {
 
         // Expect the TokensBought event
         vm.expectEmit(true, true, true, true);
-        emit ITokenEmitter.TokensBought(user, user, amountToBuy, cost, protocolRewardsFee, founderReward);
+        emit ITokenEmitter.TokensBought(
+            user,
+            user,
+            amountToBuy,
+            cost,
+            protocolRewardsFee,
+            founderReward,
+            addedSurgeCost
+        );
 
         tokenEmitter.buyToken{ value: totalPayment }(user, amountToBuy, totalPayment, rewardAddresses);
     }
@@ -491,7 +507,8 @@ contract TokenEmitterTest is Test {
             tokensToReachVrgdaCap,
             uint256(costBeforeCap),
             protocolRewardsFeeBefore,
-            founderRewardBefore
+            founderRewardBefore,
+            addedSurgeCostBeforeCap
         );
 
         tokenEmitter.buyToken{ value: totalPaymentBefore }(
@@ -520,7 +537,8 @@ contract TokenEmitterTest is Test {
             tokensToReachVrgdaCap,
             uint256(costAtCap),
             protocolRewardsFeeAt,
-            founderRewardAt
+            founderRewardAt,
+            addedSurgeCostAtCap
         );
 
         tokenEmitter.buyToken{ value: totalPaymentAt }(user, tokensToReachVrgdaCap, totalPaymentAt, rewardAddresses);
@@ -553,7 +571,8 @@ contract TokenEmitterTest is Test {
             tokensToReachVrgdaCap,
             uint256(costAfterWait),
             protocolRewardsFeeAfterWait,
-            founderRewardAfterWait
+            founderRewardAfterWait,
+            surgeCostAfterWait
         );
 
         vm.prank(user);
@@ -592,7 +611,8 @@ contract TokenEmitterTest is Test {
             largePurchase,
             uint256(costMore),
             protocolRewardsFeeMore,
-            founderRewardMore
+            founderRewardMore,
+            surgeCostMore
         );
 
         vm.prank(user);

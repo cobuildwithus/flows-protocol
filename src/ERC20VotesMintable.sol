@@ -211,6 +211,13 @@ contract ERC20VotesMintable is
      */
     function addIgnoredRewardsAddress(address account) external onlyIgnoredRewardAddressesManager {
         if (account == address(0)) revert INVALID_ADDRESS_ZERO();
+
+        // Force update to zero or correct current balance
+        if (!_ignoreRewardsAddresses.contains(account)) {
+            uint256 finalUnits = 0;
+            IRewardPool(rewardPool).updateMemberUnits(account, uint128(finalUnits));
+        }
+
         _ignoreRewardsAddresses.add(account);
 
         emit IgnoreRewardsAddressAdded(account);
@@ -231,8 +238,20 @@ contract ERC20VotesMintable is
      * @notice Burn tokens from an account.
      * @dev Only callable by the minter.
      */
-    function burn(address account, uint256 amount) external onlyMinter {
+    function burn(address account, uint256 amount) external nonReentrant onlyMinter {
         _burn(account, amount);
+    }
+
+    /**
+     * @dev See {IERC20-transfer}.
+     *
+     * Requirements:
+     *
+     * - `to` cannot be the zero address.
+     * - the caller must have a balance of at least `amount`.
+     */
+    function transfer(address to, uint256 amount) public override nonReentrant returns (bool) {
+        return super.transfer(to, amount);
     }
 
     /**

@@ -9,6 +9,11 @@ import { IERC20VotesMintable } from "./IERC20VotesMintable.sol";
  */
 interface ITokenEmitterERC20 {
     /**
+     * @dev Error for insufficient payment tokens
+     */
+    error INSUFFICIENT_PAYMENT_TOKENS();
+
+    /**
      * @dev Initializes the TokenEmitterERC20 contract
      * @param initialOwner The address of the initial owner of the contract
      * @param erc20 The address of the ERC20 token to be emitted

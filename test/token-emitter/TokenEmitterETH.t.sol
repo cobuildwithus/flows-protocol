@@ -922,20 +922,6 @@ contract TokenEmitterETHTest is Test {
         uint256 builderIncrease = builderFinalBal - builderInitialBal;
         uint256 referralIncrease = referralFinalBal - referralInitialBal;
 
-        // Log values for debugging
-        console.log("Total payment:", totalPayment);
-        console.log("Protocol rewards fee:", protocolRewardsFee);
-        console.log("Cost for tokens:", costForTokens);
-        console.log("Builder initial balance:", builderInitialBal);
-        console.log("Builder final balance:", builderFinalBal);
-        console.log("Builder increase:", builderIncrease);
-        console.log("Expected builder reward:", expectedBuilderReward);
-
-        console.log("Referral initial balance:", referralInitialBal);
-        console.log("Referral final balance:", referralFinalBal);
-        console.log("Referral increase:", referralIncrease);
-        console.log("Expected referral reward:", expectedReferralReward);
-
         // Check that rewards match expected BPS splits from RewardSplits
         assertEq(builderIncrease, expectedBuilderReward, "Builder reward incorrect");
         assertEq(referralIncrease, expectedReferralReward, "Referral reward incorrect");

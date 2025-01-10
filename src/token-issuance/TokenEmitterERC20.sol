@@ -2,7 +2,6 @@
 pragma solidity ^0.8.28;
 
 import { BaseTokenEmitter } from "./BaseTokenEmitter.sol";
-import { FlowProtocolRewards } from "../protocol-rewards/abstract/FlowProtocolRewards.sol";
 import { ITokenEmitterERC20 } from "../interfaces/ITokenEmitterERC20.sol";
 
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -11,6 +10,9 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /**
  * @title TokenEmitterERC20
  * @dev Child contract for ERC20-based token purchasing, extending the abstract BaseTokenEmitter.
+ *      Functionally similar to TokenEmitterETH but uses ERC20 tokens instead of ETH.
+ *      This is the most common use case for child flows.
+ *      This contract does not have a protocol rewards fee, instead it uses founder rewards.
  */
 contract TokenEmitterERC20 is ITokenEmitterERC20, BaseTokenEmitter {
     using SafeERC20 for IERC20;
@@ -18,22 +20,12 @@ contract TokenEmitterERC20 is ITokenEmitterERC20, BaseTokenEmitter {
     IERC20 public paymentToken;
 
     /**
-     * @dev This constructor calls the FlowProtocolRewards constructor.
+     * @dev Constructor.
      *      For an upgradable contract, the typical pattern is that this constructor
      *      only runs once at the time the proxy is deployed.
      *      Make sure your proxy deployment is consistent with your environment.
      */
-    constructor(
-        address _protocolRewards,
-        address _protocolFeeRecipient
-    )
-        payable
-        FlowProtocolRewards(_protocolRewards, _protocolFeeRecipient)
-        initializer // from OpenZeppelin's Initializable
-    {
-        if (_protocolRewards == address(0)) revert ADDRESS_ZERO();
-        if (_protocolFeeRecipient == address(0)) revert ADDRESS_ZERO();
-    }
+    constructor() payable {}
 
     /**
      * @notice External initializer to set up the contract after deployment (UUPS / Proxy style).
@@ -51,7 +43,40 @@ contract TokenEmitterERC20 is ITokenEmitterERC20, BaseTokenEmitter {
         int256 _perTimeUnit,
         uint256 _founderRewardDuration,
         address _paymentToken
-    ) external initializer {
+    ) public initializer {
+        _handleInitialization(
+            _initialOwner,
+            _erc20,
+            _weth,
+            _founderRewardAddress,
+            _curveSteepness,
+            _basePrice,
+            _maxPriceIncrease,
+            _supplyOffset,
+            _priceDecayPercent,
+            _perTimeUnit,
+            _founderRewardDuration,
+            _paymentToken
+        );
+    }
+
+    /**
+     * @dev Internal function to handle initialization logic
+     */
+    function _handleInitialization(
+        address _initialOwner,
+        address _erc20,
+        address _weth,
+        address _founderRewardAddress,
+        int256 _curveSteepness,
+        int256 _basePrice,
+        int256 _maxPriceIncrease,
+        int256 _supplyOffset,
+        int256 _priceDecayPercent,
+        int256 _perTimeUnit,
+        uint256 _founderRewardDuration,
+        address _paymentToken
+    ) internal {
         if (_paymentToken == address(0)) revert ADDRESS_ZERO();
 
         paymentToken = IERC20(_paymentToken);
@@ -88,18 +113,6 @@ contract TokenEmitterERC20 is ITokenEmitterERC20, BaseTokenEmitter {
         if (paymentToken.allowance(_msgSender(), address(this)) < totalPayment) {
             revert INSUFFICIENT_FUNDS();
         }
-
-        // 3. Transfer exactly `totalPayment` from the user to this contract.
-        paymentToken.safeTransferFrom(_msgSender(), address(this), totalPayment);
-    }
-
-    /**
-     * @notice Handles overpayment (ERC20 typically doesn't do "overpayment" flow).
-     * @dev In many ERC20 flows, we just do an exact `transferFrom`. This can be a no-op.
-     */
-    function handleOverpayment(uint256 /* totalPayment */, uint256 /* amount */) internal override {
-        // For ERC20, if the user calls `transferFrom` for exactly totalPayment, there's no overpayment.
-        // We can simply do nothing or revert if called unexpectedly.
     }
 
     /**
@@ -108,13 +121,12 @@ contract TokenEmitterERC20 is ITokenEmitterERC20, BaseTokenEmitter {
      * @param user The address that will receive the minted tokens
      * @param amount The number of tokens to buy
      * @param maxCost The maximum acceptable cost in "paymentToken" units
-     * @param protocolRewardsRecipients Splits for protocol-level affiliate or builder rewards
      */
     function buyToken(
         address user,
         uint256 amount,
         uint256 maxCost,
-        ProtocolRewardAddresses calldata protocolRewardsRecipients
+        ProtocolRewardAddresses calldata
     ) public payable virtual override nonReentrant {
         if (user == address(0)) revert ADDRESS_ZERO();
         if (amount == 0) revert INVALID_AMOUNT();
@@ -125,14 +137,17 @@ contract TokenEmitterERC20 is ITokenEmitterERC20, BaseTokenEmitter {
 
         if (costForTokens > maxCost) revert SLIPPAGE_EXCEEDED();
 
-        // Calculate protocol fee
-        uint256 protocolRewardsFee = computeTotalReward(costForTokens);
-        uint256 totalPayment = costForTokens + protocolRewardsFee;
+        uint256 totalPayment = costForTokens;
 
-        // 1. Transfer exactly `totalPayment` from user => contract
+        // 1. Check that user has enough balance to pay
         checkPayment(totalPayment, paymentToken.balanceOf(_msgSender()));
 
-        // 2. Overpayment is not applicable in ERC20 flow
+        // 2. Transfer exactly `totalPayment` from the payer to this contract.
+        // Can be called by the FlowTokenEmitter which inherits this contract, which is the only other caller.
+        // In that case, the FlowTokenEmitter (this contract) will already have the payment tokens purchased.
+        if (_msgSender() != address(this)) {
+            paymentToken.safeTransferFrom(_msgSender(), address(this), totalPayment);
+        }
 
         // 3. If there's a surge cost, track it
         if (surgeCost > 0) {
@@ -148,7 +163,7 @@ contract TokenEmitterERC20 is ITokenEmitterERC20, BaseTokenEmitter {
             erc20.mint(founderRewardAddress, founderReward);
         }
 
-        emit TokensBought(_msgSender(), user, amount, costForTokens, protocolRewardsFee, founderReward, surgeCost);
+        emit TokensBought(_msgSender(), user, amount, costForTokens, 0, founderReward, surgeCost);
     }
 
     /**

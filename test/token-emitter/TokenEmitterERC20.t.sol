@@ -94,7 +94,7 @@ contract TokenEmitterERC20Test is Test {
         erc20 = ERC20VotesMintable(address(erc20Proxy));
 
         // 5) Deploy the Emitter Implementation
-        TokenEmitterERC20 tokenEmitterImpl = new TokenEmitterERC20(address(protocolRewards), protocolFeeRecipient);
+        TokenEmitterERC20 tokenEmitterImpl = new TokenEmitterERC20();
 
         // 6) Deploy Emitter Proxy
         ERC1967Proxy proxy = new ERC1967Proxy(address(tokenEmitterImpl), "");
@@ -262,8 +262,7 @@ contract TokenEmitterERC20Test is Test {
         // Quote cost
         (int256 costInt, uint256 surgeCost) = tokenEmitter.buyTokenQuote(amountToBuy);
         uint256 costForTokens = uint256(costInt);
-        uint256 protocolFee = tokenEmitter.computeTotalReward(costForTokens);
-        uint256 totalPayment = costForTokens + protocolFee;
+        uint256 totalPayment = costForTokens;
 
         // We'll allow some "maxCost" = totalPayment + some buffer
         uint256 maxCost = totalPayment + 1e18;
@@ -317,8 +316,7 @@ contract TokenEmitterERC20Test is Test {
         uint256 amountToBuy = 1000 * 1e18;
         (int256 costInt, ) = tokenEmitter.buyTokenQuote(amountToBuy);
         uint256 cost = uint256(costInt);
-        uint256 fee = tokenEmitter.computeTotalReward(cost);
-        uint256 totalPayment = cost + fee;
+        uint256 totalPayment = cost;
 
         // Set maxCost to something smaller
         uint256 maxCost = totalPayment - 1e18;
@@ -364,7 +362,7 @@ contract TokenEmitterERC20Test is Test {
         uint256 amountToBuy = 5000 * 1e18;
         (int256 costInt, ) = tokenEmitter.buyTokenQuote(amountToBuy);
         uint256 costForTokens = uint256(costInt);
-        uint256 totalPayment = costForTokens + tokenEmitter.computeTotalReward(costForTokens);
+        uint256 totalPayment = costForTokens;
 
         ITokenEmitter.ProtocolRewardAddresses memory rewardAddrs = ITokenEmitter.ProtocolRewardAddresses({
             builder: address(0),
@@ -527,8 +525,7 @@ contract TokenEmitterERC20Test is Test {
         uint256 buyAmount = 1000e18;
         (int256 costInt, ) = tokenEmitter.buyTokenQuote(buyAmount);
         uint256 cost = uint256(costInt);
-        uint256 fee = tokenEmitter.computeTotalReward(cost);
-        uint256 totalPayment = cost + fee;
+        uint256 totalPayment = cost;
 
         // record founder + user token balances
         uint256 founderBefore = erc20.balanceOf(founderRewardAddress);
@@ -561,8 +558,7 @@ contract TokenEmitterERC20Test is Test {
         // do a quote
         (int256 costInt, ) = tokenEmitter.buyTokenQuote(buyAmount);
         uint256 costForTokens = uint256(costInt);
-        uint256 fee = tokenEmitter.computeTotalReward(costForTokens);
-        uint256 totalPayment = costForTokens + fee;
+        uint256 totalPayment = costForTokens;
 
         // set maxCost to a big number
         uint256 maxCost = totalPayment + 1e18;

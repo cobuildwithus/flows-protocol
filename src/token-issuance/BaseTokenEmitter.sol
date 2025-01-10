@@ -25,8 +25,7 @@ abstract contract BaseTokenEmitter is
     VRGDACap,
     OwnableUpgradeable,
     UUPSUpgradeable,
-    ReentrancyGuardUpgradeable,
-    FlowProtocolRewards
+    ReentrancyGuardUpgradeable
 {
     using SafeERC20 for IERC20;
 
@@ -141,21 +140,6 @@ abstract contract BaseTokenEmitter is
             totalCost = vrgdaCapCost;
             addedSurgeCost = uint256(vrgdaCapCost - bondingCurveCost);
         }
-    }
-
-    /**
-     * @notice Calculates the cost to buy a certain amount of tokens including protocol rewards
-     * @dev Uses the bonding curve to determine the cost
-     * @param amount The number of tokens to buy
-     * @return totalCost The cost to buy the specified amount of tokens including protocol rewards
-     * @return addedSurgeCost The extra payment paid by users due to high VRGDACap prices
-     */
-    function buyTokenQuoteWithRewards(uint256 amount) public view returns (int256 totalCost, uint256 addedSurgeCost) {
-        (int256 costInt, uint256 surgeCost) = buyTokenQuote(amount);
-        if (costInt < 0) revert INVALID_COST();
-
-        totalCost = costInt + int256(computeTotalReward(uint256(costInt)));
-        addedSurgeCost = surgeCost;
     }
 
     /**

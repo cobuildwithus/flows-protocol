@@ -9,7 +9,7 @@ import { ITokenEmitterETH } from "../interfaces/ITokenEmitterETH.sol";
  * @title TokenEmitterETH
  * @dev Child contract for ETH-based token purchasing, extending the abstract BaseTokenEmitter.
  */
-contract TokenEmitterETH is ITokenEmitterETH, BaseTokenEmitter {
+contract TokenEmitterETH is ITokenEmitterETH, BaseTokenEmitter, FlowProtocolRewards {
     /**
      * @dev This constructor calls the FlowProtocolRewards constructor.
      *      For an upgradable contract, the typical pattern is that this constructor
@@ -19,11 +19,7 @@ contract TokenEmitterETH is ITokenEmitterETH, BaseTokenEmitter {
     constructor(
         address _protocolRewards,
         address _protocolFeeRecipient
-    )
-        payable
-        FlowProtocolRewards(_protocolRewards, _protocolFeeRecipient)
-        initializer // from OpenZeppelin's Initializable
-    {
+    ) payable FlowProtocolRewards(_protocolRewards, _protocolFeeRecipient) {
         if (_protocolRewards == address(0)) revert ADDRESS_ZERO();
         if (_protocolFeeRecipient == address(0)) revert ADDRESS_ZERO();
     }
@@ -159,6 +155,23 @@ contract TokenEmitterETH is ITokenEmitterETH, BaseTokenEmitter {
         _transferPaymentWithFallback(_msgSender(), payment);
 
         emit TokensSold(_msgSender(), amount, payment);
+    }
+
+    /**
+     * @notice Calculates the cost to buy a certain amount of tokens including protocol rewards
+     * @dev Uses the bonding curve to determine the cost
+     * @param amount The number of tokens to buy
+     * @return totalCost The cost to buy the specified amount of tokens including protocol rewards
+     * @return addedSurgeCost The extra payment paid by users due to high VRGDACap prices
+     */
+    function buyTokenQuoteWithRewards(
+        uint256 amount
+    ) public view virtual returns (int256 totalCost, uint256 addedSurgeCost) {
+        (int256 costInt, uint256 surgeCost) = buyTokenQuote(amount);
+        if (costInt < 0) revert INVALID_COST();
+
+        totalCost = costInt + int256(computeTotalReward(uint256(costInt)));
+        addedSurgeCost = surgeCost;
     }
 
     /**

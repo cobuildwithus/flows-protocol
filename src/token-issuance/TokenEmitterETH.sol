@@ -134,7 +134,7 @@ contract TokenEmitterETH is ITokenEmitterETH, BaseTokenEmitter, FlowProtocolRewa
         uint256 protocolRewardsFee = computeTotalReward(costForTokens);
         uint256 totalPayment = costForTokens + protocolRewardsFee;
 
-        if (costForTokens > totalPayment) revert SLIPPAGE_EXCEEDED();
+        if (costForTokens > maxCost) revert SLIPPAGE_EXCEEDED();
 
         checkPayment(totalPayment, msg.value);
 

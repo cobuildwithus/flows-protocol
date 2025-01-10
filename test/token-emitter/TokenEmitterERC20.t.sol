@@ -178,6 +178,76 @@ contract TokenEmitterERC20Test is Test {
         // Add more checks if you wish
     }
 
+    function testFounderRewardExpiration() public {
+        // Buy some tokens before expiration => founderReward minted
+        _buySomeTokens(user1, 100e18);
+
+        // Warp time
+        vm.warp(block.timestamp + FOUNDER_REWARD_DURATION + 1);
+
+        // Buy tokens after expiration => no founderReward minted
+        uint256 founderBefore = erc20.balanceOf(founderRewardAddress);
+        _buySomeTokens(user1, 100e18);
+        uint256 founderAfter = erc20.balanceOf(founderRewardAddress);
+
+        // Confirm no increase in founder's balance
+        assertEq(founderAfter, founderBefore, "Founder reward minted after expiration");
+    }
+
+    function testReinitializeShouldFail() public {
+        // Try calling initialize again on the same TokenEmitterERC20 proxy
+        vm.startPrank(owner);
+        vm.expectRevert("Initializable: contract is already initialized");
+        tokenEmitter.initialize(
+            owner,
+            address(erc20),
+            address(weth),
+            founderRewardAddress,
+            CURVE_STEEPNESS,
+            BASE_PRICE,
+            MAX_PRICE_INCREASE,
+            SUPPLY_OFFSET,
+            PRICE_DECAY_PERCENT,
+            PER_TIME_UNIT,
+            FOUNDER_REWARD_DURATION,
+            address(paymentToken)
+        );
+        vm.stopPrank();
+    }
+
+    function testBuyTokenMaxAmount() public {
+        address user = user1;
+        vm.startPrank(user);
+
+        // Approve big allowance
+        paymentToken.approve(address(tokenEmitter), type(uint256).max);
+
+        uint256 hugeAmount = type(uint256).max / 1e18;
+        // or some extremely large # of brand tokens
+
+        // Expect revert due to overflow or invalid computation in the curve
+        vm.expectRevert();
+        tokenEmitter.buyTokenQuote(hugeAmount);
+
+        vm.stopPrank();
+    }
+
+    function testPriceContinuity() public {
+        uint256 steps = 100;
+        uint256 maxAmount = 10000 * 1e18;
+
+        int256 previousCost = 0;
+
+        for (uint256 i = 1; i <= steps; i++) {
+            uint256 amountToBuy = (maxAmount / steps) * i;
+            (int256 cost, ) = tokenEmitter.buyTokenQuote(amountToBuy);
+
+            // Ensure cost increases
+            assertTrue(cost > previousCost, "Cost should increase continuously");
+            previousCost = cost;
+        }
+    }
+
     // 2) test buy token
     function testBuyToken() public {
         // We'll buy e.g. 500 tokens

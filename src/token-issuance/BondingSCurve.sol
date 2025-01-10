@@ -102,7 +102,10 @@ abstract contract BondingSCurve {
 
         // Calculate the payment by finding the difference in the integral of the price function
         // given the current total sold amount and the new total sold amount
-        return pIntegral(sold) - pIntegral(newSold);
+        // subtract 1 wei to simulate rounding down
+        // prevents situations where selling tiny amount of tokens
+        // results in buyer paying less due to precision loss
+        return pIntegral(sold) - pIntegral(newSold) - 1;
     }
 
     // given # of tokens sold, returns the integral of price p(x), or the total amount paid for the tokens sold

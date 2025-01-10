@@ -22,9 +22,9 @@ interface IERC20VotesMintable {
 
     /**
      * @dev Emitted when the ignored addresses manager address is updated
-     * @param ignoredAddressesManager The new ignored addresses manager address
+     * @param ignoredRewardAddressesManager The new ignored addresses manager address
      */
-    event IgnoredAddressesManagerUpdated(address ignoredAddressesManager);
+    event IgnoredRewardAddressesManagerUpdated(address ignoredRewardAddressesManager);
 
     /**
      * @dev Emitted when an address is added to the ignored addresses list
@@ -47,6 +47,16 @@ interface IERC20VotesMintable {
      * @dev Error thrown when attempting to set an invalid zero address
      */
     error INVALID_ADDRESS_ZERO();
+
+    /**
+     * @dev Error thrown when the pool units overflow
+     */
+    error POOL_UNITS_OVERFLOW();
+
+    /**
+     * @dev Error thrown when the ignored addresses manager is not the sender
+     */
+    error NOT_IGNORED_ADDRESSES_MANAGER();
 
     /**
      * @dev Error thrown when attempting to update the minter after it has been locked
@@ -102,6 +112,7 @@ interface IERC20VotesMintable {
      * @param ignoreRewardsAddresses The addresses to ignore when updating rewards
      * @param name The name of the token
      * @param symbol The symbol of the token
+     * @param ignoredRewardAddressesManager The address of the ignored addresses manager
      */
     function initialize(
         address initialOwner,
@@ -109,6 +120,19 @@ interface IERC20VotesMintable {
         address rewardPool,
         address[] memory ignoreRewardsAddresses,
         string calldata name,
-        string calldata symbol
+        string calldata symbol,
+        address ignoredRewardAddressesManager
     ) external;
+
+    /**
+     * @dev Adds an address to the ignored addresses list
+     * @param account The address to add
+     */
+    function addIgnoredRewardsAddress(address account) external;
+
+    /**
+     * @dev Removes an address from the ignored addresses list
+     * @param account The address to remove
+     */
+    function removeIgnoredRewardsAddress(address account) external;
 }

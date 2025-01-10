@@ -74,7 +74,8 @@ contract ERC20MintableTest is Test {
             rewardPool: address(rewardPool),
             ignoreRewardsAddresses: ignoreRewardsAddresses,
             name: "Test Token",
-            symbol: "TST"
+            symbol: "TST",
+            ignoredRewardAddressesManager: address(this)
         });
 
         // Set the token variable to the proxy address

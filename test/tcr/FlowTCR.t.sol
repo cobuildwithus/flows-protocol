@@ -160,7 +160,8 @@ contract FlowTCRTest is ERC721FlowTest {
             _rewardPool: address(rewardPool),
             _ignoreRewardsAddressSet: ignoreRewardsAddresses,
             _name: "Test Token",
-            _symbol: "TST"
+            _symbol: "TST",
+            _ignoredRewardAddressesManager: address(flowTCR)
         });
 
         arbitrator = ERC20VotesArbitrator(arbitratorProxy);

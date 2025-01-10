@@ -207,7 +207,8 @@ contract DeployNounsFlow is DeployScript {
             rewardPool: rewardPool,
             ignoreRewardsAddresses: ignoreRewardsAddresses,
             name: "Nouns Flow",
-            symbol: "FLOWS"
+            symbol: "FLOWS",
+            ignoredRewardAddressesManager: flowTCR
         });
 
         // Initialize ERC20VotesArbitrator

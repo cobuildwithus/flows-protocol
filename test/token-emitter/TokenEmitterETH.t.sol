@@ -96,7 +96,8 @@ contract TokenEmitterETHTest is Test {
             address(rewardPool),
             ignoreRewardsAddresses,
             "Test Token",
-            "TST"
+            "TST",
+            address(this)
         );
 
         // Initialize TokenEmitter

@@ -9,6 +9,7 @@ import { FlowTypes } from "../storage/FlowStorageV1.sol";
 import { ITCRFactory } from "./interfaces/ITCRFactory.sol";
 import { FlowTCRItems } from "./library/FlowTCRItems.sol";
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperToken.sol";
+import { IERC20VotesMintable } from "../interfaces/IERC20VotesMintable.sol";
 
 /**
  * @title FlowTCR
@@ -197,6 +198,10 @@ contract FlowTCR is GeneralizedTCR, IFlowTCR {
             IManagedFlow(flowRecipient).resetFlowRate();
             // now that the reward pool is set, we can set the actual manager
             IManagedFlow(flowRecipient).setManager(deployedContracts.tcrAddress);
+
+            // ignore the child token emitter contract (which is a bonding curve denominated in the erc20) when updating rewards
+            // assumes the erc20 used in the TCR is the same as the one used for this Flow's bonding curve
+            IERC20VotesMintable(address(erc20)).addIgnoredRewardsAddress(deployedContracts.tokenEmitterAddress);
         }
     }
 

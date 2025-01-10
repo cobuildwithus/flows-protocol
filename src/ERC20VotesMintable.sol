@@ -28,7 +28,7 @@ contract ERC20VotesMintable is
     address public minter;
 
     // The address of the Flow that uses this token as a TCR token
-    address public ignoredAddressesManager;
+    address public ignoredRewardAddressesManager;
 
     // Whether the minter can be updated
     bool public isMinterLocked;
@@ -37,8 +37,6 @@ contract ERC20VotesMintable is
     address public rewardPool;
 
     EnumerableSet.AddressSet private _ignoreRewardsAddresses;
-
-    error POOL_UNITS_OVERFLOW();
 
     ///                                                          ///
     ///                          MODIFIERS                       ///
@@ -63,8 +61,8 @@ contract ERC20VotesMintable is
     /**
      * @notice Require that the sender is the ignored addresses manager.
      */
-    modifier onlyIgnoredAddressesManager() {
-        if (msg.sender != ignoredAddressesManager) revert NOT_IGNORED_ADDRESSES_MANAGER();
+    modifier onlyIgnoredRewardAddressesManager() {
+        if (msg.sender != ignoredRewardAddressesManager) revert NOT_IGNORED_ADDRESSES_MANAGER();
         _;
     }
 
@@ -98,7 +96,7 @@ contract ERC20VotesMintable is
      * @param _ignoreRewardsAddressSet The addresses to ignore when updating rewards
      * @param _name The name of the token
      * @param _symbol The symbol of the token
-     * @param _ignoredAddressesManager The address of the ignored addresses manager
+     * @param _ignoredRewardAddressesManager The address of the ignored addresses manager
      */
     function initialize(
         address _initialOwner,
@@ -107,7 +105,7 @@ contract ERC20VotesMintable is
         address[] memory _ignoreRewardsAddressSet,
         string calldata _name,
         string calldata _symbol,
-        address _ignoredAddressesManager
+        address _ignoredRewardAddressesManager
     ) external initializer {
         if (_minter == address(0)) revert INVALID_ADDRESS_ZERO();
         if (_initialOwner == address(0)) revert INVALID_ADDRESS_ZERO();
@@ -115,7 +113,7 @@ contract ERC20VotesMintable is
 
         minter = _minter;
         rewardPool = _rewardPool;
-        ignoredAddressesManager = _ignoredAddressesManager;
+        ignoredRewardAddressesManager = _ignoredRewardAddressesManager;
 
         for (uint256 i = 0; i < _ignoreRewardsAddressSet.length; i++) {
             _ignoreRewardsAddresses.add(_ignoreRewardsAddressSet[i]);
@@ -192,10 +190,10 @@ contract ERC20VotesMintable is
      * @notice Set the address of the ignored addresses manager.
      * @dev Only callable by the owner.
      */
-    function setIgnoredAddressesManager(address _ignoredAddressesManager) external onlyOwner {
-        ignoredAddressesManager = _ignoredAddressesManager;
+    function setignoredRewardAddressesManager(address _ignoredRewardAddressesManager) external onlyOwner {
+        ignoredRewardAddressesManager = _ignoredRewardAddressesManager;
 
-        emit IgnoredAddressesManagerUpdated(_ignoredAddressesManager);
+        emit IgnoredRewardAddressesManagerUpdated(_ignoredRewardAddressesManager);
     }
 
     /**
@@ -211,7 +209,7 @@ contract ERC20VotesMintable is
      * @dev Only callable by the ignored addresses manager
      * @param account The address to ignore when updating rewards
      */
-    function addIgnoreRewardsAddress(address account) external onlyIgnoredAddressesManager {
+    function addIgnoredRewardsAddress(address account) external onlyIgnoredRewardAddressesManager {
         if (account == address(0)) revert INVALID_ADDRESS_ZERO();
         _ignoreRewardsAddresses.add(account);
 
@@ -223,7 +221,7 @@ contract ERC20VotesMintable is
      * @dev Only callable by the ignored addresses manager
      * @param account The address to stop ignoring when updating rewards
      */
-    function removeIgnoreRewardsAddress(address account) external onlyIgnoredAddressesManager {
+    function removeIgnoredRewardsAddress(address account) external onlyIgnoredRewardAddressesManager {
         _ignoreRewardsAddresses.remove(account);
 
         emit IgnoreRewardsAddressRemoved(account);

@@ -109,7 +109,8 @@ contract TCRFactory is ITCRFactory, Ownable2StepUpgradeable, UUPSUpgradeable {
             rewardPool: rewardPoolAddress,
             ignoreRewardsAddresses: ignoreRewardsAddresses,
             name: erc20Params.name,
-            symbol: erc20Params.symbol
+            symbol: erc20Params.symbol,
+            ignoredRewardAddressesManager: tcrAddress // so that the TCR can ignore new token emitters when new child flows are deployed
         });
 
         // Initialize the TokenEmitter

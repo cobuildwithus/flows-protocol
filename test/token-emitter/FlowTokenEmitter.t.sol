@@ -132,7 +132,8 @@ contract FlowTokenEmitterTest is Test {
                 address(rewardPool),
                 ignoreList,
                 "Flow Brand Token",
-                "FLOW"
+                "FLOW",
+                address(this)
             );
         }
 
@@ -145,7 +146,8 @@ contract FlowTokenEmitterTest is Test {
                 address(paymentRewardPool),
                 ignoreList2,
                 "Payment Token",
-                "PAY"
+                "PAY",
+                address(this)
             );
         }
 

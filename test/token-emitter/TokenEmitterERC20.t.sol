@@ -121,7 +121,8 @@ contract TokenEmitterERC20Test is Test {
             address(rewardPool),
             ignoreRewardsAddresses,
             "Test Brand Token",
-            "BRAND"
+            "BRAND",
+            address(this)
         );
 
         paymentToken.initialize(
@@ -130,7 +131,8 @@ contract TokenEmitterERC20Test is Test {
             address(paymentTokenRewardPool),
             ignoreRewardsAddresses,
             "Test Token",
-            "TST"
+            "TST",
+            address(this)
         );
 
         // 9) Initialize the Emitter (the child)

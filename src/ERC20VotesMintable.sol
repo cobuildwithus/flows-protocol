@@ -235,6 +235,18 @@ contract ERC20VotesMintable is
     }
 
     /**
+     * @dev See {IERC20-transferFrom}.
+     *
+     * Requirements:
+     *
+     * - `to` cannot be the zero address.
+     * - the caller must have a balance of at least `amount`.
+     */
+    function transferFrom(address from, address to, uint256 amount) public override nonReentrant returns (bool) {
+        return super.transferFrom(from, to, amount);
+    }
+
+    /**
      * @notice Burn tokens from an account.
      * @dev Only callable by the minter.
      */

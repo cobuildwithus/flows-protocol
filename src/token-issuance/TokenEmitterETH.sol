@@ -137,7 +137,6 @@ contract TokenEmitterETH is ITokenEmitterETH, BaseTokenEmitter, FlowProtocolRewa
         uint256 totalPayment = costForTokens + protocolRewardsFee;
 
         checkPayment(totalPayment, msg.value);
-        handleOverpayment(totalPayment, msg.value);
 
         _handleRewardsAndGetValueToSend(
             costForTokens,
@@ -155,6 +154,8 @@ contract TokenEmitterETH is ITokenEmitterETH, BaseTokenEmitter, FlowProtocolRewa
         if (isFounderRewardActive()) {
             erc20.mint(founderRewardAddress, founderReward);
         }
+
+        handleOverpayment(totalPayment, msg.value);
 
         emit TokensBought(_msgSender(), user, amount, costForTokens, protocolRewardsFee, founderReward, surgeCost);
     }

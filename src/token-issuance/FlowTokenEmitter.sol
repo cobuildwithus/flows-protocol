@@ -141,9 +141,6 @@ contract FlowTokenEmitter is TokenEmitterERC20 {
         if (costInETH > maxCost) revert SLIPPAGE_EXCEEDED();
         if (costInETH > msg.value) revert INSUFFICIENT_FUNDS();
 
-        // Handle excess ETH payment
-        handleETHOverpayment(costInETH, msg.value);
-
         // Track payment token balance changes
         uint256 paymentTokenBalanceBefore = paymentToken.balanceOf(address(this));
 
@@ -156,6 +153,9 @@ contract FlowTokenEmitter is TokenEmitterERC20 {
         // Use payment tokens to purchase Flow tokens
         paymentToken.safeIncreaseAllowance(address(this), paymentTokenAcquired);
         _buyToken(address(this), user, tokenAmount, paymentTokenAcquired, protocolRewardsRecipients);
+
+        // Handle excess ETH payment
+        handleETHOverpayment(costInETH, msg.value);
     }
 
     /**

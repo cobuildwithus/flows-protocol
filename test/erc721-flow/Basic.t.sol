@@ -320,8 +320,10 @@ contract BasicERC721FlowTest is ERC721FlowTest {
             initialFlowRateMinusRewardPool - baselineFlowRate,
             "Bonus flow rate should be the remainder"
         );
+        // Test setting percentage to 100% with manager set to 0
+        vm.prank(flow.owner());
+        flow.setManagerRewardFlowRatePercent(0);
 
-        // Test setting percentage to 100%
         uint32 percent = flow.PERCENTAGE_SCALE();
         vm.prank(flow.owner());
         flow.setBaselineFlowRatePercent(percent);

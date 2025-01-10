@@ -22,8 +22,8 @@ import { IRewardPool } from "../src/interfaces/IRewardPool.sol";
 import { IERC20VotesMintable } from "../src/interfaces/IERC20VotesMintable.sol";
 import { ERC20VotesArbitrator } from "../src/tcr/ERC20VotesArbitrator.sol";
 import { IERC20VotesArbitrator } from "../src/tcr/interfaces/IERC20VotesArbitrator.sol";
-import { TokenEmitter } from "../src/TokenEmitter.sol";
-import { ITokenEmitter } from "../src/interfaces/ITokenEmitter.sol";
+import { TokenEmitterETH } from "../src/token-issuance/TokenEmitterETH.sol";
+import { ITokenEmitterETH } from "../src/interfaces/ITokenEmitterETH.sol";
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperToken.sol";
 
 contract DeployNounsFlow is DeployScript {
@@ -110,8 +110,8 @@ contract DeployNounsFlow is DeployScript {
         flowTCRImplementation = address(flowTCRImpl);
         flowTCR = address(new ERC1967Proxy(address(flowTCRImpl), ""));
 
-        // Deploy TokenEmitter
-        TokenEmitter tokenEmitterImpl = new TokenEmitter(protocolRewards, protocolFeeRecipient);
+        // Deploy TokenEmitterETH
+        TokenEmitterETH tokenEmitterImpl = new TokenEmitterETH(protocolRewards, protocolFeeRecipient);
         tokenEmitterImplementation = address(tokenEmitterImpl);
         tokenEmitter = address(new ERC1967Proxy(address(tokenEmitterImpl), ""));
 
@@ -119,7 +119,7 @@ contract DeployNounsFlow is DeployScript {
         TokenVerifier verifier = new TokenVerifier(tokenAddress);
         tokenVerifier = address(verifier);
 
-        ITokenEmitter(tokenEmitter).initialize({
+        ITokenEmitterETH(tokenEmitter).initialize({
             initialOwner: initialOwner,
             erc20: erc20Mintable,
             weth: address(WETH),

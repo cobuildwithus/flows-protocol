@@ -11,7 +11,7 @@ import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/acc
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { ITCRFactory } from "./interfaces/ITCRFactory.sol";
 import { IRewardPool } from "../interfaces/IRewardPool.sol";
-import { ITokenEmitter } from "../interfaces/ITokenEmitter.sol";
+import { ITokenEmitterETH } from "../interfaces/ITokenEmitterETH.sol";
 import { GeneralizedTCRStorageV1 } from "./storage/GeneralizedTCRStorageV1.sol";
 
 /**
@@ -113,7 +113,7 @@ contract TCRFactory is ITCRFactory, Ownable2StepUpgradeable, UUPSUpgradeable {
         });
 
         // Initialize the TokenEmitter
-        ITokenEmitter(tokenEmitterAddress).initialize({
+        ITokenEmitterETH(tokenEmitterAddress).initialize({
             weth: WETH,
             erc20: erc20Address,
             basePrice: tokenEmitterParams.basePrice,

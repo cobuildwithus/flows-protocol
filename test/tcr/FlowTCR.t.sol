@@ -17,7 +17,7 @@ import { IManagedFlow } from "../../src/interfaces/IManagedFlow.sol";
 import { IFlowTCR } from "../../src/tcr/interfaces/IGeneralizedTCR.sol";
 import { ERC721FlowTest } from "../erc721-flow/ERC721Flow.t.sol";
 import { TCRFactory } from "../../src/tcr/TCRFactory.sol";
-import { TokenEmitter } from "../../src/TokenEmitter.sol";
+import { TokenEmitterETH } from "../../src/token-issuance/TokenEmitterETH.sol";
 import { ITCRFactory } from "../../src/tcr/interfaces/ITCRFactory.sol";
 import { RewardPool } from "../../src/RewardPool.sol";
 import { ProtocolRewards } from "../../src/protocol-rewards/ProtocolRewards.sol";
@@ -29,7 +29,7 @@ contract FlowTCRTest is ERC721FlowTest {
     ERC20VotesMintable public erc20Token;
     ERC20VotesArbitrator public arbitrator;
     RewardPool public rewardPool;
-    TokenEmitter public tokenEmitter;
+    TokenEmitterETH public tokenEmitter;
     ProtocolRewards public protocolRewards;
 
     // Addresses
@@ -89,7 +89,7 @@ contract FlowTCRTest is ERC721FlowTest {
         protocolRewards = new ProtocolRewards();
 
         address rewardPoolImpl = address(new RewardPool());
-        address tokenEmitterImpl = address(new TokenEmitter(address(protocolRewards), protocolFeeRecipient));
+        address tokenEmitterImpl = address(new TokenEmitterETH(address(protocolRewards), protocolFeeRecipient));
         address flowTCRImpl = address(new FlowTCR());
         address flowTCRProxy = address(new ERC1967Proxy(flowTCRImpl, ""));
         address arbitratorImpl = address(new ERC20VotesArbitrator());

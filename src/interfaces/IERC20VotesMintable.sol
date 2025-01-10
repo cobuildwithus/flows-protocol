@@ -27,6 +27,18 @@ interface IERC20VotesMintable {
     event IgnoredAddressesManagerUpdated(address ignoredAddressesManager);
 
     /**
+     * @dev Emitted when an address is added to the ignored addresses list
+     * @param account The address that was added
+     */
+    event IgnoreRewardsAddressAdded(address account);
+
+    /**
+     * @dev Emitted when an address is removed from the ignored addresses list
+     * @param account The address that was removed
+     */
+    event IgnoreRewardsAddressRemoved(address account);
+
+    /**
      * @dev Error thrown when a function is called by an address that is not the manager
      */
     error ONLY_MANAGER();

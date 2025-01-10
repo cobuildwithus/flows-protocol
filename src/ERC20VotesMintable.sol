@@ -60,6 +60,14 @@ contract ERC20VotesMintable is
         _;
     }
 
+    /**
+     * @notice Require that the sender is the ignored addresses manager.
+     */
+    modifier onlyIgnoredAddressesManager() {
+        if (msg.sender != ignoredAddressesManager) revert NOT_IGNORED_ADDRESSES_MANAGER();
+        _;
+    }
+
     ///                                                          ///
     ///                         CONSTRUCTOR                      ///
     ///                                                          ///
@@ -137,12 +145,12 @@ contract ERC20VotesMintable is
         return 18;
     }
 
+    /**
+     * @notice Returns the total supply of the token
+     * @return totalSupply The total supply of the token
+     */
     function totalSupply() public view virtual override(ERC20Upgradeable) returns (uint256) {
         return super.totalSupply();
-    }
-
-    function ignoreRewardsAddresses() external view returns (address[] memory) {
-        return _ignoreRewardsAddresses.values();
     }
 
     /**
@@ -188,6 +196,37 @@ contract ERC20VotesMintable is
         ignoredAddressesManager = _ignoredAddressesManager;
 
         emit IgnoredAddressesManagerUpdated(_ignoredAddressesManager);
+    }
+
+    /**
+     * @notice Returns the addresses that are ignored when updating rewards
+     * @return addresses The addresses that are ignored when updating rewards
+     */
+    function ignoreRewardsAddresses() external view returns (address[] memory) {
+        return _ignoreRewardsAddresses.values();
+    }
+
+    /**
+     * @notice Add an address to be ignored when updating rewards
+     * @dev Only callable by the ignored addresses manager
+     * @param account The address to ignore when updating rewards
+     */
+    function addIgnoreRewardsAddress(address account) external onlyIgnoredAddressesManager {
+        if (account == address(0)) revert INVALID_ADDRESS_ZERO();
+        _ignoreRewardsAddresses.add(account);
+
+        emit IgnoreRewardsAddressAdded(account);
+    }
+
+    /**
+     * @notice Remove an address from being ignored when updating rewards
+     * @dev Only callable by the ignored addresses manager
+     * @param account The address to stop ignoring when updating rewards
+     */
+    function removeIgnoreRewardsAddress(address account) external onlyIgnoredAddressesManager {
+        _ignoreRewardsAddresses.remove(account);
+
+        emit IgnoreRewardsAddressRemoved(account);
     }
 
     /**

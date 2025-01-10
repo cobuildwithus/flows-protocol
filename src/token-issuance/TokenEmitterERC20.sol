@@ -155,11 +155,9 @@ contract TokenEmitterERC20 is ITokenEmitterERC20, BaseTokenEmitter {
 
         (int256 costInt, uint256 surgeCost) = buyTokenQuote(amount);
         if (costInt < 0) revert INVALID_COST();
-        uint256 costForTokens = uint256(costInt);
+        uint256 totalPayment = uint256(costInt);
 
-        if (costForTokens > maxCost) revert SLIPPAGE_EXCEEDED();
-
-        uint256 totalPayment = costForTokens;
+        if (totalPayment > maxCost) revert SLIPPAGE_EXCEEDED();
 
         checkPayment(totalPayment, payer);
 
@@ -179,7 +177,7 @@ contract TokenEmitterERC20 is ITokenEmitterERC20, BaseTokenEmitter {
             erc20.mint(founderRewardAddress, founderReward);
         }
 
-        emit TokensBought(payer, user, amount, costForTokens, 0, founderReward, surgeCost);
+        emit TokensBought(payer, user, amount, totalPayment, 0, founderReward, surgeCost);
     }
 
     /**

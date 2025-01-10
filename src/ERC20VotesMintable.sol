@@ -190,7 +190,7 @@ contract ERC20VotesMintable is
      * @notice Set the address of the ignored addresses manager.
      * @dev Only callable by the owner.
      */
-    function setignoredRewardAddressesManager(address _ignoredRewardAddressesManager) external onlyOwner {
+    function setIgnoredRewardAddressesManager(address _ignoredRewardAddressesManager) external onlyOwner {
         ignoredRewardAddressesManager = _ignoredRewardAddressesManager;
 
         emit IgnoredRewardAddressesManagerUpdated(_ignoredRewardAddressesManager);

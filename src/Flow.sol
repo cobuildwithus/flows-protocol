@@ -536,7 +536,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @dev Emits a BaselineFlowRatePercentUpdated event with the old and new percentages
      */
     function setBaselineFlowRatePercent(uint32 _baselineFlowRatePercent) external onlyOwnerOrManager nonReentrant {
-        if (_baselineFlowRatePercent > PERCENTAGE_SCALE) revert INVALID_PERCENTAGE();
+        if (_baselineFlowRatePercent + fs.managerRewardPoolFlowRatePercent > PERCENTAGE_SCALE)
+            revert INVALID_PERCENTAGE();
 
         emit BaselineFlowRatePercentUpdated(fs.baselinePoolFlowRatePercent, _baselineFlowRatePercent);
 
@@ -553,7 +554,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @dev Emits a ManagerRewardFlowRatePercentUpdated event with the old and new percentages
      */
     function setManagerRewardFlowRatePercent(uint32 _managerRewardFlowRatePercent) external onlyOwner nonReentrant {
-        if (_managerRewardFlowRatePercent > PERCENTAGE_SCALE) revert INVALID_PERCENTAGE();
+        if (_managerRewardFlowRatePercent + fs.baselinePoolFlowRatePercent > PERCENTAGE_SCALE)
+            revert INVALID_PERCENTAGE();
 
         emit ManagerRewardFlowRatePercentUpdated(fs.managerRewardPoolFlowRatePercent, _managerRewardFlowRatePercent);
 

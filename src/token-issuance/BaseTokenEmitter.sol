@@ -175,7 +175,7 @@ abstract contract BaseTokenEmitter is
      * @return Founder reward token amount
      */
     function calculateFounderReward(uint256 amount) public view returns (uint256) {
-        return amount >= 14 ? (amount * 7) / 100 : 1;
+        return amount >= 15 ? (amount * 7) / 100 : 1;
     }
 
     /**

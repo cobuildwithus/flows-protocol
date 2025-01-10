@@ -17,7 +17,10 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title BaseTokenEmitter
- * @dev Abstract contract for emitting tokens using a bonding curve mechanism
+ * @notice Abstract base contract implementing core token emission functionality using a bonding curve
+ * and Variable Rate Gradual Dutch Auction (VRGDA) pricing mechanism.
+ * @dev Combines bonding curve pricing with VRGDA caps to manage token distribution and price discovery.
+ * Inherits from multiple OpenZeppelin security and upgrade patterns.
  */
 abstract contract BaseTokenEmitter is
     ITokenEmitter,
@@ -29,37 +32,38 @@ abstract contract BaseTokenEmitter is
 {
     using SafeERC20 for IERC20;
 
-    /// @notice The ERC20 token being emitted
+    /// @notice The primary token being distributed through this emitter
     ERC20VotesMintable public erc20;
 
-    /// @notice The WETH token
+    /// @notice WETH contract for handling ETH-based operations
     IWETH public WETH;
 
-    /// @notice The address for the founder reward
+    /// @notice Recipient address for founder reward distributions
     address public founderRewardAddress;
 
-    /// @notice The timestamp at which the founder reward expires
+    /// @notice Unix timestamp after which founder rewards cease
     uint256 public founderRewardExpiration;
 
-    // The start time of token emission for the VRGDACap
+    /// @notice Unix timestamp marking the start of VRGDA price calculations
     uint256 public vrgdaCapStartTime;
 
-    // The extra payment received from high VRGDACap prices
+    /// @notice Accumulated surplus payments from VRGDA price premiums
     uint256 public vrgdaCapExtraPayment;
 
     /**
-     * @dev Initializes the TokenEmitter contract
-     * @param _initialOwner The address of the initial owner of the contract
-     * @param _erc20 The address of the ERC20 token to be emitted
-     * @param _weth The address of the WETH token
-     * @param _founderRewardAddress The address of the founder reward
-     * @param _curveSteepness The steepness of the bonding curve
-     * @param _basePrice The base price for token emission
-     * @param _maxPriceIncrease The maximum price increase for token emission
-     * @param _supplyOffset The supply offset for the bonding curve
-     * @param _priceDecayPercent The price decay percent for the VRGDACap
-     * @param _perTimeUnit The per time unit for the VRGDACap
-     * @param _founderRewardDuration The duration of seconds for the founder reward to be active in seconds
+     * @notice Initializes the token emitter with core configuration parameters
+     * @dev Should only be called once during contract deployment or upgrade
+     * @param _initialOwner Address receiving contract ownership and admin rights
+     * @param _erc20 Token contract address being distributed
+     * @param _weth WETH contract address for ETH operations
+     * @param _founderRewardAddress Recipient of founder reward tokens
+     * @param _curveSteepness Controls price sensitivity to supply changes
+     * @param _basePrice Starting price point for the bonding curve
+     * @param _maxPriceIncrease Maximum allowed price growth from base
+     * @param _supplyOffset Initial supply adjustment for price calculations
+     * @param _priceDecayPercent Rate of VRGDA price decay
+     * @param _perTimeUnit Target emission rate per time unit
+     * @param _founderRewardDuration Duration in seconds founder rewards remain active
      */
     function BaseTokenEmitter__initialize(
         address _initialOwner,
@@ -84,26 +88,22 @@ abstract contract BaseTokenEmitter is
         erc20 = ERC20VotesMintable(_erc20);
         WETH = IWETH(_weth);
 
-        // If we are upgrading, don't reset the start time
+        // Preserve existing start time during upgrades
         if (vrgdaCapStartTime == 0) vrgdaCapStartTime = block.timestamp;
 
         __Ownable_init();
-
         _transferOwnership(_initialOwner);
-
         __ReentrancyGuard_init();
-
         __BondingSCurve_init(_curveSteepness, _basePrice, _maxPriceIncrease, _supplyOffset);
         __VRGDACap_init(_priceDecayPercent, _perTimeUnit);
     }
 
     /**
-     * @notice Calculates the cost to buy a certain amount of tokens
-     * @dev Uses the bonding curve to determine the cost
-     * @param amount The number of tokens to buy
-     * @return totalCost The cost to buy the specified amount of tokens
-     * @return addedSurgeCost The extra payment paid by users due to high VRGDACap prices
-     * @dev Uses the bonding curve to determine the minimum cost, but if sales are ahead of schedule, the VRGDACap price will be used
+     * @notice Calculates total cost and surge pricing for purchasing tokens
+     * @dev Combines bonding curve base price with VRGDA price caps
+     * @param amount Number of tokens to purchase
+     * @return totalCost Final cost including any surge pricing
+     * @return addedSurgeCost Premium above base bonding curve price
      */
     function buyTokenQuote(uint256 amount) public view returns (int256 totalCost, uint256 addedSurgeCost) {
         if (amount == 0) revert INVALID_AMOUNT();
@@ -114,15 +114,13 @@ abstract contract BaseTokenEmitter is
         uint256 totalMintAmount = amount + (founderRewardActive ? founderReward : 0);
 
         int256 bondingCurveCost = costForToken(int256(erc20.totalSupply()), int256(totalMintAmount));
-
         int256 avgTargetPrice = wadDiv(bondingCurveCost, int256(totalMintAmount));
 
+        // Ensure positive target price for VRGDA calculations
         if (avgTargetPrice < 0) {
-            avgTargetPrice = 1; // ensure target price is positive
+            avgTargetPrice = 1;
         }
 
-        // not a perfect integration here, but it's more accurate than using basePrice for p_0 in the vrgda
-        // shouldn't be issues, but worth triple checking
         int256 vrgdaCapCost = xToY({
             timeSinceStart: toDaysWadUnsafe(block.timestamp - vrgdaCapStartTime),
             sold: int256(erc20.totalSupply()),
@@ -133,6 +131,7 @@ abstract contract BaseTokenEmitter is
         if (vrgdaCapCost < 0) revert INVALID_COST();
         if (bondingCurveCost < 0) revert INVALID_COST();
 
+        // Use higher of bonding curve or VRGDA price
         if (bondingCurveCost >= vrgdaCapCost) {
             totalCost = bondingCurveCost;
             addedSurgeCost = 0;
@@ -143,41 +142,22 @@ abstract contract BaseTokenEmitter is
     }
 
     /**
-     * @notice Calculates the payment received when selling a certain amount of tokens
-     * @dev Uses the bonding curve to determine the payment
-     * @param amount The number of tokens to sell
-     * @return payment The payment received for selling the specified amount of tokens
+     * @notice Calculates payment for selling tokens back to the contract
+     * @dev Uses pure bonding curve pricing without VRGDA adjustments
+     * @param amount Number of tokens to sell
+     * @return payment Amount of payment tokens to receive
      */
     function sellTokenQuote(uint256 amount) public view returns (int256 payment) {
         return paymentToSell(int256(erc20.totalSupply()), int256(amount));
     }
 
     /**
-     * @notice Collects payment from the user
-     * @dev Must be implemented in the child contract
-     * @param totalPaymentRequired The total payment amount required
-     * @param payment The number of payment tokens the user has sent to pay
-     */
-    function checkPayment(uint256 totalPaymentRequired, uint256 payment) internal virtual {
-        revert NOT_IMPLEMENTED();
-    }
-
-    /**
-     * @notice Handles overpayment
-     * @dev Must be implemented in the child contract
-     * @param totalPaymentRequired The total payment amount required
-     * @param payment The number of payment tokens the user has sent to pay
-     */
-    function handleOverpayment(uint256 totalPaymentRequired, uint256 payment) internal virtual {
-        revert NOT_IMPLEMENTED();
-    }
-
-    /**
-     * @notice Allows users to buy tokens by sending a payment token with slippage protection
-     * @dev Uses nonReentrant modifier to prevent reentrancy attacks
-     * @param user The address of the user who received the tokens
-     * @param amount The number of tokens to buy
-     * @param maxCost The maximum acceptable cost in wei
+     * @notice Template for token purchase implementation
+     * @dev Must be implemented by child contracts with reentrancy protection
+     * @param user Recipient of purchased tokens
+     * @param amount Number of tokens to purchase
+     * @param maxCost Maximum acceptable cost
+     * @param protocolRewardsRecipients Addresses for protocol reward distribution
      */
     function buyToken(
         address user,
@@ -189,36 +169,36 @@ abstract contract BaseTokenEmitter is
     }
 
     /**
-     * @notice Calculates the founder reward for a given amount of tokens
-     * @dev 7% of the amount of tokens bought, but at least 1 token (same deal as YCombinator)
-     * @param amount The number of tokens to buy
-     * @return The amount of founder reward tokens to mint
+     * @notice Calculates founder reward allocation
+     * @dev Returns 7% of purchase amount (min 1 token) following Y Combinator model
+     * @param amount Base token purchase amount
+     * @return Founder reward token amount
      */
     function calculateFounderReward(uint256 amount) public view returns (uint256) {
         return amount >= 14 ? (amount * 7) / 100 : 1;
     }
 
     /**
-     * @notice Checks if the founder reward is active
-     * @return True if the founder reward is active, false otherwise
+     * @notice Checks if founder rewards are currently active
+     * @return bool True if founder address is set and time period hasn't expired
      */
     function isFounderRewardActive() public view returns (bool) {
         return founderRewardAddress != address(0) && block.timestamp < founderRewardExpiration;
     }
 
     /**
-     * @notice Allows users to sell tokens and receive a payment token with slippage protection.
-     * @dev Only pays back an amount that fits on the bonding curve, does not factor in VRGDACap extra payment.
-     * @param amount The number of tokens to sell
-     * @param minPayment The minimum acceptable payment in wei
+     * @notice Template for token sell implementation
+     * @dev Must be implemented by child contracts
+     * @param amount Number of tokens to sell
+     * @param minPayment Minimum acceptable payment
      */
     function sellToken(uint256 amount, uint256 minPayment) public virtual {
         revert NOT_IMPLEMENTED();
     }
 
     /**
-     * @notice Allows the owner to withdraw accumulated VRGDACap payment
-     * @dev Plan is to use this to fund a liquidity pool OR fund the Flow grantees for this token
+     * @notice Allows owner to withdraw accumulated VRGDA surplus
+     * @dev Intended for liquidity provision or grant funding
      */
     function withdrawVRGDAPayment() external virtual nonReentrant onlyOwner {
         uint256 amount = vrgdaCapExtraPayment;
@@ -230,15 +210,17 @@ abstract contract BaseTokenEmitter is
     }
 
     /**
-     * @notice Transfer payment token from the contract
-     * @dev Must implement this in the child contract
-     * @param _to The recipient address
-     * @param _amount The amount transferring
+     * @notice Template for payment token transfer implementation
+     * @dev Must be implemented by child contracts
+     * @param _to Recipient address
+     * @param _amount Transfer amount
      */
     function _transferPaymentWithFallback(address _to, uint256 _amount) internal virtual {}
 
-    /// @notice Ensures the caller is authorized to upgrade the contract
-    /// @dev This function is called in `upgradeTo` & `upgradeToAndCall`
-    /// @param _newImpl The new implementation address
+    /**
+     * @notice Validates contract upgrade authorization
+     * @dev Restricts upgrades to contract owner
+     * @param _newImpl New implementation contract address
+     */
     function _authorizeUpgrade(address _newImpl) internal view override onlyOwner {}
 }

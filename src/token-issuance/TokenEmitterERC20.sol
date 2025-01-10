@@ -9,10 +9,11 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title TokenEmitterERC20
- * @dev Child contract for ERC20-based token purchasing, extending the abstract BaseTokenEmitter.
- *      Functionally similar to TokenEmitterETH but uses ERC20 tokens instead of ETH.
- *      This is the most common use case for child flows.
- *      This contract does not have a protocol rewards fee, instead it uses founder rewards.
+ * @notice Handles token purchases using ERC20 tokens as payment
+ * @dev Extends BaseTokenEmitter to enable ERC20-based token purchases
+ *      - Uses founder rewards instead of protocol rewards
+ *      - Designed for common use cases where payment is made in ERC20 tokens
+ *      - Handles token purchases, sales, and founder reward distribution
  */
 contract TokenEmitterERC20 is ITokenEmitterERC20, BaseTokenEmitter {
     using SafeERC20 for IERC20;
@@ -20,15 +21,14 @@ contract TokenEmitterERC20 is ITokenEmitterERC20, BaseTokenEmitter {
     IERC20 public paymentToken;
 
     /**
-     * @dev Constructor.
-     *      For an upgradable contract, the typical pattern is that this constructor
-     *      only runs once at the time the proxy is deployed.
-     *      Make sure your proxy deployment is consistent with your environment.
+     * @dev Empty constructor for proxy deployment pattern
+     * @notice Only runs once during proxy deployment - not during upgrades
      */
     constructor() payable {}
 
     /**
-     * @notice External initializer to set up the contract after deployment (UUPS / Proxy style).
+     * @notice Initializes contract state after proxy deployment
+     * @dev Uses UUPS proxy pattern - called only once after deployment
      */
     function initialize(
         address _initialOwner,
@@ -61,7 +61,8 @@ contract TokenEmitterERC20 is ITokenEmitterERC20, BaseTokenEmitter {
     }
 
     /**
-     * @dev Internal function to handle initialization logic
+     * @notice Internal initialization logic to set up contract state
+     * @dev Validates payment token and initializes base contract parameters
      */
     function _handleInitialization(
         address _initialOwner,
@@ -81,7 +82,6 @@ contract TokenEmitterERC20 is ITokenEmitterERC20, BaseTokenEmitter {
 
         paymentToken = IERC20(_paymentToken);
 
-        // Call the internal init function on the base
         BaseTokenEmitter__initialize(
             _initialOwner,
             _erc20,
@@ -98,36 +98,58 @@ contract TokenEmitterERC20 is ITokenEmitterERC20, BaseTokenEmitter {
     }
 
     /**
-     * @notice Collects payment from the user (ERC20 style).
-     * @dev We remove `payable` since we are not using `msg.value` or ETH here.
-     * @param totalPayment The total number of payment tokens required
-     * @param balance The number of payment tokens the user has on balance
+     * @notice Validates user has sufficient balance and allowance for payment
+     * @dev Non-payable since payment is in ERC20 tokens
+     * @param totalPayment Required payment amount in payment tokens
+     * @param payer Address that will pay for the purchase
      */
-    function checkPayment(uint256 totalPayment, uint256 balance) internal override {
-        // 1. Ensure user has enough balance to pay
+    function checkPayment(uint256 totalPayment, address payer) internal {
+        uint256 allowance = paymentToken.allowance(payer, address(this));
+        uint256 balance = paymentToken.balanceOf(payer);
+
         if (balance < totalPayment) {
-            revert INSUFFICIENT_FUNDS(); // or a more appropriate error like "Insufficient allowance"
+            revert INSUFFICIENT_FUNDS();
         }
 
-        // 2. Ensure user has approved this contract to spend at least `totalPayment`.
-        if (paymentToken.allowance(_msgSender(), address(this)) < totalPayment) {
+        if (paymentToken.allowance(payer, address(this)) < totalPayment) {
             revert INSUFFICIENT_FUNDS();
         }
     }
 
     /**
-     * @notice Allows users to buy tokens with an ERC20 token with slippage protection.
-     * @dev This is roughly analogous to the ETH-based buy but we do not rely on `msg.value`.
-     * @param user The address that will receive the minted tokens
-     * @param amount The number of tokens to buy
-     * @param maxCost The maximum acceptable cost in "paymentToken" units
+     * @notice Purchases tokens using ERC20 payment with slippage protection
+     * @dev Handles token minting, founder rewards, and surge pricing
+     * @param user Address to receive the purchased tokens
+     * @param amount Number of tokens to purchase
+     * @param maxCost Maximum acceptable cost in payment tokens
      */
     function buyToken(
         address user,
         uint256 amount,
         uint256 maxCost,
-        ProtocolRewardAddresses calldata
+        ProtocolRewardAddresses calldata protocolRewardsRecipients
     ) public payable virtual override nonReentrant {
+        _buyToken(_msgSender(), user, amount, maxCost, protocolRewardsRecipients);
+    }
+
+    /**
+     * @notice Internal function to handle token purchase with ERC20 payment
+     * @dev Validates inputs and handles token minting. Called by public buyToken()
+     *      and FlowTokenEmitter's buyWithETH(). When called by FlowTokenEmitter,
+     *      payment tokens are pre-purchased and transferred.
+     * @param payer Address that will pay for the purchase
+     * @param user Address that will receive the purchased tokens
+     * @param amount Number of tokens to purchase
+     * @param maxCost Maximum payment token cost user is willing to pay (slippage protection)
+     * @param protocolRewardsRecipients Struct containing builder and referral addresses for rewards
+     */
+    function _buyToken(
+        address payer,
+        address user,
+        uint256 amount,
+        uint256 maxCost,
+        ProtocolRewardAddresses calldata protocolRewardsRecipients
+    ) internal {
         if (user == address(0)) revert ADDRESS_ZERO();
         if (amount == 0) revert INVALID_AMOUNT();
 
@@ -139,44 +161,41 @@ contract TokenEmitterERC20 is ITokenEmitterERC20, BaseTokenEmitter {
 
         uint256 totalPayment = costForTokens;
 
-        // 1. Check that user has enough balance to pay
-        checkPayment(totalPayment, paymentToken.balanceOf(_msgSender()));
+        checkPayment(totalPayment, payer);
 
-        // 2. Transfer exactly `totalPayment` from the payer to this contract.
-        // Can be called by the FlowTokenEmitter which inherits this contract, which is the only other caller.
-        // In that case, the FlowTokenEmitter (this contract) will already have the payment tokens purchased.
-        if (_msgSender() != address(this)) {
-            paymentToken.safeTransferFrom(_msgSender(), address(this), totalPayment);
+        // Handle payment transfer - skips if called by FlowTokenEmitter which pre-purchases tokens
+        if (payer != address(this)) {
+            paymentToken.safeTransferFrom(payer, address(this), totalPayment);
         }
 
-        // 3. If there's a surge cost, track it
         if (surgeCost > 0) {
             vrgdaCapExtraPayment += surgeCost;
         }
 
-        // 4. Mint the purchased tokens
         erc20.mint(user, amount);
 
-        // 5. Possibly mint founder reward
         uint256 founderReward = calculateFounderReward(amount);
         if (isFounderRewardActive()) {
             erc20.mint(founderRewardAddress, founderReward);
         }
 
-        emit TokensBought(_msgSender(), user, amount, costForTokens, 0, founderReward, surgeCost);
+        emit TokensBought(payer, user, amount, costForTokens, 0, founderReward, surgeCost);
     }
 
     /**
-     * @notice Transfer ERC20 tokens from the contract
-     * @param _to The recipient address
-     * @param _amount The amount transferring
+     * @notice Transfers ERC20 payment tokens from contract to recipient
+     * @param _to Recipient address
+     * @param _amount Amount of tokens to transfer
      */
     function _transferPaymentWithFallback(address _to, uint256 _amount) internal override {
         paymentToken.safeTransfer(_to, _amount);
     }
 
     /**
-     * @notice Override sellToken to check ERC20 balance instead of ETH balance
+     * @notice Sells tokens back to the contract for payment tokens
+     * @dev Validates balances and handles token burning and payment
+     * @param amount Amount of tokens to sell
+     * @param minPayment Minimum acceptable payment to receive
      */
     function sellToken(uint256 amount, uint256 minPayment) public virtual override nonReentrant {
         int256 paymentInt = sellTokenQuote(amount);
@@ -196,33 +215,22 @@ contract TokenEmitterERC20 is ITokenEmitterERC20, BaseTokenEmitter {
     }
 
     /**
-     * @notice Transfer ETH/WETH from the contract
-     * @dev Attempts to transfer ETH first, falls back to WETH if ETH transfer fails
-     * @param _to The recipient address
-     * @param _amount The amount transferring
+     * @notice Transfers ETH with WETH fallback if direct transfer fails
+     * @dev Attempts ETH transfer first, wraps to WETH if needed
+     * @param _to Recipient address
+     * @param _amount Amount of ETH/WETH to transfer
      */
     function _transferETHWithFallback(address _to, uint256 _amount) internal {
-        // Ensure the contract has enough ETH to transfer
         if (address(this).balance < _amount) revert("Insufficient balance");
 
-        // Used to store if the transfer succeeded
         bool success;
-
         assembly {
-            // Transfer ETH to the recipient
-            // Limit the call to 50,000 gas
             success := call(50000, _to, _amount, 0, 0, 0, 0)
         }
 
-        // If the transfer failed:
         if (!success) {
-            // Wrap as WETH
             WETH.deposit{ value: _amount }();
-
-            // Transfer WETH instead
             bool wethSuccess = WETH.transfer(_to, _amount);
-
-            // Ensure successful transfer
             if (!wethSuccess) revert("WETH transfer failed");
         }
     }

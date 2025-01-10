@@ -148,7 +148,7 @@ abstract contract BaseTokenEmitter is
      * @return payment Amount of payment tokens to receive
      */
     function sellTokenQuote(uint256 amount) public view returns (int256 payment) {
-        return paymentToSell(int256(erc20.totalSupply()), int256(amount)) - 1;
+        return paymentToSell(int256(erc20.totalSupply()), int256(amount));
     }
 
     /**

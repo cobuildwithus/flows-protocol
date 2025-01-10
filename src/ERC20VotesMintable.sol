@@ -27,6 +27,9 @@ contract ERC20VotesMintable is
     // An address who has permissions to mint tokens
     address public minter;
 
+    // The address of the Flow that uses this token as a TCR token
+    address public ignoredAddressesManager;
+
     // Whether the minter can be updated
     bool public isMinterLocked;
 
@@ -87,6 +90,7 @@ contract ERC20VotesMintable is
      * @param _ignoreRewardsAddressSet The addresses to ignore when updating rewards
      * @param _name The name of the token
      * @param _symbol The symbol of the token
+     * @param _ignoredAddressesManager The address of the ignored addresses manager
      */
     function initialize(
         address _initialOwner,
@@ -94,7 +98,8 @@ contract ERC20VotesMintable is
         address _rewardPool,
         address[] memory _ignoreRewardsAddressSet,
         string calldata _name,
-        string calldata _symbol
+        string calldata _symbol,
+        address _ignoredAddressesManager
     ) external initializer {
         if (_minter == address(0)) revert INVALID_ADDRESS_ZERO();
         if (_initialOwner == address(0)) revert INVALID_ADDRESS_ZERO();
@@ -102,6 +107,7 @@ contract ERC20VotesMintable is
 
         minter = _minter;
         rewardPool = _rewardPool;
+        ignoredAddressesManager = _ignoredAddressesManager;
 
         for (uint256 i = 0; i < _ignoreRewardsAddressSet.length; i++) {
             _ignoreRewardsAddresses.add(_ignoreRewardsAddressSet[i]);
@@ -174,6 +180,20 @@ contract ERC20VotesMintable is
         emit MinterLocked();
     }
 
+    /**
+     * @notice Set the address of the ignored addresses manager.
+     * @dev Only callable by the owner.
+     */
+    function setIgnoredAddressesManager(address _ignoredAddressesManager) external onlyOwner {
+        ignoredAddressesManager = _ignoredAddressesManager;
+
+        emit IgnoredAddressesManagerUpdated(_ignoredAddressesManager);
+    }
+
+    /**
+     * @notice Burn tokens from an account.
+     * @dev Only callable by the minter.
+     */
     function burn(address account, uint256 amount) external onlyMinter {
         _burn(account, amount);
     }

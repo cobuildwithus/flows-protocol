@@ -21,6 +21,12 @@ interface IERC20VotesMintable {
     event MinterLocked();
 
     /**
+     * @dev Emitted when the ignored addresses manager address is updated
+     * @param ignoredAddressesManager The new ignored addresses manager address
+     */
+    event IgnoredAddressesManagerUpdated(address ignoredAddressesManager);
+
+    /**
      * @dev Error thrown when a function is called by an address that is not the manager
      */
     error ONLY_MANAGER();

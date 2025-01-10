@@ -19,7 +19,7 @@ import { SuperfluidFrameworkDeployer } from "@superfluid-finance/ethereum-contra
 import { TestToken } from "@superfluid-finance/ethereum-contracts/contracts/utils/TestToken.sol";
 import { SuperToken } from "@superfluid-finance/ethereum-contracts/contracts/superfluid/SuperToken.sol";
 
-contract TokenEmitterTest is Test {
+contract TokenEmitterETHTest is Test {
     // Superfluid
     SuperfluidFrameworkDeployer.Framework internal sf;
     SuperfluidFrameworkDeployer internal deployer;

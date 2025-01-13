@@ -49,6 +49,16 @@ interface IERC20VotesMintable {
     error INVALID_ADDRESS_ZERO();
 
     /**
+     * @dev Error thrown when an address is already ignored
+     */
+    error ALREADY_IGNORED();
+
+    /**
+     * @dev Error thrown when an address is not ignored
+     */
+    error NOT_IGNORED();
+
+    /**
      * @dev Error thrown when the pool units overflow
      */
     error POOL_UNITS_OVERFLOW();

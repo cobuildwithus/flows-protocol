@@ -216,11 +216,13 @@ contract ERC20VotesMintable is
         if (!_ignoreRewardsAddresses.contains(account)) {
             uint256 finalUnits = 0;
             IRewardPool(rewardPool).updateMemberUnits(account, uint128(finalUnits));
+
+            _ignoreRewardsAddresses.add(account);
+
+            emit IgnoreRewardsAddressAdded(account);
+        } else {
+            revert ALREADY_IGNORED();
         }
-
-        _ignoreRewardsAddresses.add(account);
-
-        emit IgnoreRewardsAddressAdded(account);
     }
 
     /**
@@ -229,6 +231,8 @@ contract ERC20VotesMintable is
      * @param account The address to stop ignoring when updating rewards
      */
     function removeIgnoredRewardsAddress(address account) external onlyIgnoredRewardAddressesManager {
+        if (!_ignoreRewardsAddresses.contains(account)) revert NOT_IGNORED();
+
         _ignoreRewardsAddresses.remove(account);
 
         emit IgnoreRewardsAddressRemoved(account);

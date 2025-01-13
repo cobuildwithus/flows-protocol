@@ -34,7 +34,7 @@ jobs:
       - name: Set environment variables
         run: |
           echo "RPC_BASE=${{ secrets.RPC_BASE }}" >> $GITHUB_ENV
-          if [ -z "$RPC_BASE" ]; then
+          if [ -z "${{ secrets.RPC_BASE }}" ]; then
             echo "Error: RPC_BASE environment variable is not set"
             exit 1
           fi

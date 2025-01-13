@@ -23,7 +23,14 @@ generate() {
   for contract in $contracts_list
   do
     { echo -e "\n======================="; echo "➡ $contract" ; echo -e "=======================\n"; } >> "$file"
-    FOUNDRY_PROFILE=default forge inspect --pretty "$contract" storage-layout >> "$file"
+    if ! FOUNDRY_PROFILE=default forge inspect --pretty "$contract" storage-layout >> "$file" 2>&1; then
+      echo "❌ Failed to get storage layout for $contract"
+      echo "Make sure:"
+      echo "  1. The contract exists and is compiled"
+      echo "  2. The contract has storage variables"
+      echo "  3. The contract path is correct"
+      echo "Try running 'forge build' first"
+    fi
   done
   if [[ $func == "generate" ]]; then
     echo "Storage layout snapshot stored at $file"

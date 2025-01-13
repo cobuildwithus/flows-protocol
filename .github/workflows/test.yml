@@ -41,5 +41,5 @@ jobs:
 
       - name: Run Storage Inspection Test
         run: |
-          cd ${{ github.workspace }} && pnpm storage-inspect:check
+          cd ${{ github.workspace }} && ./script/storage-check.sh check StateVerifier TokenVerifier ERC721Flow Flow GeneralizedTCR FlowTCR ERC20VotesArbitrator ERC20VotesMintable TokenEmitterETH TokenEmitterERC20 TCRFactory RewardPool NounsFlow BaseTokenEmitter FlowTokenEmitter
         id: storage-inspection

@@ -38,3 +38,8 @@ jobs:
         run: |
           forge test -vvv
         id: test
+
+      - name: Run Storage Inspection Test
+        run: |
+          cd ${{ github.workspace }} && pnpm storage-inspect:check
+        id: storage-inspection

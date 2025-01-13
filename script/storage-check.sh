@@ -16,13 +16,12 @@ generate() {
   for contract in ${contracts[@]}
   do
     { echo -e "\n======================="; echo "➡ $contract" ; echo -e "=======================\n"; } >> "$file"
-    FOUNDRY_PROFILE=dev forge inspect --pretty "$contract" storage-layout >> "$file"
+    FOUNDRY_PROFILE=default forge inspect --pretty "$contract" storage-layout >> "$file"
   done
   if [[ $func == "generate" ]]; then
     echo "Storage layout snapshot stored at $file"
   fi
 }
-
 if ! command -v forge &> /dev/null
 then
     echo "forge could not be found. Please install forge by running:"

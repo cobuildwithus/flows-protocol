@@ -9,8 +9,8 @@
     "dev": "forge test --watch -vvv",
     "test-gas": "forge test --gas-report",
     "build:sizes": "forge build --sizes",
-    "storage-inspect:check": "./script/storage-check.sh check ERC20VotesMintable",
-    "storage-inspect:generate": "./script/storage-check.sh generate ERC20VotesMintable"
+    "storage-inspect:check": "./script/storage-check.sh check StateVerifier TokenVerifier ERC721Flow Flow GeneralizedTCR FlowTCR ERC20VotesArbitrator ERC20VotesMintable TokenEmitterETH TokenEmitterERC20 TCRFactory RewardPool NounsFlow BaseTokenEmitter FlowTokenEmitter",
+    "storage-inspect:generate": "./script/storage-check.sh generate StateVerifier TokenVerifier ERC721Flow Flow GeneralizedTCR FlowTCR ERC20VotesArbitrator ERC20VotesMintable TokenEmitterETH TokenEmitterERC20 TCRFactory RewardPool NounsFlow BaseTokenEmitter FlowTokenEmitter"
   },
   "devDependencies": {
     "prettier": "^3.0.3",

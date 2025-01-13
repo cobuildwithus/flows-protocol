@@ -5,15 +5,22 @@ set -e
 generate() {
   file=$1
   if [[ $func == "generate" ]]; then
-    echo "Creating storage layout diagrams for the following contracts: $contracts"
-    echo "..."
+    echo "Creating storage layout diagrams for the following contracts from $contracts_file"
   fi
 
   echo "=======================" > "$file"
   echo "👁👁 STORAGE LAYOUT snapshot 👁👁" >"$file"
   echo "=======================" >> "$file"
-# shellcheck disable=SC2068
-  for contract in ${contracts[@]}
+
+  # Read contracts from file, removing @ prefix if present
+  contracts_list=$(cat "${contracts_file#@}")
+  
+  # Log the contracts we're checking
+  echo "Checking contracts:"
+  echo "$contracts_list"
+  echo "..."
+  
+  for contract in $contracts_list
   do
     { echo -e "\n======================="; echo "➡ $contract" ; echo -e "=======================\n"; } >> "$file"
     FOUNDRY_PROFILE=default forge inspect --pretty "$contract" storage-layout >> "$file"
@@ -22,6 +29,7 @@ generate() {
     echo "Storage layout snapshot stored at $file"
   fi
 }
+
 if ! command -v forge &> /dev/null
 then
     echo "forge could not be found. Please install forge by running:"
@@ -29,9 +37,8 @@ then
     exit
 fi
 
-# shellcheck disable=SC2124
-contracts="${@:2}"
 func=$1
+contracts_file=$2
 filename=.storage-layout
 new_filename=.storage-layout.temp
 

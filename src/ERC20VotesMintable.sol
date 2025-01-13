@@ -27,16 +27,17 @@ contract ERC20VotesMintable is
     // An address who has permissions to mint tokens
     address public minter;
 
-    // The address of the Flow that uses this token as a TCR token
-    address public ignoredRewardAddressesManager;
-
     // Whether the minter can be updated
     bool public isMinterLocked;
 
     // The address of the reward pool
     address public rewardPool;
 
+    // The address of the ignored addresses manager
     EnumerableSet.AddressSet private _ignoreRewardsAddresses;
+
+    // The address of the Flow that uses this token as a TCR token
+    address public ignoredRewardAddressesManager;
 
     ///                                                          ///
     ///                          MODIFIERS                       ///

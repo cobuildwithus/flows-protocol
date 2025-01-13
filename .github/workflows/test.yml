@@ -31,6 +31,14 @@ jobs:
         run: |
           forge --version
 
+      - name: Set environment variables
+        run: |
+          echo "RPC_BASE=${{ secrets.RPC_BASE }}" >> $GITHUB_ENV
+          if [ -z "$RPC_BASE" ]; then
+            echo "Error: RPC_BASE environment variable is not set"
+            exit 1
+          fi
+
       - name: Run Forge build
         run: |
           forge build --sizes
@@ -40,6 +48,7 @@ jobs:
         run: |
           forge test -vvv
         id: test
+
       - name: Run Storage Inspection Test
         run: |
           cd ${{ github.workspace }} && ./script/storage-check.sh check @contracts.txt

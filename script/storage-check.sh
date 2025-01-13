@@ -9,7 +9,7 @@ generate() {
   fi
 
   echo "=======================" > "$file"
-  echo "👁👁 STORAGE LAYOUT snapshot 👁👁" >"$file"
+  echo "👁 STORAGE LAYOUT snapshot 👁" >"$file"
   echo "=======================" >> "$file"
 
   # Read contracts from file, removing @ prefix if present

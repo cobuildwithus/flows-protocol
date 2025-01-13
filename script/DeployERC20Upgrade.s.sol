@@ -14,7 +14,10 @@ contract DeployERC20MintableUpgrade is DeployScript {
     }
 
     function writeAdditionalDeploymentDetails(string memory filePath) internal override {
-        vm.writeLine(filePath, string(abi.encodePacked("New MintableImpl: ", addressToString(mintableImplementation))));
+        vm.writeLine(
+            filePath,
+            string(abi.encodePacked("New ERC20VotesMintableImpl: ", addressToString(mintableImplementation)))
+        );
     }
 
     function getContractName() internal pure override returns (string memory) {

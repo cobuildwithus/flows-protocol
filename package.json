@@ -8,7 +8,9 @@
     "test": "forge test -vv",
     "dev": "forge test --watch -vvv",
     "test-gas": "forge test --gas-report",
-    "build:sizes": "forge build --sizes"
+    "build:sizes": "forge build --sizes",
+    "storage-inspect:check": "./script/storage-check.sh check @contracts.txt",
+    "storage-inspect:generate": "./script/storage-check.sh generate @contracts.txt"
   },
   "devDependencies": {
     "prettier": "^3.0.3",

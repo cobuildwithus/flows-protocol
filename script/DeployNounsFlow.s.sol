@@ -185,7 +185,8 @@ contract DeployNounsFlow is DeployScript {
                 priceDecayPercent: priceDecayPercent,
                 perTimeUnit: perTimeUnit,
                 founderRewardAddress: founderRewardAddress,
-                founderRewardDuration: founderRewardDuration
+                founderRewardDuration: founderRewardDuration,
+                paymentToken: address(erc20Mintable)
             })
         });
 

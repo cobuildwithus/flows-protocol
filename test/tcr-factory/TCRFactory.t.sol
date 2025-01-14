@@ -10,10 +10,11 @@ import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy
 import { ERC721Flow } from "../../src/ERC721Flow.sol";
 import { ITCRFactory } from "../../src/tcr/interfaces/ITCRFactory.sol";
 import { IManagedFlow } from "../../src/interfaces/IManagedFlow.sol";
+import { IERC20VotesMintable } from "../../src/interfaces/IERC20VotesMintable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IArbitrator } from "../../src/tcr/interfaces/IArbitrator.sol";
 import { FlowTypes } from "../../src/storage/FlowStorageV1.sol";
-import { TokenEmitterETH } from "../../src/token-issuance/TokenEmitterETH.sol";
+import { FlowTokenEmitter } from "../../src/token-issuance/FlowTokenEmitter.sol";
 import { ProtocolRewards } from "../../src/protocol-rewards/ProtocolRewards.sol";
 import { RewardPool } from "../../src/RewardPool.sol";
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperToken.sol";
@@ -32,7 +33,7 @@ contract TCRFactoryTest is Test {
     ERC20VotesMintable public erc20Impl;
     ERC20VotesArbitrator public arbitratorImpl;
     RewardPool public rewardPoolImpl;
-    TokenEmitterETH public tokenEmitterImpl;
+    FlowTokenEmitter public tokenEmitterImpl;
     ProtocolRewards public protocolRewardsImpl;
 
     // Addresses
@@ -42,6 +43,7 @@ contract TCRFactoryTest is Test {
     address public flowContract;
     address public protocolFeeRecipient;
     address public WETH;
+    address public paymentToken;
     // Test Parameters
     uint256 public constant SUBMISSION_BASE_DEPOSIT = 100 ether;
     uint256 public constant REMOVAL_BASE_DEPOSIT = 100 ether;
@@ -77,7 +79,7 @@ contract TCRFactoryTest is Test {
         erc20Impl = new ERC20VotesMintable();
         arbitratorImpl = new ERC20VotesArbitrator();
         rewardPoolImpl = new RewardPool();
-        tokenEmitterImpl = new TokenEmitterETH(address(protocolRewardsImpl), protocolFeeRecipient);
+        tokenEmitterImpl = new FlowTokenEmitter();
 
         // Deploy TCRFactory
         TCRFactory tcrFactoryImpl = new TCRFactory();
@@ -93,6 +95,22 @@ contract TCRFactoryTest is Test {
             rewardPoolImplementation: address(rewardPoolImpl),
             tokenEmitterImplementation: address(tokenEmitterImpl),
             weth: WETH
+        });
+
+        // Deploy ERC20VotesMintable implementation
+        paymentToken = address(new ERC1967Proxy(address(erc20Impl), ""));
+
+        address[] memory ignoreRewardsAddresses = new address[](0);
+
+        // Initialize ERC20VotesMintable
+        IERC20VotesMintable(paymentToken).initialize({
+            initialOwner: address(this),
+            minter: address(this),
+            rewardPool: address(rewardPoolImpl),
+            ignoreRewardsAddresses: ignoreRewardsAddresses,
+            name: "Nouns Flow",
+            symbol: "FLOWS",
+            ignoredRewardAddressesManager: address(this)
         });
 
         // Setup Superfluid
@@ -154,7 +172,8 @@ contract TCRFactoryTest is Test {
             priceDecayPercent: int256(1e18) / 4, // 25%
             perTimeUnit: int256(1e18) * 500, // 500 tokens per day
             founderRewardAddress: founderRewardAddress,
-            founderRewardDuration: FOUNDER_REWARD_DURATION
+            founderRewardDuration: FOUNDER_REWARD_DURATION,
+            paymentToken: address(paymentToken)
         });
 
         // Deploy FlowTCR ecosystem

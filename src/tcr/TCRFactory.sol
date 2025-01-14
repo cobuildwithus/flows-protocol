@@ -11,7 +11,7 @@ import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/acc
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { ITCRFactory } from "./interfaces/ITCRFactory.sol";
 import { IRewardPool } from "../interfaces/IRewardPool.sol";
-import { ITokenEmitterETH } from "../interfaces/ITokenEmitterETH.sol";
+import { ITokenEmitterERC20 } from "../interfaces/ITokenEmitterERC20.sol";
 import { GeneralizedTCRStorageV1 } from "./storage/GeneralizedTCRStorageV1.sol";
 
 /**
@@ -74,6 +74,8 @@ contract TCRFactory is ITCRFactory, Ownable2StepUpgradeable, UUPSUpgradeable {
      * @param params Parameters for initializing the FlowTCR contract
      * @param arbitratorParams Parameters for initializing the ERC20VotesArbitrator contract
      * @param erc20Params Parameters for initializing the ERC20VotesMintable contract
+     * @param rewardPoolParams Parameters for initializing the RewardPool contract
+     * @param tokenEmitterParams Parameters for initializing the TokenEmitter contract
      * @return deployedContracts The deployed contracts
      */
     function deployFlowTCR(
@@ -83,71 +85,101 @@ contract TCRFactory is ITCRFactory, Ownable2StepUpgradeable, UUPSUpgradeable {
         RewardPoolParams memory rewardPoolParams,
         TokenEmitterParams memory tokenEmitterParams
     ) external returns (DeployedContracts memory deployedContracts) {
-        // Deploy FlowTCR proxy
-        address tcrAddress = address(new ERC1967Proxy(flowTCRImplementation, ""));
+        // 1. Deploy all proxies
+        deployedContracts = _deployProxies();
 
-        // Deploy ERC20VotesArbitrator proxy
-        address arbitratorAddress = address(new ERC1967Proxy(arbitratorImplementation, ""));
+        // 2. Initialize all the proxies in a subfunction
+        _initializeAllContracts(
+            deployedContracts,
+            params,
+            arbitratorParams,
+            erc20Params,
+            rewardPoolParams,
+            tokenEmitterParams
+        );
 
-        // Deploy ERC20VotesMintable proxy
-        address erc20Address = address(new ERC1967Proxy(erc20Implementation, ""));
+        // 3. Emit event
+        emit FlowTCRDeployed(
+            msg.sender,
+            deployedContracts.tcrAddress,
+            deployedContracts.arbitratorAddress,
+            deployedContracts.erc20Address,
+            deployedContracts.rewardPoolAddress,
+            deployedContracts.tokenEmitterAddress,
+            address(params.flowContract),
+            address(params.flowContract.baselinePool()),
+            address(params.flowContract.bonusPool())
+        );
+    }
 
-        // Deploy RewardPool proxy
-        address rewardPoolAddress = address(new ERC1967Proxy(rewardPoolImplementation, ""));
+    function _deployProxies() internal returns (DeployedContracts memory deployed) {
+        deployed.tcrAddress = address(new ERC1967Proxy(flowTCRImplementation, ""));
+        deployed.arbitratorAddress = address(new ERC1967Proxy(arbitratorImplementation, ""));
+        deployed.erc20Address = address(new ERC1967Proxy(erc20Implementation, ""));
+        deployed.rewardPoolAddress = address(new ERC1967Proxy(rewardPoolImplementation, ""));
+        deployed.tokenEmitterAddress = address(new ERC1967Proxy(tokenEmitterImplementation, ""));
+    }
 
-        // Deploy TokenEmitter proxy
-        address tokenEmitterAddress = address(new ERC1967Proxy(tokenEmitterImplementation, ""));
-
+    function _initializeAllContracts(
+        DeployedContracts memory deployed,
+        FlowTCRParams memory params,
+        ArbitratorParams memory arbitratorParams,
+        ERC20Params memory erc20Params,
+        RewardPoolParams memory rewardPoolParams,
+        TokenEmitterParams memory tokenEmitterParams
+    ) internal {
+        // (a) Setup addresses to ignore for rewards
         address[] memory ignoreRewardsAddresses = new address[](2);
-        ignoreRewardsAddresses[0] = address(tcrAddress);
-        ignoreRewardsAddresses[1] = address(arbitratorAddress);
+        ignoreRewardsAddresses[0] = deployed.tcrAddress;
+        ignoreRewardsAddresses[1] = deployed.arbitratorAddress;
 
-        // Initialize the ERC20VotesMintable token
-        IERC20VotesMintable(erc20Address).initialize({
+        // (b) Initialize ERC20
+        IERC20VotesMintable(deployed.erc20Address).initialize({
             initialOwner: erc20Params.initialOwner,
-            minter: tokenEmitterAddress,
-            rewardPool: rewardPoolAddress,
+            minter: deployed.tokenEmitterAddress,
+            rewardPool: deployed.rewardPoolAddress,
             ignoreRewardsAddresses: ignoreRewardsAddresses,
             name: erc20Params.name,
             symbol: erc20Params.symbol,
-            ignoredRewardAddressesManager: tcrAddress // so that the TCR can ignore new token emitters when new child flows are deployed
+            ignoredRewardAddressesManager: deployed.tcrAddress
         });
 
-        // Initialize the TokenEmitter
-        ITokenEmitterETH(tokenEmitterAddress).initialize({
+        // (c) Initialize TokenEmitter
+        ITokenEmitterERC20(deployed.tokenEmitterAddress).initialize({
             weth: WETH,
-            erc20: erc20Address,
+            erc20: deployed.erc20Address,
             basePrice: tokenEmitterParams.basePrice,
             supplyOffset: tokenEmitterParams.supplyOffset,
-            initialOwner: params.governor, // Set owner to governor
+            initialOwner: params.governor,
             curveSteepness: tokenEmitterParams.curveSteepness,
             maxPriceIncrease: tokenEmitterParams.maxPriceIncrease,
             priceDecayPercent: tokenEmitterParams.priceDecayPercent,
             perTimeUnit: tokenEmitterParams.perTimeUnit,
             founderRewardAddress: tokenEmitterParams.founderRewardAddress,
-            founderRewardDuration: tokenEmitterParams.founderRewardDuration
+            founderRewardDuration: tokenEmitterParams.founderRewardDuration,
+            paymentToken: tokenEmitterParams.paymentToken
         });
 
-        // Initialize the arbitrator
-        IERC20VotesArbitrator(arbitratorAddress).initialize({
-            initialOwner: params.governor, // Set owner to governor
-            votingToken: address(erc20Address),
-            arbitrable: tcrAddress,
+        // (d) Initialize Arbitrator
+        IERC20VotesArbitrator(deployed.arbitratorAddress).initialize({
+            initialOwner: params.governor,
+            votingToken: deployed.erc20Address,
+            arbitrable: deployed.tcrAddress,
             votingPeriod: arbitratorParams.votingPeriod,
             votingDelay: arbitratorParams.votingDelay,
             revealPeriod: arbitratorParams.revealPeriod,
             arbitrationCost: arbitratorParams.arbitrationCost
         });
 
-        // Initialize the FlowTCR
-        IFlowTCR(tcrAddress).initialize(
+        // (e) Initialize FlowTCR
+        IFlowTCR(deployed.tcrAddress).initialize(
             GeneralizedTCRStorageV1.ContractParams({
                 initialOwner: params.governor,
                 governor: params.governor,
                 flowContract: params.flowContract,
-                arbitrator: IArbitrator(arbitratorAddress),
+                arbitrator: IArbitrator(deployed.arbitratorAddress),
                 tcrFactory: ITCRFactory(address(this)),
-                erc20: IERC20(address(erc20Address))
+                erc20: IERC20(deployed.erc20Address)
             }),
             GeneralizedTCRStorageV1.TCRParams({
                 submissionBaseDeposit: params.submissionBaseDeposit,
@@ -168,35 +200,16 @@ contract TCRFactory is ITCRFactory, Ownable2StepUpgradeable, UUPSUpgradeable {
                 priceDecayPercent: tokenEmitterParams.priceDecayPercent,
                 perTimeUnit: tokenEmitterParams.perTimeUnit,
                 founderRewardAddress: tokenEmitterParams.founderRewardAddress,
-                founderRewardDuration: tokenEmitterParams.founderRewardDuration
+                founderRewardDuration: tokenEmitterParams.founderRewardDuration,
+                paymentToken: tokenEmitterParams.paymentToken
             })
         );
 
-        // Initialize the RewardPool
-        IRewardPool(rewardPoolAddress).initialize({
+        // (f) Initialize RewardPool
+        IRewardPool(deployed.rewardPoolAddress).initialize({
             superToken: rewardPoolParams.superToken,
-            manager: erc20Address,
+            manager: deployed.erc20Address,
             funder: address(params.flowContract)
-        });
-
-        emit FlowTCRDeployed(
-            msg.sender,
-            tcrAddress,
-            arbitratorAddress,
-            erc20Address,
-            rewardPoolAddress,
-            tokenEmitterAddress,
-            address(params.flowContract),
-            address(params.flowContract.baselinePool()),
-            address(params.flowContract.bonusPool())
-        );
-
-        deployedContracts = DeployedContracts({
-            tcrAddress: tcrAddress,
-            arbitratorAddress: arbitratorAddress,
-            erc20Address: erc20Address,
-            rewardPoolAddress: rewardPoolAddress,
-            tokenEmitterAddress: tokenEmitterAddress
         });
     }
 

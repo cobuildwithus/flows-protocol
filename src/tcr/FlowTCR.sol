@@ -187,7 +187,8 @@ contract FlowTCR is GeneralizedTCR, IFlowTCR {
                     // we want to raise the ceiling
                     perTimeUnit: perTimeUnit * 2,
                     founderRewardAddress: founderRewardAddress,
-                    founderRewardDuration: founderRewardDuration
+                    founderRewardDuration: founderRewardDuration,
+                    paymentToken: address(erc20)
                 })
             );
 

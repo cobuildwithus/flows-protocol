@@ -154,16 +154,16 @@ abstract contract BaseTokenEmitter is
     /**
      * @notice Template for token purchase implementation
      * @dev Must be implemented by child contracts with reentrancy protection
-     * @param user Recipient of purchased tokens
-     * @param amount Number of tokens to purchase
-     * @param maxCost Maximum acceptable cost
-     * @param protocolRewardsRecipients Addresses for protocol reward distribution
+     * @dev user Recipient of purchased tokens
+     * @dev amount Number of tokens to purchase
+     * @dev maxCost Maximum acceptable cost
+     * @dev protocolRewardsRecipients Addresses for protocol reward distribution
      */
     function buyToken(
-        address user,
-        uint256 amount,
-        uint256 maxCost,
-        ProtocolRewardAddresses calldata protocolRewardsRecipients
+        address /*user*/,
+        uint256 /*amount*/,
+        uint256 /*maxCost*/,
+        ProtocolRewardAddresses calldata /*protocolRewardsRecipients*/
     ) public payable virtual {
         revert NOT_IMPLEMENTED();
     }
@@ -189,10 +189,10 @@ abstract contract BaseTokenEmitter is
     /**
      * @notice Template for token sell implementation
      * @dev Must be implemented by child contracts
-     * @param amount Number of tokens to sell
-     * @param minPayment Minimum acceptable payment
+     * @dev amount Number of tokens to sell
+     * @dev minPayment Minimum acceptable payment
      */
-    function sellToken(uint256 amount, uint256 minPayment) public virtual {
+    function sellToken(uint256 /*amount*/, uint256 /*minPayment*/) public virtual {
         revert NOT_IMPLEMENTED();
     }
 

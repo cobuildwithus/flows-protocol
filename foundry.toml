@@ -9,13 +9,19 @@ via_ir = true
 optimizer = true
 optimizer_runs = 1
 # useful for storage layout
-libraries = ["@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol:SafeERC20:0x0000000000000000000000000000000000000000"]
+libraries = [
+    "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol:SafeERC20:0x0000000000000000000000000000000000000000",
+    "./utils/CappedMath.sol:CappedMath:0x0000000000000000000000000000000000000000"
+]
 
 [profile.dev]
 optimizer = false 
 optimizer_runs = 0  
 via_ir = false
-
+libraries = [
+    "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol:SafeERC20:0x0000000000000000000000000000000000000000",
+    "./utils/CappedMath.sol:CappedMath:0x0000000000000000000000000000000000000000"
+]
 
 [rpc_endpoints]
 base = "${RPC_BASE}"

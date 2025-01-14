@@ -7,6 +7,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IFlowTCR } from "./interfaces/IGeneralizedTCR.sol";
 import { IERC20VotesMintable } from "../interfaces/IERC20VotesMintable.sol";
 import { IERC20VotesArbitrator } from "./interfaces/IERC20VotesArbitrator.sol";
+import { ITokenEmitter } from "../interfaces/ITokenEmitter.sol";
 import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { ITCRFactory } from "./interfaces/ITCRFactory.sol";
@@ -179,7 +180,8 @@ contract TCRFactory is ITCRFactory, Ownable2StepUpgradeable, UUPSUpgradeable {
                 flowContract: params.flowContract,
                 arbitrator: IArbitrator(deployed.arbitratorAddress),
                 tcrFactory: ITCRFactory(address(this)),
-                erc20: IERC20(deployed.erc20Address)
+                erc20: IERC20(deployed.erc20Address),
+                tokenEmitter: ITokenEmitter(deployed.tokenEmitterAddress)
             }),
             GeneralizedTCRStorageV1.TCRParams({
                 submissionBaseDeposit: params.submissionBaseDeposit,

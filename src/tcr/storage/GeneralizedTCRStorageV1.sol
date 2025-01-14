@@ -8,6 +8,7 @@ import { FlowTypes } from "../../storage/FlowStorageV1.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IManagedFlow } from "../../interfaces/IManagedFlow.sol";
 import { ITCRFactory } from "../interfaces/ITCRFactory.sol";
+import { ITokenEmitter } from "../../interfaces/ITokenEmitter.sol";
 
 /**
  * @title GeneralizedTCRStorageV1
@@ -85,6 +86,7 @@ contract GeneralizedTCRStorageV1 {
      * @param arbitrator The arbitrator to resolve disputes
      * @param tcrFactory The address of the TCR factory
      * @param erc20 The ERC20 token used for deposits and challenges
+     * @param tokenEmitter The address of the token emitter
      */
     struct ContractParams {
         address initialOwner;
@@ -93,6 +95,7 @@ contract GeneralizedTCRStorageV1 {
         IArbitrator arbitrator;
         ITCRFactory tcrFactory;
         IERC20 erc20;
+        ITokenEmitter tokenEmitter;
     }
 
     /* Storage */

@@ -210,6 +210,27 @@ abstract contract BaseTokenEmitter is
     }
 
     /**
+     * @notice Calculates the price ratio of the bonding curve relative to the base price
+     * @dev Uses a range of tokens to buy to calculate the average price per token
+     * @param range The range of tokens to buy to average out price differences
+     * @return ratio The price ratio in WAD scale
+     */
+    function getBondingCurvePriceRatio(uint256 range) external returns (int256 ratio) {
+        uint256 halfRange = range / 2;
+        // we first construct a range of tokens to buy
+        uint256 totalSupply = erc20.totalSupply();
+        int256 minSupply = totalSupply > halfRange ? int256(totalSupply - halfRange) : int256(0);
+        int256 costForRange = costForToken(minSupply, int256(range));
+        if (costForRange < 0) revert INVALID_COST();
+
+        // Calculate the average price per token in WAD scale
+        int256 averagePrice = wadDiv(costForRange, int256(range));
+
+        // Compare to basePrice and return the ratio in WAD scale
+        ratio = wadDiv(averagePrice, basePrice);
+    }
+
+    /**
      * @notice Template for payment token transfer implementation
      * @dev Must be implemented by child contracts
      * @param _to Recipient address

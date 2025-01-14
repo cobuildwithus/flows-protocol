@@ -17,6 +17,7 @@ import { ITCRFactory } from "../src/tcr/interfaces/ITCRFactory.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IManagedFlow } from "../src/interfaces/IManagedFlow.sol";
 import { IFlowTCR } from "../src/tcr/interfaces/IGeneralizedTCR.sol";
+import { ITokenEmitter } from "../src/interfaces/ITokenEmitter.sol";
 import { INounsFlow } from "../src/interfaces/IFlow.sol";
 import { IRewardPool } from "../src/interfaces/IRewardPool.sol";
 import { IERC20VotesMintable } from "../src/interfaces/IERC20VotesMintable.sol";
@@ -164,7 +165,8 @@ contract DeployNounsFlow is DeployScript {
                 flowContract: IManagedFlow(nounsFlow),
                 arbitrator: IArbitrator(erc20Arbitrator),
                 tcrFactory: ITCRFactory(tcrFactory),
-                erc20: IERC20(erc20Mintable)
+                erc20: IERC20(erc20Mintable),
+                tokenEmitter: ITokenEmitter(tokenEmitter)
             }),
             tcrParams: GeneralizedTCRStorageV1.TCRParams({
                 submissionBaseDeposit: submissionBaseDeposit,

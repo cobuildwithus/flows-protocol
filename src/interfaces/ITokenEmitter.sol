@@ -106,4 +106,11 @@ interface ITokenEmitter {
      * @return The payment received for selling the specified amount of tokens
      */
     function sellTokenQuote(uint256 amount) external view returns (int256);
+
+    /**
+     * @dev Calculates the price ratio of the bonding curve relative to the base price
+     * @param range The range of tokens to buy to average out price differences
+     * @return ratio The price ratio in WAD scale
+     */
+    function getBondingCurvePriceRatio(uint256 range) external returns (int256 ratio);
 }

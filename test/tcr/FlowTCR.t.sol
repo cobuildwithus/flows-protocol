@@ -8,6 +8,7 @@ import { ERC20VotesMintable } from "../../src/ERC20VotesMintable.sol";
 import { ERC20VotesArbitrator } from "../../src/tcr/ERC20VotesArbitrator.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IGeneralizedTCR } from "../../src/tcr/interfaces/IGeneralizedTCR.sol";
+import { ITokenEmitter } from "../../src/interfaces/ITokenEmitter.sol";
 import { IArbitrator } from "../../src/tcr/interfaces/IArbitrator.sol";
 import { IArbitrable } from "../../src/tcr/interfaces/IArbitrable.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
@@ -18,6 +19,7 @@ import { IFlowTCR } from "../../src/tcr/interfaces/IGeneralizedTCR.sol";
 import { ERC721FlowTest } from "../erc721-flow/ERC721Flow.t.sol";
 import { TCRFactory } from "../../src/tcr/TCRFactory.sol";
 import { FlowTokenEmitter } from "../../src/token-issuance/FlowTokenEmitter.sol";
+import { TokenEmitterETH } from "../../src/token-issuance/TokenEmitterETH.sol";
 import { ITCRFactory } from "../../src/tcr/interfaces/ITCRFactory.sol";
 import { RewardPool } from "../../src/RewardPool.sol";
 import { ProtocolRewards } from "../../src/protocol-rewards/ProtocolRewards.sol";
@@ -30,6 +32,7 @@ contract FlowTCRTest is ERC721FlowTest {
     ERC20VotesArbitrator public arbitrator;
     RewardPool public rewardPool;
     FlowTokenEmitter public tokenEmitter;
+    TokenEmitterETH public ethTokenEmitter;
     ProtocolRewards public protocolRewards;
 
     // Addresses
@@ -90,6 +93,7 @@ contract FlowTCRTest is ERC721FlowTest {
 
         address rewardPoolImpl = address(new RewardPool());
         address tokenEmitterImpl = address(new FlowTokenEmitter());
+        address ethTokenEmitterImpl = address(new TokenEmitterETH(address(protocolRewards), protocolFeeRecipient));
         address flowTCRImpl = address(new FlowTCR());
         address flowTCRProxy = address(new ERC1967Proxy(flowTCRImpl, ""));
         address arbitratorImpl = address(new ERC20VotesArbitrator());
@@ -97,6 +101,7 @@ contract FlowTCRTest is ERC721FlowTest {
         address erc20TokenImpl = address(new ERC20VotesMintable());
         address erc20TokenProxy = address(new ERC1967Proxy(erc20TokenImpl, ""));
         address tokenEmitterProxy = address(new ERC1967Proxy(tokenEmitterImpl, ""));
+        address ethTokenEmitterProxy = address(new ERC1967Proxy(ethTokenEmitterImpl, ""));
 
         address tcrFactoryImpl = address(new TCRFactory());
         address tcrFactoryProxy = address(new ERC1967Proxy(tcrFactoryImpl, ""));
@@ -124,7 +129,8 @@ contract FlowTCRTest is ERC721FlowTest {
                 flowContract: IManagedFlow(address(flow)),
                 arbitrator: IArbitrator(arbitratorProxy),
                 tcrFactory: ITCRFactory(tcrFactoryProxy),
-                erc20: IERC20(erc20TokenProxy)
+                erc20: IERC20(erc20TokenProxy),
+                tokenEmitter: ITokenEmitter(tokenEmitterProxy)
             }),
             GeneralizedTCRStorageV1.TCRParams({
                 submissionBaseDeposit: SUBMISSION_BASE_DEPOSIT,
@@ -151,6 +157,39 @@ contract FlowTCRTest is ERC721FlowTest {
         );
 
         erc20Token = ERC20VotesMintable(erc20TokenProxy);
+
+        ethTokenEmitter = TokenEmitterETH(ethTokenEmitterProxy);
+        ethTokenEmitter.initialize({
+            _initialOwner: address(owner),
+            _erc20: address(erc20Token),
+            _weth: WETH,
+            _curveSteepness: int256(1e18) / 100,
+            _basePrice: int256(1e18) / 3000,
+            _maxPriceIncrease: int256(1e18) / 300,
+            _supplyOffset: int256(1e18) * 1000,
+            _priceDecayPercent: int256(1e18) / 4,
+            _perTimeUnit: int256(1e18) * 500,
+            _founderRewardAddress: founderRewardAddress,
+            _founderRewardDuration: FOUNDER_REWARD_DURATION
+        });
+
+        tokenEmitter = FlowTokenEmitter(tokenEmitterProxy);
+        tokenEmitter.initialize(
+            address(owner),
+            address(erc20Token),
+            WETH,
+            founderRewardAddress,
+            int256(1e18) / 100, // curveSteepness
+            int256(1e18) / 3000, // basePrice
+            int256(1e18) / 300, // maxPriceIncrease
+            int256(1e18) * 1000, // supplyOffset
+            int256(1e18) / 4, // priceDecayPercent
+            int256(1e18) * 500, // perTimeUnit
+            FOUNDER_REWARD_DURATION,
+            address(erc20Token),
+            address(ethTokenEmitter)
+        );
+
         address[] memory ignoreRewardsAddresses = new address[](2);
         ignoreRewardsAddresses[0] = address(flowTCR);
         ignoreRewardsAddresses[1] = address(arbitrator);

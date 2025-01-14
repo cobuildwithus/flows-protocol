@@ -6,6 +6,8 @@ import { IArbitrator } from "./interfaces/IArbitrator.sol";
 import { IManagedFlow } from "../interfaces/IManagedFlow.sol";
 import { IFlowTCR } from "./interfaces/IGeneralizedTCR.sol";
 import { FlowTypes } from "../storage/FlowStorageV1.sol";
+import { ITokenEmitter } from "../interfaces/ITokenEmitter.sol";
+import { wadDiv, wadMul } from "../libs/SignedWadMath.sol";
 import { ITCRFactory } from "./interfaces/ITCRFactory.sol";
 import { FlowTCRItems } from "./library/FlowTCRItems.sol";
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperToken.sol";
@@ -42,8 +44,14 @@ contract FlowTCR is GeneralizedTCR, IFlowTCR {
     address public founderRewardAddress;
     uint256 public founderRewardDuration;
 
+    // The tokenEmitter contract
+    ITokenEmitter public tokenEmitter;
+
     // Error emitted when the curve steepness is invalid
     error INVALID_CURVE_STEEPNESS();
+
+    // Error emitted when the bonding curve ratio is invalid
+    error INVALID_BONDING_CURVE_RATIO();
 
     // Event emitted when TokenEmitter parameters are set
     event TokenEmitterParamsSet(
@@ -60,6 +68,9 @@ contract FlowTCR is GeneralizedTCR, IFlowTCR {
     // Event emitted when the required recipient type is set
     event RequiredRecipientTypeSet(FlowTypes.RecipientType requiredRecipientType);
 
+    // Event emitted when the token emitter is set
+    event TokenEmitterSet(address tokenEmitter);
+
     constructor() payable initializer {}
 
     /**
@@ -74,6 +85,8 @@ contract FlowTCR is GeneralizedTCR, IFlowTCR {
     ) public initializer {
         flowContract = _contractParams.flowContract;
         tcrFactory = _contractParams.tcrFactory;
+        tokenEmitter = _contractParams.tokenEmitter;
+
         requiredRecipientType = _tcrParams.requiredRecipientType;
 
         _setTokenEmitterParams(
@@ -179,8 +192,8 @@ contract FlowTCR is GeneralizedTCR, IFlowTCR {
                     curveSteepness: curveSteepness,
                     // scale down by 10 so children don't have the same economic expectations as their parent
                     // so eg: tokens are 10x cheaper but follow same curve for children
-                    basePrice: basePrice / 10,
-                    maxPriceIncrease: maxPriceIncrease / 10,
+                    basePrice: scaleBackPrice(basePrice),
+                    maxPriceIncrease: scaleBackPrice(maxPriceIncrease),
                     supplyOffset: supplyOffset,
                     priceDecayPercent: priceDecayPercent,
                     // since children will likely have many more applications
@@ -207,6 +220,23 @@ contract FlowTCR is GeneralizedTCR, IFlowTCR {
     }
 
     /**
+     * @notice Scales back the price by 10x * the current price differential on the parent erc20 curve
+     * @param _price The price to scale back
+     * @return The scaled back price
+     */
+    function scaleBackPrice(int256 _price) internal returns (int256) {
+        uint256 range = 10000;
+        int256 ratio = tokenEmitter.getBondingCurvePriceRatio(range * 1e18);
+
+        // if the ratio is negative, we need to scale up the price
+        if (ratio < 1e18) {
+            revert INVALID_BONDING_CURVE_RATIO();
+        }
+
+        return wadDiv(_price, wadMul(10e18, ratio));
+    }
+
+    /**
      * @notice Sets the required recipient type for the TCR
      * @param _requiredRecipientType The required recipient type
      * @dev This function is called internally when the required recipient type is set
@@ -214,6 +244,17 @@ contract FlowTCR is GeneralizedTCR, IFlowTCR {
     function setRequiredRecipientType(FlowTypes.RecipientType _requiredRecipientType) external onlyOwner {
         requiredRecipientType = _requiredRecipientType;
         emit RequiredRecipientTypeSet(_requiredRecipientType);
+    }
+
+    /**
+     * @notice Sets the token emitter contract
+     * @param _tokenEmitter The address of the token emitter
+     */
+    function setTokenEmitter(ITokenEmitter _tokenEmitter) external onlyOwner {
+        if (address(_tokenEmitter) == address(0)) revert ADDRESS_ZERO();
+
+        tokenEmitter = _tokenEmitter;
+        emit TokenEmitterSet(address(_tokenEmitter));
     }
 
     /**

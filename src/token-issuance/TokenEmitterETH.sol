@@ -77,7 +77,7 @@ contract TokenEmitterETH is ITokenEmitterETH, BaseTokenEmitter, FlowProtocolRewa
      * @param totalPaymentRequired Required payment amount in wei
      * @param payment Actual ETH payment received
      */
-    function checkPayment(uint256 totalPaymentRequired, uint256 payment) internal {
+    function _checkPayment(uint256 totalPaymentRequired, uint256 payment) internal {
         if (payment < totalPaymentRequired) revert INSUFFICIENT_FUNDS();
     }
 
@@ -87,7 +87,7 @@ contract TokenEmitterETH is ITokenEmitterETH, BaseTokenEmitter, FlowProtocolRewa
      * @param totalPaymentRequired Required payment amount in wei
      * @param payment Actual ETH payment received
      */
-    function handleOverpayment(uint256 totalPaymentRequired, uint256 payment) internal {
+    function _handleOverpayment(uint256 totalPaymentRequired, uint256 payment) internal {
         if (payment > totalPaymentRequired) {
             _transferPaymentWithFallback(_msgSender(), payment - totalPaymentRequired);
         }
@@ -136,7 +136,7 @@ contract TokenEmitterETH is ITokenEmitterETH, BaseTokenEmitter, FlowProtocolRewa
 
         if (totalPayment > maxCost) revert SLIPPAGE_EXCEEDED();
 
-        checkPayment(totalPayment, msg.value);
+        _checkPayment(totalPayment, msg.value);
 
         _handleRewardsAndGetValueToSend(
             costForTokens,
@@ -155,7 +155,7 @@ contract TokenEmitterETH is ITokenEmitterETH, BaseTokenEmitter, FlowProtocolRewa
             erc20.mint(founderRewardAddress, founderReward);
         }
 
-        handleOverpayment(totalPayment, msg.value);
+        _handleOverpayment(totalPayment, msg.value);
 
         emit TokensBought(_msgSender(), user, amount, costForTokens, protocolRewardsFee, founderReward, surgeCost);
     }

@@ -156,7 +156,34 @@ contract FlowTokenEmitter is IFlowTokenEmitter, TokenEmitterERC20 {
         _buyToken(address(this), user, tokenAmount, paymentTokenAcquired, protocolRewardsRecipients);
 
         // Handle excess ETH payment
-        handleETHOverpayment(costInETH, msg.value);
+        _handleETHOverpayment(costInETH, msg.value);
+    }
+
+    /**
+     * @notice Calculates the total ETH cost for selling a given amount of Flow tokens
+     * @param tokenAmount The amount of Flow tokens to sell
+     * @return payment Amount of payment tokens to receive
+     */
+    function sellTokenQuoteETH(uint256 tokenAmount) external view returns (int256 payment) {
+        return _sellTokenQuoteETH(tokenAmount);
+    }
+
+    /**
+     * @notice Calculates the total ETH cost for selling a given amount of Flow tokens
+     * @param tokenAmount The amount of Flow tokens to sell
+     * @return payment Amount of payment tokens to receive
+     */
+    function _sellTokenQuoteETH(uint256 tokenAmount) internal view returns (int256 payment) {
+        if (tokenAmount == 0) revert INVALID_AMOUNT();
+
+        int256 paymentInERC20Int = sellTokenQuote(tokenAmount);
+        if (paymentInERC20Int < 0) revert INVALID_PAYMENT();
+        uint256 paymentInERC20 = uint256(paymentInERC20Int);
+
+        int256 paymentInETHInt = ethEmitter.sellTokenQuote(paymentInERC20);
+        if (paymentInETHInt < 0) revert INVALID_PAYMENT();
+
+        return paymentInETHInt;
     }
 
     /**
@@ -164,7 +191,7 @@ contract FlowTokenEmitter is IFlowTokenEmitter, TokenEmitterERC20 {
      * @param totalPaymentRequired The required ETH payment amount
      * @param payment The actual ETH amount sent
      */
-    function handleETHOverpayment(uint256 totalPaymentRequired, uint256 payment) internal {
+    function _handleETHOverpayment(uint256 totalPaymentRequired, uint256 payment) internal {
         if (payment > totalPaymentRequired) {
             address _to = _msgSender();
             uint256 overpaid = payment - totalPaymentRequired;

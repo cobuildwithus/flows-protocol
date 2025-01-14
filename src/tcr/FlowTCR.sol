@@ -188,7 +188,7 @@ contract FlowTCR is GeneralizedTCR, IFlowTCR {
                     perTimeUnit: perTimeUnit * 2,
                     founderRewardAddress: founderRewardAddress,
                     founderRewardDuration: founderRewardDuration,
-                    paymentToken: address(erc20)
+                    paymentToken: address(erc20) // set payment token for child TCRs to current TCR's erc20 token
                 })
             );
 

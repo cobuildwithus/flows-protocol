@@ -17,6 +17,7 @@ import { FlowTypes } from "../../src/storage/FlowStorageV1.sol";
 import { FlowTokenEmitter } from "../../src/token-issuance/FlowTokenEmitter.sol";
 import { ProtocolRewards } from "../../src/protocol-rewards/ProtocolRewards.sol";
 import { RewardPool } from "../../src/RewardPool.sol";
+import { TokenEmitterETH } from "../../src/token-issuance/TokenEmitterETH.sol";
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperToken.sol";
 import { SuperTokenV1Library } from "@superfluid-finance/ethereum-contracts/contracts/apps/SuperTokenV1Library.sol";
 import { PoolConfig } from "@superfluid-finance/ethereum-contracts/contracts/apps/SuperTokenV1Library.sol";
@@ -44,6 +45,7 @@ contract TCRFactoryTest is Test {
     address public protocolFeeRecipient;
     address public WETH;
     address public paymentToken;
+    address public ethEmitter;
     // Test Parameters
     uint256 public constant SUBMISSION_BASE_DEPOSIT = 100 ether;
     uint256 public constant REMOVAL_BASE_DEPOSIT = 100 ether;
@@ -81,6 +83,25 @@ contract TCRFactoryTest is Test {
         rewardPoolImpl = new RewardPool();
         tokenEmitterImpl = new FlowTokenEmitter();
 
+        // Deploy ERC20VotesMintable implementation
+        paymentToken = address(new ERC1967Proxy(address(erc20Impl), ""));
+
+        address ethTokenEmitterImpl = address(new TokenEmitterETH(address(protocolRewardsImpl), protocolFeeRecipient));
+        ethEmitter = address(new ERC1967Proxy(ethTokenEmitterImpl, ""));
+        TokenEmitterETH(ethEmitter).initialize({
+            _initialOwner: owner,
+            _erc20: paymentToken,
+            _weth: WETH,
+            _curveSteepness: int256(1e18) / 100,
+            _basePrice: int256(1e18) / 3000,
+            _maxPriceIncrease: int256(1e18) / 300,
+            _supplyOffset: int256(1e18) * 1000,
+            _priceDecayPercent: int256(1e18) / 4,
+            _perTimeUnit: int256(1e18) * 500,
+            _founderRewardAddress: founderRewardAddress,
+            _founderRewardDuration: FOUNDER_REWARD_DURATION
+        });
+
         // Deploy TCRFactory
         TCRFactory tcrFactoryImpl = new TCRFactory();
         ERC1967Proxy proxy = new ERC1967Proxy(address(tcrFactoryImpl), "");
@@ -96,9 +117,6 @@ contract TCRFactoryTest is Test {
             tokenEmitterImplementation: address(tokenEmitterImpl),
             weth: WETH
         });
-
-        // Deploy ERC20VotesMintable implementation
-        paymentToken = address(new ERC1967Proxy(address(erc20Impl), ""));
 
         address[] memory ignoreRewardsAddresses = new address[](0);
 
@@ -173,7 +191,8 @@ contract TCRFactoryTest is Test {
             perTimeUnit: int256(1e18) * 500, // 500 tokens per day
             founderRewardAddress: founderRewardAddress,
             founderRewardDuration: FOUNDER_REWARD_DURATION,
-            paymentToken: address(paymentToken)
+            paymentToken: address(paymentToken),
+            ethEmitter: address(ethEmitter)
         });
 
         // Deploy FlowTCR ecosystem

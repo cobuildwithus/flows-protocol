@@ -6,6 +6,7 @@ import { TokenEmitterETH } from "./TokenEmitterETH.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ITokenEmitter } from "../interfaces/ITokenEmitter.sol";
+import { IFlowTokenEmitter } from "../interfaces/IFlowTokenEmitter.sol";
 
 /**
  * @title FlowTokenEmitter
@@ -13,7 +14,7 @@ import { ITokenEmitter } from "../interfaces/ITokenEmitter.sol";
  * 1. ETH is used to acquire payment tokens from a TokenEmitterETH contract
  * 2. Payment tokens are then used to purchase Flow tokens
  */
-contract FlowTokenEmitter is TokenEmitterERC20 {
+contract FlowTokenEmitter is IFlowTokenEmitter, TokenEmitterERC20 {
     using SafeERC20 for IERC20;
 
     /// @notice Reference to the TokenEmitterETH contract that mints/sells the payment token

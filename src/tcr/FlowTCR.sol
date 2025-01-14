@@ -44,8 +44,11 @@ contract FlowTCR is GeneralizedTCR, IFlowTCR {
     address public founderRewardAddress;
     uint256 public founderRewardDuration;
 
-    // The tokenEmitter contract
+    // The tokenEmitter contract for this flow's ERC20 token
     ITokenEmitter public tokenEmitter;
+
+    // The root level eth emitter contract for the root level TCR token
+    address public ethEmitter;
 
     // Error emitted when the curve steepness is invalid
     error INVALID_CURVE_STEEPNESS();
@@ -71,6 +74,9 @@ contract FlowTCR is GeneralizedTCR, IFlowTCR {
     // Event emitted when the token emitter is set
     event TokenEmitterSet(address tokenEmitter);
 
+    // Event emitted when the eth emitter is set
+    event EthEmitterSet(address ethEmitter);
+
     constructor() payable initializer {}
 
     /**
@@ -83,9 +89,15 @@ contract FlowTCR is GeneralizedTCR, IFlowTCR {
         TCRParams memory _tcrParams,
         ITCRFactory.TokenEmitterParams memory _tokenEmitterParams
     ) public initializer {
+        if (address(_tokenEmitterParams.ethEmitter) == address(0)) revert ADDRESS_ZERO();
+        if (address(_contractParams.tokenEmitter) == address(0)) revert ADDRESS_ZERO();
+        if (address(_contractParams.flowContract) == address(0)) revert ADDRESS_ZERO();
+        if (address(_contractParams.tcrFactory) == address(0)) revert ADDRESS_ZERO();
+
         flowContract = _contractParams.flowContract;
         tcrFactory = _contractParams.tcrFactory;
         tokenEmitter = _contractParams.tokenEmitter;
+        ethEmitter = _tokenEmitterParams.ethEmitter;
 
         requiredRecipientType = _tcrParams.requiredRecipientType;
 
@@ -201,7 +213,8 @@ contract FlowTCR is GeneralizedTCR, IFlowTCR {
                     perTimeUnit: perTimeUnit * 2,
                     founderRewardAddress: founderRewardAddress,
                     founderRewardDuration: founderRewardDuration,
-                    paymentToken: address(erc20) // set payment token for child TCRs to current TCR's erc20 token
+                    paymentToken: address(erc20), // set payment token for child TCRs to current TCR's erc20 token
+                    ethEmitter: ethEmitter
                 })
             );
 
@@ -255,6 +268,17 @@ contract FlowTCR is GeneralizedTCR, IFlowTCR {
 
         tokenEmitter = _tokenEmitter;
         emit TokenEmitterSet(address(_tokenEmitter));
+    }
+
+    /**
+     * @notice Sets the eth emitter contract
+     * @param _ethEmitter The address of the eth emitter
+     */
+    function setEthEmitter(address _ethEmitter) external onlyOwner {
+        if (address(_ethEmitter) == address(0)) revert ADDRESS_ZERO();
+
+        ethEmitter = _ethEmitter;
+        emit EthEmitterSet(_ethEmitter);
     }
 
     /**

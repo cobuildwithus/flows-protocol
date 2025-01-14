@@ -121,6 +121,9 @@ contract FlowTCRTest is ERC721FlowTest {
         EXTERNAL_ACCOUNT_ITEM_DATA = abi.encode(recipient, recipientMetadata, FlowTypes.RecipientType.ExternalAccount);
         FLOW_RECIPIENT_ITEM_DATA = abi.encode(address(0), recipientMetadata, FlowTypes.RecipientType.FlowContract);
 
+        erc20Token = ERC20VotesMintable(erc20TokenProxy);
+        ethTokenEmitter = TokenEmitterETH(ethTokenEmitterProxy);
+
         flowTCR = FlowTCR(flowTCRProxy);
         flowTCR.initialize(
             GeneralizedTCRStorageV1.ContractParams({
@@ -152,13 +155,11 @@ contract FlowTCRTest is ERC721FlowTest {
                 perTimeUnit: int256(1e18) * 500, // 500 tokens per day
                 founderRewardAddress: founderRewardAddress,
                 founderRewardDuration: FOUNDER_REWARD_DURATION,
-                paymentToken: address(erc20Token)
+                paymentToken: address(erc20Token),
+                ethEmitter: address(ethTokenEmitter)
             })
         );
 
-        erc20Token = ERC20VotesMintable(erc20TokenProxy);
-
-        ethTokenEmitter = TokenEmitterETH(ethTokenEmitterProxy);
         ethTokenEmitter.initialize({
             _initialOwner: address(owner),
             _erc20: address(erc20Token),

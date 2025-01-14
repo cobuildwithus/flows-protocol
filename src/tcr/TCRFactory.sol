@@ -12,7 +12,7 @@ import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/acc
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { ITCRFactory } from "./interfaces/ITCRFactory.sol";
 import { IRewardPool } from "../interfaces/IRewardPool.sol";
-import { ITokenEmitterERC20 } from "../interfaces/ITokenEmitterERC20.sol";
+import { IFlowTokenEmitter } from "../interfaces/IFlowTokenEmitter.sol";
 import { GeneralizedTCRStorageV1 } from "./storage/GeneralizedTCRStorageV1.sol";
 
 /**
@@ -145,8 +145,8 @@ contract TCRFactory is ITCRFactory, Ownable2StepUpgradeable, UUPSUpgradeable {
             ignoredRewardAddressesManager: deployed.tcrAddress
         });
 
-        // (c) Initialize TokenEmitter
-        ITokenEmitterERC20(deployed.tokenEmitterAddress).initialize({
+        // (c) Initialize FlowTokenEmitter
+        IFlowTokenEmitter(deployed.tokenEmitterAddress).initialize({
             weth: WETH,
             erc20: deployed.erc20Address,
             basePrice: tokenEmitterParams.basePrice,
@@ -158,7 +158,8 @@ contract TCRFactory is ITCRFactory, Ownable2StepUpgradeable, UUPSUpgradeable {
             perTimeUnit: tokenEmitterParams.perTimeUnit,
             founderRewardAddress: tokenEmitterParams.founderRewardAddress,
             founderRewardDuration: tokenEmitterParams.founderRewardDuration,
-            paymentToken: tokenEmitterParams.paymentToken
+            paymentToken: tokenEmitterParams.paymentToken,
+            ethEmitter: tokenEmitterParams.ethEmitter
         });
 
         // (d) Initialize Arbitrator
@@ -203,7 +204,8 @@ contract TCRFactory is ITCRFactory, Ownable2StepUpgradeable, UUPSUpgradeable {
                 perTimeUnit: tokenEmitterParams.perTimeUnit,
                 founderRewardAddress: tokenEmitterParams.founderRewardAddress,
                 founderRewardDuration: tokenEmitterParams.founderRewardDuration,
-                paymentToken: tokenEmitterParams.paymentToken
+                paymentToken: tokenEmitterParams.paymentToken,
+                ethEmitter: tokenEmitterParams.ethEmitter
             })
         );
 

@@ -22,6 +22,7 @@ interface ITCRFactory {
      * @param founderRewardAddress The address of the founder reward
      * @param founderRewardDuration The duration for the founder reward
      * @param paymentToken The address of the payment token
+     * @param ethEmitter The address of the ETH emitter
      */
     struct TokenEmitterParams {
         int256 curveSteepness;
@@ -33,6 +34,7 @@ interface ITCRFactory {
         address founderRewardAddress;
         uint256 founderRewardDuration;
         address paymentToken;
+        address ethEmitter;
     }
 
     /**

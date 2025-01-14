@@ -188,7 +188,8 @@ contract DeployNounsFlow is DeployScript {
                 perTimeUnit: perTimeUnit,
                 founderRewardAddress: founderRewardAddress,
                 founderRewardDuration: founderRewardDuration,
-                paymentToken: address(erc20Mintable)
+                paymentToken: address(erc20Mintable),
+                ethEmitter: address(tokenEmitter)
             })
         });
 

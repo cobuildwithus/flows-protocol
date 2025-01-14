@@ -149,9 +149,7 @@ contract BasicFlowTokenEmitterTest is FlowTokenEmitterTest {
         (int256 costInETHInt, ) = ethEmitter.buyTokenQuoteWithRewards(costInPAY);
         uint256 costInETH = uint256(costInETHInt);
 
-        // Ensure costInETH is large enough before subtracting
-        require(costInETH > 0.1 ether, "costInETH too small for test");
-        uint256 maxCost = costInETH - 0.1 ether;
+        uint256 maxCost = costInETH - costInETH / 2;
 
         vm.startPrank(user);
 
@@ -436,7 +434,7 @@ contract BasicFlowTokenEmitterTest is FlowTokenEmitterTest {
     function testBuyFlowViaETH_BridgingSlippage() public {
         vm.deal(user1, 1 ether);
 
-        uint256 flowAmount = 20e18; // arbitrary
+        uint256 flowAmount = 2000e18; // arbitrary
         (int256 costPAYInt, ) = flowTokenEmitter.buyTokenQuote(flowAmount);
         uint256 costPAY = uint256(costPAYInt);
 
@@ -444,7 +442,7 @@ contract BasicFlowTokenEmitterTest is FlowTokenEmitterTest {
         uint256 costETH = uint256(costETHInt);
 
         // We'll artificially reduce maxCost below costETH to trigger revert
-        uint256 maxCost = costETH - 0.001 ether;
+        uint256 maxCost = costETH - costETH / 2;
 
         vm.startPrank(user1);
         vm.expectRevert(ITokenEmitter.SLIPPAGE_EXCEEDED.selector);

@@ -13,7 +13,7 @@ import { IManagedFlow } from "../../src/interfaces/IManagedFlow.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IArbitrator } from "../../src/tcr/interfaces/IArbitrator.sol";
 import { FlowTypes } from "../../src/storage/FlowStorageV1.sol";
-import { TokenEmitterETH } from "../../src/token-issuance/TokenEmitterETH.sol";
+import { TokenEmitter } from "../../src/TokenEmitter.sol";
 import { ProtocolRewards } from "../../src/protocol-rewards/ProtocolRewards.sol";
 import { RewardPool } from "../../src/RewardPool.sol";
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperToken.sol";
@@ -32,7 +32,7 @@ contract TCRFactoryTest is Test {
     ERC20VotesMintable public erc20Impl;
     ERC20VotesArbitrator public arbitratorImpl;
     RewardPool public rewardPoolImpl;
-    TokenEmitterETH public tokenEmitterImpl;
+    TokenEmitter public tokenEmitterImpl;
     ProtocolRewards public protocolRewardsImpl;
 
     // Addresses
@@ -77,7 +77,7 @@ contract TCRFactoryTest is Test {
         erc20Impl = new ERC20VotesMintable();
         arbitratorImpl = new ERC20VotesArbitrator();
         rewardPoolImpl = new RewardPool();
-        tokenEmitterImpl = new TokenEmitterETH(address(protocolRewardsImpl), protocolFeeRecipient);
+        tokenEmitterImpl = new TokenEmitter(address(protocolRewardsImpl), protocolFeeRecipient);
 
         // Deploy TCRFactory
         TCRFactory tcrFactoryImpl = new TCRFactory();

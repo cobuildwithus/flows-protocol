@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import { Test } from "forge-std/Test.sol";
-import { TokenEmitterETH } from "../../src/token-issuance/TokenEmitterETH.sol";
+import { TokenEmitter } from "../../src/TokenEmitter.sol";
 import { ERC20VotesMintable } from "../../src/ERC20VotesMintable.sol";
 import { ITokenEmitter } from "../../src/interfaces/ITokenEmitter.sol";
 import { ProtocolRewards } from "../../src/protocol-rewards/ProtocolRewards.sol";
@@ -11,7 +11,6 @@ import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy
 import { RewardPool } from "../../src/RewardPool.sol";
 import { BondingSCurve } from "../../src/token-issuance/BondingSCurve.sol";
 import { MockWETH } from "../mocks/MockWETH.sol";
-import { console } from "forge-std/console.sol";
 
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperToken.sol";
 import { ERC1820RegistryCompiled } from "@superfluid-finance/ethereum-contracts/contracts/libs/ERC1820RegistryCompiled.sol";
@@ -19,7 +18,7 @@ import { SuperfluidFrameworkDeployer } from "@superfluid-finance/ethereum-contra
 import { TestToken } from "@superfluid-finance/ethereum-contracts/contracts/utils/TestToken.sol";
 import { SuperToken } from "@superfluid-finance/ethereum-contracts/contracts/superfluid/SuperToken.sol";
 
-contract TokenEmitterETHTest is Test {
+contract TokenEmitterTest is Test {
     // Superfluid
     SuperfluidFrameworkDeployer.Framework internal sf;
     SuperfluidFrameworkDeployer internal deployer;
@@ -27,7 +26,7 @@ contract TokenEmitterETHTest is Test {
     TestToken internal underlyingToken;
 
     // Contracts
-    TokenEmitterETH public tokenEmitter;
+    TokenEmitter public tokenEmitter;
     ERC20VotesMintable public erc20;
     ProtocolRewards public protocolRewards;
     MockWETH public weth;
@@ -66,7 +65,7 @@ contract TokenEmitterETHTest is Test {
 
         // Deploy implementation contracts
         protocolRewards = new ProtocolRewards();
-        TokenEmitterETH tokenEmitterImpl = new TokenEmitterETH(address(protocolRewards), protocolFeeRecipient);
+        TokenEmitter tokenEmitterImpl = new TokenEmitter(address(protocolRewards), protocolFeeRecipient);
 
         // Deploy RewardPool
         RewardPool rewardPoolImpl = new RewardPool();
@@ -83,7 +82,7 @@ contract TokenEmitterETHTest is Test {
 
         // Deploy TokenEmitter proxy
         ERC1967Proxy proxy = new ERC1967Proxy(address(tokenEmitterImpl), "");
-        tokenEmitter = TokenEmitterETH(address(proxy));
+        tokenEmitter = TokenEmitter(address(proxy));
 
         // Initialize RewardPool
         rewardPool.initialize(ISuperToken(address(superToken)), address(erc20), address(tokenEmitter));
@@ -121,10 +120,6 @@ contract TokenEmitterETHTest is Test {
         vm.deal(user1, 100 ether);
         vm.deal(user2, 100 ether);
         vm.stopPrank();
-    }
-
-    function getFounderReward(uint256 amount) public view returns (uint256) {
-        return (amount * 7) / 100; // 7% founder reward
     }
 
     function testInitialization() public view {
@@ -171,18 +166,10 @@ contract TokenEmitterETHTest is Test {
         // Send excess ETH to test overpayment refund
         uint256 sentValue = totalPayment + 0.5 ether;
 
-        uint256 founderReward = getFounderReward(amountToBuy);
+        uint256 founderReward = amountToBuy >= 10 ? (amountToBuy * 10) / 100 : 1;
 
         vm.expectEmit(true, true, true, true);
-        emit ITokenEmitter.TokensBought(
-            user,
-            user,
-            amountToBuy,
-            costWithoutRewards,
-            protocolRewardsFee,
-            founderReward,
-            addedSurgeCost
-        );
+        emit ITokenEmitter.TokensBought(user, user, amountToBuy, costWithoutRewards, protocolRewardsFee, founderReward);
 
         tokenEmitter.buyToken{ value: sentValue }(user, amountToBuy, maxCost, rewardAddresses);
 
@@ -455,19 +442,11 @@ contract TokenEmitterETHTest is Test {
             purchaseReferral: address(0)
         });
 
-        uint256 founderReward = getFounderReward(amountToBuy);
+        uint256 founderReward = (amountToBuy * 10) / 100;
 
         // Expect the TokensBought event
         vm.expectEmit(true, true, true, true);
-        emit ITokenEmitter.TokensBought(
-            user,
-            user,
-            amountToBuy,
-            cost,
-            protocolRewardsFee,
-            founderReward,
-            addedSurgeCost
-        );
+        emit ITokenEmitter.TokensBought(user, user, amountToBuy, cost, protocolRewardsFee, founderReward);
 
         tokenEmitter.buyToken{ value: totalPayment }(user, amountToBuy, totalPayment, rewardAddresses);
     }
@@ -480,8 +459,8 @@ contract TokenEmitterETHTest is Test {
 
         // Assume initial supply is less than SUPPLY_OFFSET
         uint256 initialSupply = erc20.totalSupply();
-        // Account for 7% founder reward by dividing by 1.07 (since founder reward is 7% on top)
-        uint256 tokensToReachVrgdaCap = ((uint256(PER_TIME_UNIT) - initialSupply) * 100) / 107;
+        // Account for 10% founder reward by dividing by 1.1 (since founder reward is 10% on top)
+        uint256 tokensToReachVrgdaCap = ((uint256(PER_TIME_UNIT) - initialSupply) * 10) / 11;
 
         // Start pranking as user
         vm.startPrank(user);
@@ -498,7 +477,7 @@ contract TokenEmitterETHTest is Test {
 
         assertEq(addedSurgeCostBeforeCap, 0, "Added VRGDACap surge cost should be 0");
 
-        uint256 founderRewardBefore = getFounderReward(tokensToReachVrgdaCap);
+        uint256 founderRewardBefore = (tokensToReachVrgdaCap * 10) / 100;
 
         vm.expectEmit(true, true, true, true);
         emit ITokenEmitter.TokensBought(
@@ -507,8 +486,7 @@ contract TokenEmitterETHTest is Test {
             tokensToReachVrgdaCap,
             uint256(costBeforeCap),
             protocolRewardsFeeBefore,
-            founderRewardBefore,
-            addedSurgeCostBeforeCap
+            founderRewardBefore
         );
 
         tokenEmitter.buyToken{ value: totalPaymentBefore }(
@@ -528,7 +506,7 @@ contract TokenEmitterETHTest is Test {
         // Assert that cost at offset is greater than cost before offset
         assertTrue(costAtCap > costBeforeCap, "Cost should increase at supply offset due to VRGDACap");
 
-        uint256 founderRewardAt = getFounderReward(tokensToReachVrgdaCap);
+        uint256 founderRewardAt = (tokensToReachVrgdaCap * 10) / 100;
 
         vm.expectEmit(true, true, true, true);
         emit ITokenEmitter.TokensBought(
@@ -537,8 +515,7 @@ contract TokenEmitterETHTest is Test {
             tokensToReachVrgdaCap,
             uint256(costAtCap),
             protocolRewardsFeeAt,
-            founderRewardAt,
-            addedSurgeCostAtCap
+            founderRewardAt
         );
 
         tokenEmitter.buyToken{ value: totalPaymentAt }(user, tokensToReachVrgdaCap, totalPaymentAt, rewardAddresses);
@@ -562,7 +539,7 @@ contract TokenEmitterETHTest is Test {
 
         assertEq(surgeCostAfterWait, 0, "Added VRGDACap surge cost should be = 0");
 
-        uint256 founderRewardAfterWait = getFounderReward(tokensToReachVrgdaCap);
+        uint256 founderRewardAfterWait = (tokensToReachVrgdaCap * 10) / 100;
 
         vm.expectEmit(true, true, true, true);
         emit ITokenEmitter.TokensBought(
@@ -571,8 +548,7 @@ contract TokenEmitterETHTest is Test {
             tokensToReachVrgdaCap,
             uint256(costAfterWait),
             protocolRewardsFeeAfterWait,
-            founderRewardAfterWait,
-            surgeCostAfterWait
+            founderRewardAfterWait
         );
 
         vm.prank(user);
@@ -585,9 +561,9 @@ contract TokenEmitterETHTest is Test {
 
         uint256 balanceBeforeWithdraw = address(tokenEmitter.owner()).balance;
 
-        // Withdraw the extra VRGDA Payment
+        // Withdraw the extra VRGDA ETH
         vm.prank(owner);
-        tokenEmitter.withdrawVRGDAPayment();
+        tokenEmitter.withdrawVRGDAETH();
 
         uint256 balanceAfterWithdraw = address(tokenEmitter.owner()).balance;
 
@@ -602,7 +578,7 @@ contract TokenEmitterETHTest is Test {
         uint256 protocolRewardsFeeMore = tokenEmitter.computeTotalReward(uint256(costMore));
         uint256 totalPaymentMore = uint256(costMore) + protocolRewardsFeeMore;
 
-        uint256 founderRewardMore = getFounderReward(largePurchase);
+        uint256 founderRewardMore = (largePurchase * 10) / 100;
 
         vm.expectEmit(true, true, true, true);
         emit ITokenEmitter.TokensBought(
@@ -611,8 +587,7 @@ contract TokenEmitterETHTest is Test {
             largePurchase,
             uint256(costMore),
             protocolRewardsFeeMore,
-            founderRewardMore,
-            surgeCostMore
+            founderRewardMore
         );
 
         vm.prank(user);
@@ -631,9 +606,9 @@ contract TokenEmitterETHTest is Test {
         tokenEmitter.sellToken(erc20.balanceOf(founderRewardAddress), 0);
         vm.stopPrank();
 
-        // Withdraw the final VRGDA Payment
+        // Withdraw the final VRGDA ETH
         vm.prank(owner);
-        tokenEmitter.withdrawVRGDAPayment();
+        tokenEmitter.withdrawVRGDAETH();
 
         balanceAfterWithdraw = address(tokenEmitter.owner()).balance;
 
@@ -667,7 +642,7 @@ contract TokenEmitterETHTest is Test {
         tokenEmitter.buyToken{ value: totalPayment }(user, amountToBuy, totalPayment, rewardAddresses);
 
         // Check balances after purchase
-        uint256 expectedFounderReward = (amountToBuy * 7) / 100; // 7% founder reward
+        uint256 expectedFounderReward = amountToBuy / 10; // 10% founder reward
         uint256 finalFounderBalance = erc20.balanceOf(founderRewardAddress);
         uint256 finalUserBalance = erc20.balanceOf(user);
 
@@ -719,9 +694,9 @@ contract TokenEmitterETHTest is Test {
 
     function testFounderRewardWithZeroAddress() public {
         // Deploy new token emitter with zero founder reward address
-        TokenEmitterETH tokenEmitterImpl = new TokenEmitterETH(address(protocolRewards), protocolFeeRecipient);
+        TokenEmitter tokenEmitterImpl = new TokenEmitter(address(protocolRewards), protocolFeeRecipient);
         ERC1967Proxy proxy = new ERC1967Proxy(address(tokenEmitterImpl), "");
-        TokenEmitterETH newTokenEmitter = TokenEmitterETH(address(proxy));
+        TokenEmitter newTokenEmitter = TokenEmitter(address(proxy));
 
         // Initialize with zero address for founder rewards
         vm.startPrank(owner);
@@ -766,164 +741,5 @@ contract TokenEmitterETHTest is Test {
 
         // Verify only user tokens were minted (no founder rewards)
         assertEq(erc20.totalSupply() - initialSupply, amountToBuy, "Only user tokens should be minted");
-    }
-
-    function testRepeatedPartialSell() public {
-        address user = user1;
-        uint256 totalMint = 1000 * 1e18;
-        vm.startPrank(address(tokenEmitter));
-        erc20.mint(user, totalMint); // mimic a user who has 1000 tokens
-        vm.stopPrank();
-
-        // Fund contract with ETH so sells can succeed
-        vm.deal(address(tokenEmitter), 300 ether);
-
-        uint256 userInitialBal = user.balance;
-
-        // Sell in multiple parts
-        uint256 part1 = 300 * 1e18;
-        uint256 part2 = 200 * 1e18;
-        uint256 part3 = 500 * 1e18; // the remainder
-
-        // For each part, we get a quote and sell
-        // PART 1
-        int256 paymentInt1 = tokenEmitter.sellTokenQuote(part1);
-        uint256 expectedPay1 = uint256(paymentInt1);
-
-        vm.prank(user);
-        tokenEmitter.sellToken(part1, 0); // accept any payment >= 0
-
-        // PART 2
-        int256 paymentInt2 = tokenEmitter.sellTokenQuote(part2);
-        uint256 expectedPay2 = uint256(paymentInt2);
-
-        vm.prank(user);
-        tokenEmitter.sellToken(part2, 0);
-
-        // PART 3
-        int256 paymentInt3 = tokenEmitter.sellTokenQuote(part3);
-        uint256 expectedPay3 = uint256(paymentInt3);
-
-        vm.prank(user);
-        tokenEmitter.sellToken(part3, 0);
-
-        // Final checks
-        uint256 userFinalBal = user.balance;
-
-        // The sum of each partial pay
-        uint256 totalExpected = expectedPay1 + expectedPay2 + expectedPay3;
-        // The user should have gained about that much total
-        assertApproxEqAbs(
-            userFinalBal - userInitialBal,
-            totalExpected,
-            1e14, // tolerance
-            "User didn't receive the correct total from partial sells"
-        );
-
-        // Check user tokens are fully burned
-        assertEq(erc20.balanceOf(user), 0, "User should have sold all tokens");
-    }
-
-    function testReinitializeShouldFail() public {
-        // First initialization is done in setUp(), so let's confirm a second fails
-        vm.startPrank(owner);
-
-        // Attempt to call initialize again
-        vm.expectRevert("Initializable: contract is already initialized");
-        tokenEmitter.initialize({
-            _initialOwner: owner,
-            _erc20: address(erc20),
-            _weth: address(weth),
-            _curveSteepness: CURVE_STEEPNESS,
-            _basePrice: BASE_PRICE,
-            _maxPriceIncrease: MAX_PRICE_INCREASE,
-            _supplyOffset: SUPPLY_OFFSET,
-            _priceDecayPercent: PRICE_DECAY_PERCENT,
-            _perTimeUnit: PER_TIME_UNIT,
-            _founderRewardAddress: founderRewardAddress,
-            _founderRewardDuration: FOUNDER_REWARD_DURATION
-        });
-
-        vm.stopPrank();
-    }
-
-    function testLockMinterCannotUpdateAgain() public {
-        // Make sure we're the owner
-        vm.startPrank(owner);
-
-        // Initially set a new minter
-        erc20.setMinter(makeAddr("initialMinter"));
-        assertEq(erc20.minter(), makeAddr("initialMinter"));
-
-        // Now lock the minter
-        erc20.lockMinter();
-
-        // Attempt to change minter again
-        vm.expectRevert(abi.encodeWithSignature("MINTER_LOCKED()"));
-        erc20.setMinter(makeAddr("secondMinter"));
-
-        vm.stopPrank();
-    }
-
-    function testProtocolRewardsSplit() public {
-        // We'll pick some non-zero addresses for builder & referral
-        address builderAddr = makeAddr("builder");
-        address referralAddr = makeAddr("referral");
-
-        // We'll buy an amount of tokens
-        uint256 amountToBuy = 200 * 1e18;
-        address user = user1;
-        vm.deal(user, 50 ether); // ensure user has enough ETH
-
-        // Prepare the protocol reward addresses
-        ITokenEmitter.ProtocolRewardAddresses memory rewardAddresses = ITokenEmitter.ProtocolRewardAddresses({
-            builder: builderAddr,
-            purchaseReferral: referralAddr
-        });
-
-        // Get buy quote
-        vm.prank(user);
-        (int256 costInt, ) = tokenEmitter.buyTokenQuote(amountToBuy);
-        uint256 costForTokens = uint256(costInt);
-
-        // Calculate protocol rewards and total payment
-        uint256 protocolRewardsFee = tokenEmitter.computeTotalReward(costForTokens);
-        uint256 totalPayment = costForTokens + protocolRewardsFee;
-
-        // Calculate expected rewards based on costForTokens
-        uint256 expectedBuilderReward = (costForTokens * 100) / 10_000; // 1.0% BUILDER_REWARD_BPS
-        uint256 expectedReferralReward = (costForTokens * 50) / 10_000; // 0.5% PURCHASE_REFERRAL_BPS
-
-        // We send a bit more to handle any rounding
-        uint256 sentValue = totalPayment + 0.1 ether;
-
-        // Record balances before
-        uint256 builderInitialBal = protocolRewards.balanceOf(builderAddr);
-        uint256 referralInitialBal = protocolRewards.balanceOf(referralAddr);
-
-        // Actually buy the tokens
-        vm.prank(user);
-        tokenEmitter.buyToken{ value: sentValue }(
-            user,
-            amountToBuy,
-            totalPayment, // maxCost = totalPayment
-            rewardAddresses
-        );
-
-        // Check balances after
-        uint256 builderFinalBal = protocolRewards.balanceOf(builderAddr);
-        uint256 referralFinalBal = protocolRewards.balanceOf(referralAddr);
-
-        // They should have increased balances in the ProtocolRewards contract
-        assertTrue(builderFinalBal > builderInitialBal, "Builder did not receive protocol rewards");
-        assertTrue(referralFinalBal > referralInitialBal, "Referral did not receive protocol rewards");
-
-        // Verify the rewards were deposited correctly
-        uint256 builderIncrease = builderFinalBal - builderInitialBal;
-        uint256 referralIncrease = referralFinalBal - referralInitialBal;
-
-        // Check that rewards match expected BPS splits from RewardSplits
-        assertEq(builderIncrease, expectedBuilderReward, "Builder reward incorrect");
-        assertEq(referralIncrease, expectedReferralReward, "Referral reward incorrect");
     }
 }

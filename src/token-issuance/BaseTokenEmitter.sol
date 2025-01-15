@@ -191,8 +191,9 @@ abstract contract BaseTokenEmitter is
      * @dev Must be implemented by child contracts
      * @dev amount Number of tokens to sell
      * @dev minPayment Minimum acceptable payment
+     * @return payment Amount of payment tokens received
      */
-    function sellToken(uint256 /*amount*/, uint256 /*minPayment*/) public virtual {
+    function sellToken(uint256 /*amount*/, uint256 /*minPayment*/) public virtual returns (uint256 payment) {
         revert NOT_IMPLEMENTED();
     }
 

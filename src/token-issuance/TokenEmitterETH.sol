@@ -165,8 +165,12 @@ contract TokenEmitterETH is ITokenEmitterETH, BaseTokenEmitter, FlowProtocolRewa
      * @dev Returns ETH based on bonding curve price, includes slippage protection
      * @param amount Number of tokens to sell
      * @param minPayment Minimum acceptable payment in wei
+     * @return payment Amount of ETH received
      */
-    function sellToken(uint256 amount, uint256 minPayment) public virtual override nonReentrant {
+    function sellToken(
+        uint256 amount,
+        uint256 minPayment
+    ) public virtual override nonReentrant returns (uint256 payment) {
         int256 paymentInt = sellTokenQuote(amount);
         if (paymentInt < 0) revert INVALID_PAYMENT();
         if (amount == 0) revert INVALID_AMOUNT();

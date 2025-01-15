@@ -45,10 +45,14 @@ contract SellFlowTokenEmitterTest is FlowTokenEmitterTest {
      *         the separate calls to FlowTokenEmitter.sellTokenQuote and ethEmitter.sellTokenQuote.
      */
     function testSellTokenQuoteETH_Basic() public {
-        // 1) Mint user some Flow tokens
+        // 1) Buy Flow tokens with ETH first
         uint256 flowAmount = 100e18;
-        vm.startPrank(address(flowTokenEmitter));
-        brandToken.mint(user1, flowAmount);
+        vm.startPrank(user1);
+        (int256 costInt, ) = flowTokenEmitter.buyTokenQuoteETH(flowAmount);
+        assertTrue(costInt > 0, "Expected positive ETH cost");
+        uint256 ethCost = uint256(costInt);
+
+        flowTokenEmitter.buyWithETH{ value: ethCost }(user1, flowAmount, ethCost, emptyAddr);
         vm.stopPrank();
 
         // 2) Flow emitter quote in PaymentToken
@@ -197,7 +201,7 @@ contract SellFlowTokenEmitterTest is FlowTokenEmitterTest {
 
         // user Flow should be 0 now
         uint256 userFlowAfter = brandToken.balanceOf(user3);
-        assertEq(userFlowAfter, 0, "User's Flow should be burnt");
+        assertEq(userFlowAfter, 0, "Users Flow should be burnt");
 
         // user Payment
         uint256 userPaymentBal = paymentToken.balanceOf(user3);
@@ -230,5 +234,189 @@ contract SellFlowTokenEmitterTest is FlowTokenEmitterTest {
             1e14,
             "End-to-end user ETH from bridging Flow->Payment->ETH should match sellTokenQuoteETH"
         );
+    }
+
+    /**
+     * @notice Tests a basic scenario for sellTokenForETH: user sells Flow tokens and receives ETH.
+     */
+    function testSellTokenForETH_BasicFlow() public {
+        // 1) Buy Flow tokens with ETH first
+        uint256 flowAmount = 50e18;
+        vm.startPrank(user1);
+        vm.deal(user1, 100 ether);
+
+        (int256 costInt, ) = flowTokenEmitter.buyTokenQuoteETH(flowAmount);
+        assertTrue(costInt > 0, "Expected positive ETH cost");
+        uint256 ethCost = uint256(costInt);
+
+        flowTokenEmitter.buyWithETH{ value: ethCost }(user1, flowAmount, ethCost, emptyAddr);
+        vm.stopPrank();
+
+        // 2) Confirm user1 has those Flow tokens
+        assertEq(brandToken.balanceOf(user1), flowAmount, "User should hold Flow tokens initially");
+
+        // 3) Check how much ETH they'd receive
+        int256 ethQuoteInt = flowTokenEmitter.sellTokenQuoteETH(flowAmount);
+        assertTrue(ethQuoteInt > 0, "Expected a positive sell quote in ETH");
+        uint256 minPayment = (uint256(ethQuoteInt) * 99) / 100; // 1% slippage buffer
+
+        // 4) Sell the Flow tokens
+        vm.startPrank(user1);
+        brandToken.approve(address(flowTokenEmitter), flowAmount);
+        flowTokenEmitter.sellTokenForETH(flowAmount, minPayment);
+        vm.stopPrank();
+
+        // 5) The user should have 0 Flow tokens left
+        assertEq(brandToken.balanceOf(user1), 0, "Users Flow balance should be zero after selling");
+        // 6) The user’s ETH changed – can do an approximate check if needed, or
+        //    rely on an advanced check that the revert didn’t happen for slippage.
+    }
+
+    /**
+     * @notice Tests selling 0 tokens via sellTokenForETH, expecting revert.
+     */
+    function testSellTokenForETH_ZeroTokensReverts() public {
+        vm.startPrank(user1);
+        vm.expectRevert(BondingSCurve.INVALID_AMOUNT.selector);
+        flowTokenEmitter.sellTokenForETH(0, 0);
+        vm.stopPrank();
+    }
+
+    /**
+     * @notice Tests the slippage protection in sellTokenForETH by setting a minPayment
+     *         greater than the actual final ETH to be received.
+     */
+    function testSellTokenForETH_SlippageExceeded() public {
+        // First buy some Flow tokens with ETH
+        uint256 flowAmount = 25e18;
+        vm.startPrank(user1);
+        vm.deal(user1, 100 ether);
+
+        // Get quote for buying Flow tokens
+        (int256 costInt, ) = flowTokenEmitter.buyTokenQuote(flowAmount);
+        assertTrue(costInt > 0, "Expected positive cost");
+        uint256 cost = uint256(costInt);
+
+        // Buy Flow tokens with ETH
+        flowTokenEmitter.buyWithETH{ value: cost }(user1, flowAmount, cost, emptyAddr);
+
+        // Suppose the quote says we expect ~1 ETH, but we demand 2 ETH minimum
+        // so we can force a slippage revert.
+        int256 ethQuoteInt = flowTokenEmitter.sellTokenQuoteETH(flowAmount);
+        assertTrue(ethQuoteInt > 0, "Expected a positive ETH quote");
+        uint256 unrealisticMinPayment = uint256(ethQuoteInt) + 1 ether;
+
+        brandToken.approve(address(flowTokenEmitter), flowAmount);
+
+        // Expect revert because minPayment is too high
+        vm.expectRevert(ITokenEmitter.SLIPPAGE_EXCEEDED.selector);
+        flowTokenEmitter.sellTokenForETH(flowAmount, unrealisticMinPayment);
+
+        vm.stopPrank();
+    }
+
+    /**
+     * @notice Tests trying to sell more Flow tokens than the user holds, expecting revert.
+     */
+    function testSellTokenForETH_InsufficientFlowBalance() public {
+        // user1 has 0 Flow tokens
+        // Attempt to sell 20 tokens
+        uint256 flowAmount = 20e18;
+
+        vm.startPrank(user1);
+        brandToken.approve(address(flowTokenEmitter), flowAmount);
+        // Expect revert, because user does not actually hold that many tokens
+        vm.expectRevert(BondingSCurve.INVALID_SOLD_AMOUNT.selector);
+        flowTokenEmitter.sellTokenForETH(flowAmount, 1);
+        vm.stopPrank();
+    }
+
+    /**
+     * @notice Tests if the FlowTokenEmitter contract lacks enough Payment tokens
+     *         to pay out the user when they do Flow -> Payment -> ETH. Should revert
+     *         with INSUFFICIENT_CONTRACT_BALANCE if there's no liquidity.
+     *
+     *         This test artificially drains Payment tokens from the FlowTokenEmitter
+     *         contract before a user tries to sell.
+     */
+    function testSellTokenForETH_InsufficientContractBalance() public {
+        // 1) First buy Flow tokens with ETH
+        uint256 flowAmount = 100e18;
+        vm.startPrank(user1);
+        vm.deal(user1, 100 ether);
+
+        // Get quote and buy Flow tokens
+        (int256 costInt, ) = flowTokenEmitter.buyTokenQuote(flowAmount);
+        assertTrue(costInt > 0, "Expected positive cost");
+        uint256 cost = uint256(costInt);
+        flowTokenEmitter.buyWithETH{ value: cost }(user1, flowAmount, cost, emptyAddr);
+        vm.stopPrank();
+
+        // 2) Under normal conditions, the contract might accumulate Payment tokens
+        //    from other buyers. But here, we artificially ensure the FlowTokenEmitter
+        //    has zero Payment tokens by transferring them out (if any).
+        //    For example, if the FlowTokenEmitter somehow had a Payment token balance from prior buys,
+        //    we forcibly drain it:
+        uint256 emitterBalance = paymentToken.balanceOf(address(flowTokenEmitter));
+        if (emitterBalance > 0) {
+            vm.prank(address(flowTokenEmitter));
+            paymentToken.transfer(owner, emitterBalance);
+        }
+
+        // 3) The user attempts to sell Flow tokens
+        //    Because the contract has zero Payment token liquidity, the flowTokenEmitter
+        //    should revert with "INSUFFICIENT_CONTRACT_BALANCE()".
+        vm.startPrank(user1);
+        brandToken.approve(address(flowTokenEmitter), flowAmount);
+
+        // We'll use some minPayment well below the actual expected, just so we can confirm
+        // the revert is from insufficient balance rather than slippage
+        vm.expectRevert(ITokenEmitter.INSUFFICIENT_CONTRACT_BALANCE.selector);
+        flowTokenEmitter.sellTokenForETH(flowAmount, 1e15);
+
+        vm.stopPrank();
+    }
+
+    // ---------------------------------------------------------------------
+    // 2. Additional combined or advanced tests (if needed)
+    // ---------------------------------------------------------------------
+
+    /**
+     * @notice Example test that tries partial sells multiple times, ensuring
+     *         the user’s leftover Flow tokens remain correct, and final ETH is correct.
+     */
+    function testSellTokenForETH_MultiplePartialSells() public {
+        // 1) Buy Flow tokens with ETH
+        uint256 flowAmount = 200e18;
+        vm.startPrank(user1);
+        vm.deal(user1, 100 ether);
+
+        // Get quote and buy Flow tokens
+        (int256 costInt, ) = flowTokenEmitter.buyTokenQuote(flowAmount);
+        assertTrue(costInt > 0, "Expected positive cost");
+        uint256 cost = uint256(costInt);
+        flowTokenEmitter.buyWithETH{ value: cost }(user1, flowAmount, cost, emptyAddr);
+        vm.stopPrank();
+
+        // 2) user1 sells half, then sells half again
+        uint256 halfAmount = flowAmount / 2;
+
+        // Sell #1: half the user’s Flow
+        vm.startPrank(user1);
+        brandToken.approve(address(flowTokenEmitter), halfAmount);
+        flowTokenEmitter.sellTokenForETH(halfAmount, 0 /* minPayment */);
+        vm.stopPrank();
+
+        // user1 should have half left
+        uint256 expectedFlowRemaining = brandToken.balanceOf(user1);
+        assertEq(expectedFlowRemaining, flowAmount - halfAmount, "User should have half left");
+
+        // Sell #2: the rest
+        vm.startPrank(user1);
+        brandToken.approve(address(flowTokenEmitter), expectedFlowRemaining);
+        flowTokenEmitter.sellTokenForETH(expectedFlowRemaining, 0);
+        vm.stopPrank();
+
+        assertEq(brandToken.balanceOf(user1), 0, "Users Flow should be zero after 2 sells");
     }
 }

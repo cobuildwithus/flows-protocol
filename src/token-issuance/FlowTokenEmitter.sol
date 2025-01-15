@@ -160,6 +160,34 @@ contract FlowTokenEmitter is IFlowTokenEmitter, TokenEmitterERC20 {
     }
 
     /**
+     * @notice Sells Flow tokens for ETH through a two-step process
+     * @dev First sells tokens to convert them to parent Flow tokens, then converts parent Flow tokens to ETH
+     * @param amount Amount of Flow tokens to sell
+     * @param minPayment Minimum ETH amount user is willing to receive (slippage protection)
+     */
+    function sellTokenForETH(uint256 amount, uint256 minPayment) external nonReentrant {
+        _sellTokenForETH(amount, minPayment);
+    }
+
+    /**
+     * @notice Internal function to handle Flow token selling and ETH conversion
+     * @dev Two step process:
+     *      1. Converts payment tokens to parent Flow tokens
+     *      2. Converts parent Flow tokens to ETH
+     *      Handles slippage protection and protocol rewards
+     * @param amount Amount of Flow tokens to sell
+     * @param minPayment Minimum ETH amount user is willing to receive (slippage protection)
+     */
+    function _sellTokenForETH(uint256 amount, uint256 minPayment) internal {
+        // pass in 0 as minPayment here since we handle minPayment in the ethEmitter
+        uint256 paymentInERC20 = _burnTokens(amount, 0);
+
+        uint256 paymentInETH = ethEmitter.sellToken(paymentInERC20, minPayment);
+
+        _transferETHWithFallback(_msgSender(), paymentInETH);
+    }
+
+    /**
      * @notice Calculates the total ETH cost for selling a given amount of Flow tokens
      * @param tokenAmount The amount of Flow tokens to sell
      * @return payment Amount of payment tokens to receive

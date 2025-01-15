@@ -137,6 +137,9 @@ contract TokenEmitterERC20 is ITokenEmitterERC20, BaseTokenEmitter {
      * @dev Validates inputs and handles token minting. Called by public buyToken()
      *      and FlowTokenEmitter's buyWithETH(). When called by FlowTokenEmitter,
      *      payment tokens are pre-purchased and transferred.
+     * @notice Must safeIncreaseAllowance() before calling this function from inherited contracts eg: FlowTokenEmitter
+     *         - eg: paymentToken.safeIncreaseAllowance(address(this), paymentTokenAcquired);
+     *         - otherwise the checkPayment() will revert for not enough allowance
      * @param payer Address that will pay for the purchase
      * @param user Address that will receive the purchased tokens
      * @param amount Number of tokens to purchase
@@ -194,22 +197,38 @@ contract TokenEmitterERC20 is ITokenEmitterERC20, BaseTokenEmitter {
      * @dev Validates balances and handles token burning and payment
      * @param amount Amount of tokens to sell
      * @param minPayment Minimum acceptable payment to receive
+     * @return payment Amount of payment tokens received
      */
-    function sellToken(uint256 amount, uint256 minPayment) public virtual override nonReentrant {
+    function sellToken(
+        uint256 amount,
+        uint256 minPayment
+    ) public virtual override nonReentrant returns (uint256 payment) {
+        payment = _burnTokens(amount, minPayment);
+
+        // Pay the user
+        _transferPaymentWithFallback(_msgSender(), payment);
+
+        emit TokensSold(_msgSender(), amount, payment);
+    }
+
+    /**
+     * @notice Internal function to handle token selling and payment token conversion
+     * @dev Validates inputs and handles token burning and payment token transfer
+     * @param amount Amount of tokens to sell
+     * @param minPayment Minimum acceptable payment to receive
+     * @return payment Amount of payment tokens received
+     */
+    function _burnTokens(uint256 amount, uint256 minPayment) internal returns (uint256 payment) {
         int256 paymentInt = sellTokenQuote(amount);
         if (paymentInt < 0) revert INVALID_PAYMENT();
         if (amount == 0) revert INVALID_AMOUNT();
-        uint256 payment = uint256(paymentInt);
+        payment = uint256(paymentInt);
 
         if (payment < minPayment) revert SLIPPAGE_EXCEEDED();
         if (payment > paymentToken.balanceOf(address(this))) revert INSUFFICIENT_CONTRACT_BALANCE();
         if (erc20.balanceOf(_msgSender()) < amount) revert INSUFFICIENT_TOKEN_BALANCE();
 
         erc20.burn(_msgSender(), amount);
-
-        _transferPaymentWithFallback(_msgSender(), payment);
-
-        emit TokensSold(_msgSender(), amount, payment);
     }
 
     /**
@@ -222,7 +241,7 @@ contract TokenEmitterERC20 is ITokenEmitterERC20, BaseTokenEmitter {
         if (address(this).balance < _amount) revert("Insufficient balance");
 
         bool success;
-        assembly {
+        assembly ("memory-safe") {
             success := call(50000, _to, _amount, 0, 0, 0, 0)
         }
 

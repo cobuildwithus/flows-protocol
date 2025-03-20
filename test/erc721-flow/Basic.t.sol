@@ -381,4 +381,22 @@ contract BasicERC721FlowTest is ERC721FlowTest {
         // Verify that the manager was not changed
         assertEq(flow.manager(), newManager, "Manager should not be changed to zero address");
     }
+
+    function testTotalTokenSupplyVoteWeight() public {
+        // Mint some tokens to simulate total supply
+        nounsToken.mint(address(0x1), 1);
+        nounsToken.mint(address(0x2), 2);
+        nounsToken.mint(address(0x3), 3);
+
+        uint256 expectedTotalSupply = nounsToken.totalSupply();
+        uint256 tokenVoteWeight = flow.tokenVoteWeight();
+
+        uint256 expectedTotalVoteWeight = expectedTotalSupply * tokenVoteWeight;
+
+        assertEq(
+            flow.totalTokenSupplyVoteWeight(),
+            expectedTotalVoteWeight,
+            "Total token supply vote weight should match expected calculation"
+        );
+    }
 }

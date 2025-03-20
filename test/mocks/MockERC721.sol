@@ -31,4 +31,20 @@ contract MockERC721 is ERC721, IERC721Checkpointable {
     function getPriorVotes(address, uint256) external pure override returns (uint96) {
         return 0;
     }
+
+    // Implementations for IERC721Enumerable functions
+    function tokenByIndex(uint256 index) external view override returns (uint256) {
+        // This is a mock implementation, returning a dummy value
+        return index;
+    }
+
+    function tokenOfOwnerByIndex(address owner, uint256 index) external view override returns (uint256) {
+        // This is a mock implementation, returning a dummy value
+        return index;
+    }
+
+    function totalSupply() external view override returns (uint256) {
+        // This is a mock implementation, returning a dummy value
+        return 0;
+    }
 }

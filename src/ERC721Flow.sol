@@ -130,4 +130,13 @@ contract ERC721Flow is IERC721Flow, Flow {
             IRewardPool(rewardPool).setFlowRate(getManagerRewardPoolFlowRate());
         }
     }
+
+    /**
+     * @notice Virtual function to calculate the total vote weight of all tokens used for voting
+     * @dev This function can be overridden in derived contracts to implement custom logic
+     * @return uint256 The total vote weight of all tokens used for voting
+     */
+    function totalTokenSupplyVoteWeight() public view virtual override returns (uint256) {
+        return erc721Votes.totalSupply() * fs.tokenVoteWeight;
+    }
 }

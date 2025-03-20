@@ -358,6 +358,17 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
+     * @notice Virtual function to calculate the total vote weight of all tokens used for voting
+     * @dev This function can be overridden in derived contracts to implement custom logic
+     * @return uint256 The total vote weight of all tokens used for voting
+     */
+    function totalTokenSupplyVoteWeight() public view virtual returns (uint256) {
+        // Default implementation assumes a simple sum of token vote weights
+        // Derived contracts can override this function to add custom logic
+        return fs.totalActiveVoteWeight;
+    }
+
+    /**
      * @notice Deploys a new Flow contract as a recipient
      * @dev This function is virtual to allow for different deployment strategies in derived contracts
      * @param _metadata The metadata of the recipient

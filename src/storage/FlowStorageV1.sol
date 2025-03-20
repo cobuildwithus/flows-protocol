@@ -74,7 +74,7 @@ interface FlowTypes {
         ISuperfluidPool baselinePool;
         /// The mapping of a tokenId to the member units assigned to each recipient they voted for
         mapping(uint256 => mapping(address => uint256)) tokenIdToRecipientMemberUnits;
-        // The weight of the 721 voting token
+        // The weight of each individual 721 voting token
         uint256 tokenVoteWeight;
         // The mapping of a token to a list of votes allocations (recipient, BPS)
         mapping(uint256 => VoteAllocation[]) votes;
@@ -82,6 +82,15 @@ interface FlowTypes {
         mapping(uint256 => address) voters;
         // The cached flow rate
         int96 cachedFlowRate;
+        /*
+         * Flow Rate Quorum
+         */
+        // The total active voting weight cast across all tokens that have voting power
+        // If in the future we let people clear their votes, or we support erc20 voting,
+        // ensure that the total active vote weight is decremented correctly
+        uint256 totalActiveVoteWeight;
+        // Mapping of whether or not a token has voted before - for flow rate quorum purposes
+        mapping(uint256 => bool) tokenHasVoted;
     }
 }
 

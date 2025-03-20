@@ -172,6 +172,12 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             _setChildrenAsNeedingUpdates(address(0));
         }
 
+        if (!fs.tokenHasVoted[tokenId]) {
+            // update total active vote weight
+            fs.totalActiveVoteWeight += fs.tokenVoteWeight;
+            fs.tokenHasVoted[tokenId] = true;
+        }
+
         // update member units for previous votes
         childFlowsToUpdate += _clearPreviousVotes(tokenId);
 
@@ -767,6 +773,14 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      */
     function managerRewardPool() external view returns (address) {
         return fs.managerRewardPool;
+    }
+
+    /**
+     * @notice Retrieves the total active vote weight for quorum purposes
+     * @return uint256 The total active vote weight
+     */
+    function totalActiveVoteWeight() external view returns (uint256) {
+        return fs.totalActiveVoteWeight;
     }
 
     /**

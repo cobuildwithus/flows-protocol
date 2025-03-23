@@ -98,11 +98,26 @@ contract RewardPool is UUPSUpgradeable, Ownable2StepUpgradeable, ReentrancyGuard
     }
 
     /**
-     * @notice Resets the flow rate of the pool to its current total flow rate
-     * @dev This function can only be called by the owner or manager
+     * @notice Resets the flow rate of the pool to the (updated) cached flow rate
+     * @dev This safely handles cases where the flow was forcibly closed due to insufficient balance,
+     *      causing the actual on-chain flow to become zero while our cachedFlowRate was stale.
      */
     function resetFlowRate() external onlyManagerOrOwner nonReentrant {
-        superToken.distributeFlow(address(this), rewardPool, getTotalFlowRate());
+        // 1. Get the actual on-chain flow rate (the "real" situation)
+        int96 actualFlowRate = getActualFlowRate(); // i.e., rewardPool.getTotalFlowRate()
+
+        // 2. If on-chain flow is zero but our cachedFlowRate is nonzero, synchronize
+        if (actualFlowRate == 0 && cachedFlowRate != 0) {
+            cachedFlowRate = 0;
+        }
+
+        // 3. If both are zero, there's truly no flow to reset; do nothing
+        if (actualFlowRate == 0 && cachedFlowRate == 0) {
+            return;
+        }
+
+        // 4. Otherwise, update the flow to our (potentially corrected) cachedFlowRate
+        superToken.distributeFlow(address(this), rewardPool, cachedFlowRate);
     }
 
     /**

@@ -79,6 +79,9 @@ interface IFlowEvents {
 
     /// @notice Emitted when the manager is updated
     event ManagerUpdated(address indexed oldManager, address indexed newManager);
+
+    /// @notice Emitted when the bonus pool quorum is updated
+    event BonusPoolQuorumUpdated(uint32 oldBonusPoolQuorum, uint32 newBonusPoolQuorum);
 }
 
 /**

@@ -33,6 +33,13 @@ interface FlowTypes {
         string url;
     }
 
+    // Struct to hold the bonus pool quorum parameters
+    struct BonusPoolQuorum {
+        // the % of the total vote weight that is required to reach full quorum
+        // and pay out the whole bonus pool
+        uint32 quorumBps;
+    }
+
     // Struct to handle potential recipients
     struct FlowRecipient {
         // the account to stream funds to
@@ -91,6 +98,8 @@ interface FlowTypes {
         uint256 totalActiveVoteWeight;
         // Mapping of whether or not a token has voted before - for flow rate quorum purposes
         mapping(uint256 => bool) tokenHasVoted;
+        // The quorum parameters to scale up the bonus pool based on vote weight
+        BonusPoolQuorum bonusPoolQuorum;
     }
 }
 

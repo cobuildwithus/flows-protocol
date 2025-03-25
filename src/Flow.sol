@@ -534,7 +534,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
         (int96 baselineFlowRate, int96 bonusFlowRate, int96 managerRewardFlowRate) = fs.calculateFlowRates(
             _flowRate,
-            PERCENTAGE_SCALE
+            PERCENTAGE_SCALE,
+            totalTokenSupplyVoteWeight()
         );
 
         _setFlowToManagerRewardPool(managerRewardFlowRate);
@@ -560,6 +561,23 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         fs.baselinePoolFlowRatePercent = _baselineFlowRatePercent;
 
         // Update flow rates to reflect the new percentage
+        _setFlowRate(getTotalFlowRate());
+    }
+
+    /**
+     * @notice Sets the bonus pool quorum parameters
+     * @param _quorumBps The new quorum percentage (in basis points, scaled by PERCENTAGE_SCALE).
+     * Once reached, the bonus pool will be scaled up to the maximum available flow rate. (total - baseline - manager reward)
+     * Leftover flow rate when quorum is not reached will be added to the baseline pool.
+     * @dev Only callable by the owner or manager of the contract
+     */
+    function setBonusPoolQuorum(uint32 _quorumBps) external onlyOwnerOrManager {
+        if (_quorumBps > PERCENTAGE_SCALE) revert INVALID_PERCENTAGE();
+
+        emit BonusPoolQuorumUpdated(fs.bonusPoolQuorum.quorumBps, _quorumBps);
+
+        fs.bonusPoolQuorum = BonusPoolQuorum(_quorumBps);
+
         _setFlowRate(getTotalFlowRate());
     }
 

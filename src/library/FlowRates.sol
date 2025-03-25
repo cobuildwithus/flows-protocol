@@ -12,8 +12,69 @@ library FlowRates {
     using SuperTokenV1Library for ISuperToken;
 
     /**
+     * @notice Calculates the bonus flow rate based on quorum and active votes
+     * @param fs The storage of the Flow contract
+     * @param _flowRate The desired total flow rate for the flow contract
+     * @param _percentageScale The percentage scale used for calculations
+     * @param _totalTokenSupplyVoteWeight The total token supply vote weight
+     * @param _baselineFlowRate The baseline flow rate already calculated
+     * @param _remainingFlowRate The remaining flow rate after manager reward deduction
+     * @return bonusFlowRate The calculated bonus flow rate
+     * @return leftoverFlowRate The leftover flow rate that is not used
+     */
+    function _calculateBonusFlowRate(
+        FlowTypes.Storage storage fs,
+        int96 _flowRate,
+        uint256 _percentageScale,
+        uint256 _totalTokenSupplyVoteWeight,
+        int96 _baselineFlowRate,
+        int96 _remainingFlowRate
+    ) public returns (int96 bonusFlowRate, int96 leftoverFlowRate) {
+        // the max rate the bonus pool can have if it reaches full quorum
+        int96 maxBonusFlowRate = _remainingFlowRate - _baselineFlowRate;
+        // the quorum percentage
+        uint256 quorumBps = fs.bonusPoolQuorum.quorumBps;
+
+        // if quorum is 0 or total token supply vote weight is 0, return the max bonus flow rate
+        // this is fine because when there are no votes the bonus pool is split evenly between recipients
+        if (quorumBps == 0 || _totalTokenSupplyVoteWeight == 0) {
+            return (maxBonusFlowRate, 0);
+        }
+
+        // how many votes have actually been cast
+        uint256 totalActiveVoteWeight = fs.totalActiveVoteWeight;
+
+        // how many votes are needed to reach quorum
+        uint256 votesToReachQuorum = _scaleAmountByPercentage(_totalTokenSupplyVoteWeight, quorumBps, _percentageScale);
+
+        if (votesToReachQuorum == 0) {
+            return (maxBonusFlowRate, 0);
+        }
+
+        // actual bonus flow rate is linearly proportional to the total active vote weight / totalSupplyVoteWeight * quorumBps
+        uint256 percentageOfQuorum = (totalActiveVoteWeight * _percentageScale) / votesToReachQuorum;
+        if (percentageOfQuorum > _percentageScale) {
+            percentageOfQuorum = _percentageScale;
+        }
+
+        // actual bonus flow rate is linearly proportional to the total active vote weight / totalSupplyVoteWeight * quorumBps
+        int256 computedBonusFlowRate = int256(
+            _scaleAmountByPercentage(uint256(uint96(maxBonusFlowRate)), percentageOfQuorum, _percentageScale)
+        );
+
+        if (computedBonusFlowRate > type(int96).max) revert IFlow.FLOW_RATE_TOO_HIGH();
+
+        bonusFlowRate = int96(computedBonusFlowRate);
+
+        leftoverFlowRate = maxBonusFlowRate - bonusFlowRate;
+    }
+
+    /**
      * @notice Calculates the flow rates for the flow contract
      * @param fs The storage of the Flow contract
+     * @param _flowRate The desired flow rate for the flow contract
+     * @param _percentageScale The percentage scale
+     * @param _totalTokenSupplyVoteWeight The total token supply vote weight
      * @return baselineFlowRate The baseline flow rate
      * @return bonusFlowRate The bonus flow rate
      * @return managerRewardFlowRate The manager reward pool flow rate
@@ -21,7 +82,8 @@ library FlowRates {
     function calculateFlowRates(
         FlowTypes.Storage storage fs,
         int96 _flowRate,
-        uint256 _percentageScale
+        uint256 _percentageScale,
+        uint256 _totalTokenSupplyVoteWeight
     ) external returns (int96 baselineFlowRate, int96 bonusFlowRate, int96 managerRewardFlowRate) {
         int256 managerRewardFlowRatePercent = int256(
             _scaleAmountByPercentage(uint96(_flowRate), fs.managerRewardPoolFlowRatePercent, _percentageScale)
@@ -40,8 +102,19 @@ library FlowRates {
         if (baselineFlowRate256 > type(int96).max) revert IFlow.FLOW_RATE_TOO_HIGH();
 
         baselineFlowRate = int96(baselineFlowRate256);
-        // cannot be negative because remainingFlowRate will always be greater than baselineFlowRate
-        bonusFlowRate = remainingFlowRate - baselineFlowRate;
+        int96 leftoverFlowRate;
+
+        (bonusFlowRate, leftoverFlowRate) = _calculateBonusFlowRate(
+            fs,
+            _flowRate,
+            _percentageScale,
+            _totalTokenSupplyVoteWeight,
+            baselineFlowRate,
+            remainingFlowRate
+        );
+
+        // add the leftover flowrate to baseline
+        baselineFlowRate += leftoverFlowRate;
     }
 
     /**

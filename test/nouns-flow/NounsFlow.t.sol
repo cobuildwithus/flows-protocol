@@ -62,6 +62,10 @@ contract NounsFlowTest is Test {
 
         _transferTestTokenToFlow(flowProxy, 10_000 * 10 ** 18); //10k usdc a month to start
 
+        // so we have nouns available
+        // in the total vote weight supply function
+        vm.warp(1628399590);
+
         // set small flow rate
         vm.prank(manager);
         IFlow(flowProxy).setFlowRate(385 * 10 ** 13); // 0.00385 tokens per second

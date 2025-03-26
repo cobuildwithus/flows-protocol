@@ -38,7 +38,7 @@ contract RewardPool is UUPSUpgradeable, Ownable2StepUpgradeable, ReentrancyGuard
 
     /// The Superfluid pool configuration
     PoolConfig public poolConfig =
-        PoolConfig({ transferabilityForUnitsOwner: false, distributionFromAnyAddress: false });
+        PoolConfig({ transferabilityForUnitsOwner: false, distributionFromAnyAddress: true });
 
     error ADDRESS_ZERO();
     error FLOW_RATE_NEGATIVE();
@@ -52,11 +52,18 @@ contract RewardPool is UUPSUpgradeable, Ownable2StepUpgradeable, ReentrancyGuard
      * @param _superToken The address of the SuperToken to be used
      * @param _manager The address of the manager of the pool
      * @param _funder The address of the funder of the pool (usually the Flow contract)
+     * @param _initialOwner The address of the initial owner of the pool
      */
-    function initialize(ISuperToken _superToken, address _manager, address _funder) public initializer {
+    function initialize(
+        ISuperToken _superToken,
+        address _manager,
+        address _funder,
+        address _initialOwner
+    ) public initializer {
         if (address(_superToken) == address(0)) revert ADDRESS_ZERO();
         if (_manager == address(0)) revert ADDRESS_ZERO();
         if (_funder == address(0)) revert ADDRESS_ZERO();
+        if (_initialOwner == address(0)) revert ADDRESS_ZERO();
 
         __Ownable2Step_init();
         __ReentrancyGuard_init();
@@ -64,6 +71,8 @@ contract RewardPool is UUPSUpgradeable, Ownable2StepUpgradeable, ReentrancyGuard
         manager = _manager;
         funder = _funder;
         rewardPool = superToken.createPool(address(this), poolConfig);
+
+        _transferOwnership(_initialOwner);
     }
 
     /**
@@ -98,11 +107,26 @@ contract RewardPool is UUPSUpgradeable, Ownable2StepUpgradeable, ReentrancyGuard
     }
 
     /**
-     * @notice Resets the flow rate of the pool to its current total flow rate
-     * @dev This function can only be called by the owner or manager
+     * @notice Resets the flow rate of the pool to the (updated) cached flow rate
+     * @dev This safely handles cases where the flow was forcibly closed due to insufficient balance,
+     *      causing the actual on-chain flow to become zero while our cachedFlowRate was stale.
      */
     function resetFlowRate() external onlyManagerOrOwner nonReentrant {
-        superToken.distributeFlow(address(this), rewardPool, getTotalFlowRate());
+        // 1. Get the actual on-chain flow rate (the "real" situation)
+        int96 actualFlowRate = getActualFlowRate(); // i.e., rewardPool.getTotalFlowRate()
+
+        // 2. If on-chain flow is zero but our cachedFlowRate is nonzero, synchronize
+        if (actualFlowRate == 0 && cachedFlowRate != 0) {
+            cachedFlowRate = 0;
+        }
+
+        // 3. If both are zero, there's truly no flow to reset; do nothing
+        if (actualFlowRate == 0 && cachedFlowRate == 0) {
+            return;
+        }
+
+        // 4. Otherwise, update the flow to our (potentially corrected) cachedFlowRate
+        superToken.distributeFlow(address(this), rewardPool, cachedFlowRate);
     }
 
     /**

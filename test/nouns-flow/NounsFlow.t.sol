@@ -45,7 +45,7 @@ contract NounsFlowTest is Test {
 
     function deployFlow(address verifierAddress, address superTokenAddress) internal returns (NounsFlow) {
         address flowProxy = address(new ERC1967Proxy(flowImpl, ""));
-        rewardPool = deployRewardPool(superTokenAddress, flowProxy);
+        rewardPool = deployRewardPool(superTokenAddress, flowProxy, address(manager));
 
         vm.prank(address(manager));
         INounsFlow(flowProxy).initialize({
@@ -73,7 +73,11 @@ contract NounsFlowTest is Test {
         return NounsFlow(flowProxy);
     }
 
-    function deployRewardPool(address superTokenAddress, address flowAddress) internal returns (IRewardPool) {
+    function deployRewardPool(
+        address superTokenAddress,
+        address flowAddress,
+        address initialOwner
+    ) internal returns (IRewardPool) {
         // Deploy the implementation contract
         address rewardPoolImpl = address(new RewardPool());
 
@@ -81,7 +85,7 @@ contract NounsFlowTest is Test {
         address rewardPoolProxy = address(new ERC1967Proxy(rewardPoolImpl, ""));
 
         // Initialize the proxy
-        IRewardPool(rewardPoolProxy).initialize(ISuperToken(superTokenAddress), manager, flowAddress);
+        IRewardPool(rewardPoolProxy).initialize(ISuperToken(superTokenAddress), manager, flowAddress, initialOwner);
 
         return IRewardPool(rewardPoolProxy);
     }

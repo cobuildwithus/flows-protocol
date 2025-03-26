@@ -175,7 +175,8 @@ contract TCRFactory is ITCRFactory, Ownable2StepUpgradeable, UUPSUpgradeable {
         IRewardPool(rewardPoolAddress).initialize({
             superToken: rewardPoolParams.superToken,
             manager: erc20Address,
-            funder: address(params.flowContract)
+            funder: address(params.flowContract),
+            initialOwner: params.governor
         });
 
         emit FlowTCRDeployed(
@@ -252,6 +253,17 @@ contract TCRFactory is ITCRFactory, Ownable2StepUpgradeable, UUPSUpgradeable {
         address oldImplementation = erc20Implementation;
         erc20Implementation = newImplementation;
         emit ERC20ImplementationUpdated(oldImplementation, newImplementation);
+    }
+
+    /**
+     * @notice Transfers the ownership of the old RewardPool to the new owner
+     * helps the issue where the RewardPool was not initialized with the correct owner
+     * @dev Only callable by the owner
+     * @param oldRewardPool The address of the old RewardPool
+     * @param newOwner The new owner address
+     */
+    function transferOldRewardPoolOwnership(address oldRewardPool, address newOwner) external onlyOwner {
+        Ownable2StepUpgradeable(oldRewardPool).transferOwnership(newOwner);
     }
 
     /**

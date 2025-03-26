@@ -18,7 +18,7 @@ contract TCRFundFlowTest is FlowTCRTest {
 
     function test_issue() public {
         uint256 blockNumber = 21347817;
-        vm.createSelectFork("https://mainnet.base.org", blockNumber);
+        vm.createSelectFork(vm.rpcUrl("base"), blockNumber);
 
         address deployedFlow = address(0x816897059Ce5938C16A2770Bf9BA9A7caA487639);
 

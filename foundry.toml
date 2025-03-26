@@ -17,5 +17,6 @@ via_ir = false
 
 [rpc_endpoints]
 base = "${RPC_BASE}"
+mainnet = "${RPC_MAINNET}"
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

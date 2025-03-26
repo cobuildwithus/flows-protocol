@@ -116,6 +116,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param tokenId The tokenId whose previous votes are to be cleared.
      * @dev This function resets the member units for all recipients that the tokenId has previously voted for.
      * It should be called before setting new votes to ensure accurate vote allocations.
+     * Note - Important - only ever delete votes for a tokenId right before adding them back, otherwise you will have to
+     * manually update the total active vote weight
      */
     function _clearPreviousVotes(uint256 tokenId) internal returns (uint256 childFlowsToUpdate) {
         VoteAllocation[] memory allocations = fs.votes[tokenId];
@@ -170,6 +172,14 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             // so we need to reset child flow rates
             childFlowsToUpdate = 10;
             _setChildrenAsNeedingUpdates(address(0));
+
+            // update total active vote weight
+            fs.totalActiveVoteWeight += fs.tokenVoteWeight;
+
+            if (fs.bonusPoolQuorum.quorumBps > 0) {
+                // since new votes affects quorum based bonus pool, we need to update the flow rate
+                _setFlowRate(getTotalFlowRate());
+            }
         }
 
         // update member units for previous votes
@@ -352,6 +362,13 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
+     * @notice Virtual function to calculate the total vote weight of all tokens used for voting
+     * @dev This function can be overridden in derived contracts to implement custom logic
+     * @return uint256 The total vote weight of all tokens used for voting
+     */
+    function totalTokenSupplyVoteWeight() public view virtual returns (uint256) {}
+
+    /**
      * @notice Deploys a new Flow contract as a recipient
      * @dev This function is virtual to allow for different deployment strategies in derived contracts
      * @param _metadata The metadata of the recipient
@@ -517,7 +534,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
         (int96 baselineFlowRate, int96 bonusFlowRate, int96 managerRewardFlowRate) = fs.calculateFlowRates(
             _flowRate,
-            PERCENTAGE_SCALE
+            PERCENTAGE_SCALE,
+            totalTokenSupplyVoteWeight()
         );
 
         _setFlowToManagerRewardPool(managerRewardFlowRate);
@@ -543,6 +561,23 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         fs.baselinePoolFlowRatePercent = _baselineFlowRatePercent;
 
         // Update flow rates to reflect the new percentage
+        _setFlowRate(getTotalFlowRate());
+    }
+
+    /**
+     * @notice Sets the bonus pool quorum parameters
+     * @param _quorumBps The new quorum percentage (in basis points, scaled by PERCENTAGE_SCALE).
+     * Once reached, the bonus pool will be scaled up to the maximum available flow rate. (total - baseline - manager reward)
+     * Leftover flow rate when quorum is not reached will be added to the baseline pool.
+     * @dev Only callable by the owner or manager of the contract
+     */
+    function setBonusPoolQuorum(uint32 _quorumBps) external onlyOwnerOrManager {
+        if (_quorumBps > PERCENTAGE_SCALE) revert INVALID_PERCENTAGE();
+
+        emit BonusPoolQuorumUpdated(fs.bonusPoolQuorum.quorumBps, _quorumBps);
+
+        fs.bonusPoolQuorum = BonusPoolQuorum(_quorumBps);
+
         _setFlowRate(getTotalFlowRate());
     }
 
@@ -770,6 +805,14 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
+     * @notice Retrieves the total active vote weight for quorum purposes
+     * @return uint256 The total active vote weight
+     */
+    function totalActiveVoteWeight() external view returns (uint256) {
+        return fs.totalActiveVoteWeight;
+    }
+
+    /**
      * @notice Retrieves the current flow rate to the manager reward pool
      * @return flowRate The current flow rate to the manager reward pool
      */
@@ -792,6 +835,15 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      */
     function getClaimableBalance(address member) external view returns (uint256) {
         return fs.getClaimableBalance(member);
+    }
+
+    /**
+     * @notice Backfills the total active vote weight
+     * @param totalActive The total active vote weight to set
+     * @dev Only callable by the owner - to be removed immediately after running
+     */
+    function backfillActiveVotes(uint256 totalActive) external onlyOwner {
+        fs.totalActiveVoteWeight = totalActive;
     }
 
     /**

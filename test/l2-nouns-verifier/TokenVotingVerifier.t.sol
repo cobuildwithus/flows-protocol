@@ -17,7 +17,7 @@ contract L2NounsVotingVerifier is TokenVerifierTest {
         uint256 tokenId = 256;
         address account = 0x77D920b4d1163DbC516E7Ce70596225D17819dC5;
 
-        vm.createSelectFork("https://mainnet.base.org", 19354086);
+        vm.createSelectFork(vm.rpcUrl("base"), 19354086);
         TokenVerifier verifier = new TokenVerifier(NOUNS_TOKEN_ADDRESS);
 
         string memory rootPath = vm.projectRoot();
@@ -50,7 +50,7 @@ contract L2NounsVotingVerifier is TokenVerifierTest {
         address vaultNoun40 = 0xa555d1Ee16780B2d414eD97f4f169c0740099615;
         uint256 tokenId = 40;
 
-        vm.createSelectFork("https://mainnet.base.org", 19382037);
+        vm.createSelectFork(vm.rpcUrl("base"), 19382037);
         TokenVerifier verifier = new TokenVerifier(NOUNS_TOKEN_ADDRESS);
 
         string memory rootPath = vm.projectRoot();
@@ -83,7 +83,7 @@ contract L2NounsVotingVerifier is TokenVerifierTest {
         address delegate = 0x05A1ff0a32bc24265BCB39499d0c5D9A6cb2011c;
         address owner = 0x05A1ff0a32bc24265BCB39499d0c5D9A6cb2011c;
         uint256 tokenId = 1016;
-        vm.createSelectFork("https://mainnet.base.org", 21718459);
+        vm.createSelectFork(vm.rpcUrl("base"), 21718459);
         TokenVerifier verifier = new TokenVerifier(NOUNS_TOKEN_ADDRESS);
 
         string memory rootPath = vm.projectRoot();
@@ -113,7 +113,7 @@ contract L2NounsVotingVerifier is TokenVerifierTest {
         address delegate = 0x289715fFBB2f4b482e2917D2f183FeAb564ec84F;
         address owner = 0x05A1ff0a32bc24265BCB39499d0c5D9A6cb2011c;
         uint256 tokenId = 1016;
-        vm.createSelectFork("https://mainnet.base.org", 21718950);
+        vm.createSelectFork(vm.rpcUrl("base"), 21718950);
         TokenVerifier verifier = new TokenVerifier(NOUNS_TOKEN_ADDRESS);
 
         string memory rootPath = vm.projectRoot();

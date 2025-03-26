@@ -53,13 +53,13 @@
 |-----------------------------+---------------------------------+------+--------+-------+-------------------------------|
 | __gap                       | uint256[49]                     | 252  | 0      | 1568  | src/ERC721Flow.sol:ERC721Flow |
 |-----------------------------+---------------------------------+------+--------+-------+-------------------------------|
-| fs                          | struct FlowTypes.Storage        | 301  | 0      | 640   | src/ERC721Flow.sol:ERC721Flow |
+| fs                          | struct FlowTypes.Storage        | 301  | 0      | 704   | src/ERC721Flow.sol:ERC721Flow |
 |-----------------------------+---------------------------------+------+--------+-------+-------------------------------|
-| _childFlows                 | struct EnumerableSet.AddressSet | 321  | 0      | 64    | src/ERC721Flow.sol:ERC721Flow |
+| _childFlows                 | struct EnumerableSet.AddressSet | 323  | 0      | 64    | src/ERC721Flow.sol:ERC721Flow |
 |-----------------------------+---------------------------------+------+--------+-------+-------------------------------|
-| _childFlowsToUpdateFlowRate | struct EnumerableSet.AddressSet | 323  | 0      | 64    | src/ERC721Flow.sol:ERC721Flow |
+| _childFlowsToUpdateFlowRate | struct EnumerableSet.AddressSet | 325  | 0      | 64    | src/ERC721Flow.sol:ERC721Flow |
 |-----------------------------+---------------------------------+------+--------+-------+-------------------------------|
-| erc721Votes                 | contract IERC721Checkpointable  | 325  | 0      | 20    | src/ERC721Flow.sol:ERC721Flow |
+| erc721Votes                 | contract IERC721Checkpointable  | 327  | 0      | 20    | src/ERC721Flow.sol:ERC721Flow |
 ╰-----------------------------+---------------------------------+------+--------+-------+-------------------------------╯
 
 
@@ -93,11 +93,11 @@
 |-----------------------------+---------------------------------+------+--------+-------+-------------------|
 | __gap                       | uint256[49]                     | 252  | 0      | 1568  | src/Flow.sol:Flow |
 |-----------------------------+---------------------------------+------+--------+-------+-------------------|
-| fs                          | struct FlowTypes.Storage        | 301  | 0      | 640   | src/Flow.sol:Flow |
+| fs                          | struct FlowTypes.Storage        | 301  | 0      | 704   | src/Flow.sol:Flow |
 |-----------------------------+---------------------------------+------+--------+-------+-------------------|
-| _childFlows                 | struct EnumerableSet.AddressSet | 321  | 0      | 64    | src/Flow.sol:Flow |
+| _childFlows                 | struct EnumerableSet.AddressSet | 323  | 0      | 64    | src/Flow.sol:Flow |
 |-----------------------------+---------------------------------+------+--------+-------+-------------------|
-| _childFlowsToUpdateFlowRate | struct EnumerableSet.AddressSet | 323  | 0      | 64    | src/Flow.sol:Flow |
+| _childFlowsToUpdateFlowRate | struct EnumerableSet.AddressSet | 325  | 0      | 64    | src/Flow.sol:Flow |
 ╰-----------------------------+---------------------------------+------+--------+-------+-------------------╯
 
 
@@ -543,12 +543,28 @@
 |-----------------------------+---------------------------------+------+--------+-------+-----------------------------|
 | __gap                       | uint256[49]                     | 252  | 0      | 1568  | src/NounsFlow.sol:NounsFlow |
 |-----------------------------+---------------------------------+------+--------+-------+-----------------------------|
-| fs                          | struct FlowTypes.Storage        | 301  | 0      | 640   | src/NounsFlow.sol:NounsFlow |
+| fs                          | struct FlowTypes.Storage        | 301  | 0      | 704   | src/NounsFlow.sol:NounsFlow |
 |-----------------------------+---------------------------------+------+--------+-------+-----------------------------|
-| _childFlows                 | struct EnumerableSet.AddressSet | 321  | 0      | 64    | src/NounsFlow.sol:NounsFlow |
+| _childFlows                 | struct EnumerableSet.AddressSet | 323  | 0      | 64    | src/NounsFlow.sol:NounsFlow |
 |-----------------------------+---------------------------------+------+--------+-------+-----------------------------|
-| _childFlowsToUpdateFlowRate | struct EnumerableSet.AddressSet | 323  | 0      | 64    | src/NounsFlow.sol:NounsFlow |
+| _childFlowsToUpdateFlowRate | struct EnumerableSet.AddressSet | 325  | 0      | 64    | src/NounsFlow.sol:NounsFlow |
 |-----------------------------+---------------------------------+------+--------+-------+-----------------------------|
-| verifier                    | contract ITokenVerifier         | 325  | 0      | 20    | src/NounsFlow.sol:NounsFlow |
+| verifier                    | contract ITokenVerifier         | 327  | 0      | 20    | src/NounsFlow.sol:NounsFlow |
 ╰-----------------------------+---------------------------------+------+--------+-------+-----------------------------╯
+
+
+=======================
+➡ FlowStorageV1
+=======================
+
+
+╭-----------------------------+---------------------------------+------+--------+-------+---------------------------------------------╮
+| Name                        | Type                            | Slot | Offset | Bytes | Contract                                    |
++=====================================================================================================================================+
+| fs                          | struct FlowTypes.Storage        | 0    | 0      | 704   | src/storage/FlowStorageV1.sol:FlowStorageV1 |
+|-----------------------------+---------------------------------+------+--------+-------+---------------------------------------------|
+| _childFlows                 | struct EnumerableSet.AddressSet | 22   | 0      | 64    | src/storage/FlowStorageV1.sol:FlowStorageV1 |
+|-----------------------------+---------------------------------+------+--------+-------+---------------------------------------------|
+| _childFlowsToUpdateFlowRate | struct EnumerableSet.AddressSet | 24   | 0      | 64    | src/storage/FlowStorageV1.sol:FlowStorageV1 |
+╰-----------------------------+---------------------------------+------+--------+-------+---------------------------------------------╯
 

@@ -374,4 +374,85 @@ contract VotingFlowTest is ERC721FlowTest {
         // check that recipient2 flow rate has gone down
         assertLt(Flow(recipient2).getTotalFlowRate(), recipient2FlowRate);
     }
+
+    function testTotalActiveVoteWeightUpdatesCorrectly() public {
+        // Initial setup
+        uint256 tokenId1 = 1;
+        uint256 tokenId2 = 2;
+        address voter1 = address(0x123);
+        address voter2 = address(0x456);
+
+        address recipient = address(2);
+        address recipient2 = address(1);
+        vm.startPrank(manager);
+        bytes32 recipientId = keccak256(abi.encodePacked(recipient));
+        bytes32 recipientId2 = keccak256(abi.encodePacked(recipient2));
+        flow.addRecipient(recipientId, recipient, recipientMetadata);
+        flow.addRecipient(recipientId2, recipient2, recipientMetadata);
+        vm.stopPrank();
+
+        // Mint tokens to voters using nounsToken instead of erc721
+        nounsToken.mint(voter1, tokenId1);
+        nounsToken.mint(voter2, tokenId2);
+
+        // Initial total active vote weight should be zero
+        assertEq(flow.totalActiveVoteWeight(), 0);
+
+        // First voter casts votes
+        bytes32[] memory recipientIds = new bytes32[](1);
+        recipientIds[0] = recipientId;
+        uint32[] memory percentAllocations = new uint32[](1);
+        percentAllocations[0] = 1e6; // 100%
+        uint256[] memory tokenIds = new uint256[](1);
+        tokenIds[0] = tokenId1;
+
+        vm.prank(voter1);
+        flow.castVotes(tokenIds, recipientIds, percentAllocations);
+
+        // After first vote, total active vote weight should increase by tokenVoteWeight
+        assertEq(flow.totalActiveVoteWeight(), flow.tokenVoteWeight());
+
+        // Same voter casts votes again, total active vote weight should not change
+        vm.prank(voter1);
+        flow.castVotes(tokenIds, recipientIds, percentAllocations);
+
+        assertEq(flow.totalActiveVoteWeight(), flow.tokenVoteWeight());
+
+        // Second voter casts votes
+        tokenIds[0] = tokenId2;
+        vm.prank(voter2);
+        flow.castVotes(tokenIds, recipientIds, percentAllocations);
+
+        // After second voter votes, total active vote weight should increase again
+        assertEq(flow.totalActiveVoteWeight(), flow.tokenVoteWeight() * 2);
+
+        // Change votes from recipient1 to recipient2 for voter1
+        recipientIds[0] = recipientId2;
+        tokenIds[0] = tokenId1;
+
+        vm.prank(voter1);
+        flow.castVotes(tokenIds, recipientIds, percentAllocations);
+
+        // Ensure total active vote weight remains unchanged after changing votes
+        assertEq(flow.totalActiveVoteWeight(), flow.tokenVoteWeight() * 2);
+
+        // Voter1 casts votes again, switching back to recipient1
+        recipientIds[0] = recipientId;
+        tokenIds[0] = tokenId1;
+
+        vm.prank(voter1);
+        flow.castVotes(tokenIds, recipientIds, percentAllocations);
+
+        // Ensure total active vote weight remains unchanged after switching votes again
+        assertEq(flow.totalActiveVoteWeight(), flow.tokenVoteWeight() * 2);
+
+        // Voter1 casts votes again, switching back to recipient2
+        recipientIds[0] = recipientId2;
+
+        vm.prank(voter1);
+        flow.castVotes(tokenIds, recipientIds, percentAllocations);
+
+        // Ensure total active vote weight remains unchanged after another vote switch
+        assertEq(flow.totalActiveVoteWeight(), flow.tokenVoteWeight() * 2);
+    }
 }

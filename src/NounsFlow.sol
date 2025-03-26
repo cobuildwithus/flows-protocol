@@ -207,4 +207,20 @@ contract NounsFlow is INounsFlow, Flow {
         if (_verifier == address(0)) revert ADDRESS_ZERO();
         verifier = ITokenVerifier(_verifier);
     }
+
+    /**
+     * @notice Function to calculate the total vote weight based on days since August 8th, 2021
+     * @dev Assumes one noun minted per day since August 8th, 2021
+     * @dev Every 10th noun is automatically minted to founders without additional time delay
+     * @return uint256 The total vote weight calculated from days elapsed
+     */
+    function totalTokenSupplyVoteWeight() public view override returns (uint256) {
+        uint256 firstAuctionStartSeconds = 1628399590;
+        uint256 daysSinceStart = (block.timestamp - firstAuctionStartSeconds) / 1 days;
+        // +1 because the first auction started on 8th August 2021
+        // and also minted the 0th noun that day
+        uint256 founderNouns = (daysSinceStart / 10) + 1;
+        uint256 totalNouns = daysSinceStart + founderNouns;
+        return totalNouns * fs.tokenVoteWeight;
+    }
 }

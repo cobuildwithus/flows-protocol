@@ -11,7 +11,7 @@ import { IStateProof } from "../../src/interfaces/IStateProof.sol";
 contract L2NounsOwnershipVerifierTest is TokenVerifierTest {
     function test__isOwner() public {
         uint256 tokenId = 256;
-        vm.createSelectFork("https://mainnet.base.org", 19354086);
+        vm.createSelectFork(vm.rpcUrl("base"), 19354086);
         TokenVerifier verifier = new TokenVerifier(NOUNS_TOKEN_ADDRESS);
         string memory rootPath = vm.projectRoot();
         string memory path = string.concat(rootPath, "/test/proof-data/_owners/", vm.toString(tokenId), ".json");
@@ -28,7 +28,7 @@ contract L2NounsOwnershipVerifierTest is TokenVerifierTest {
 
     function test__isNotOwner() public {
         uint256 tokenId = 256;
-        vm.createSelectFork("https://mainnet.base.org", 19354086);
+        vm.createSelectFork(vm.rpcUrl("base"), 19354086);
         TokenVerifier verifier = new TokenVerifier(NOUNS_TOKEN_ADDRESS);
         string memory rootPath = vm.projectRoot();
         string memory path = string.concat(rootPath, "/test/proof-data/_owners/", vm.toString(tokenId), ".json");

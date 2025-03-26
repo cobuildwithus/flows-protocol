@@ -176,6 +176,11 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             // update total active vote weight
             fs.totalActiveVoteWeight += fs.tokenVoteWeight;
             fs.tokenHasVoted[tokenId] = true;
+
+            if (fs.bonusPoolQuorum.quorumBps > 0) {
+                // since new votes affects quorum based bonus pool, we need to update the flow rate
+                _setFlowRate(getTotalFlowRate());
+            }
         }
 
         // update member units for previous votes

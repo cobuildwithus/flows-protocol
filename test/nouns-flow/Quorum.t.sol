@@ -6,7 +6,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract QuorumTest is NounsFlowTest {
     function test_totalTokenSupplyVoteWeight() public {
         _setUp();
-        vm.createSelectFork("https://mainnet.base.org");
+        vm.createSelectFork(vm.rpcUrl("base"));
 
         uint256 firstAuctionStartSeconds = 1628399590;
         uint256 daysSinceStart = (block.timestamp - firstAuctionStartSeconds) / 1 days;
@@ -21,14 +21,14 @@ contract QuorumTest is NounsFlowTest {
 
     function test_againstNounsContract() public {
         _setUp();
-        vm.createSelectFork("https://mainnet.base.org");
+        vm.createSelectFork(vm.rpcUrl("base"));
 
         uint256 computedVoteWeight = flow.totalTokenSupplyVoteWeight();
         uint256 tokenVoteWeight = flowParams.tokenVoteWeight;
 
         uint256 expectedTotalNouns = computedVoteWeight / tokenVoteWeight;
 
-        vm.createSelectFork("https://eth.llamarpc.com");
+        vm.createSelectFork(vm.rpcUrl("mainnet"));
 
         address nounsToken = address(0x9C8fF314C9Bc7F6e59A9d9225Fb22946427eDC03);
 

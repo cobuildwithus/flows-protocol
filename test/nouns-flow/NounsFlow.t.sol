@@ -106,7 +106,7 @@ contract NounsFlowTest is Test {
 
     function _setUpWithForkBlock(uint256 blockNumber) public virtual {
         _setUp();
-        vm.createSelectFork("https://mainnet.base.org", blockNumber);
+        vm.createSelectFork(vm.rpcUrl("base"), blockNumber);
     }
 
     function _setUp() public virtual {

@@ -170,12 +170,9 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             // so we need to reset child flow rates
             childFlowsToUpdate = 10;
             _setChildrenAsNeedingUpdates(address(0));
-        }
 
-        if (!fs.tokenHasVoted[tokenId]) {
             // update total active vote weight
             fs.totalActiveVoteWeight += fs.tokenVoteWeight;
-            fs.tokenHasVoted[tokenId] = true;
 
             if (fs.bonusPoolQuorum.quorumBps > 0) {
                 // since new votes affects quorum based bonus pool, we need to update the flow rate

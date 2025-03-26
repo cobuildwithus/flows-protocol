@@ -62,6 +62,10 @@ contract NounsFlowTest is Test {
 
         _transferTestTokenToFlow(flowProxy, 10_000 * 10 ** 18); //10k usdc a month to start
 
+        // so we have nouns available
+        // in the total vote weight supply function
+        vm.warp(1628399590);
+
         // set small flow rate
         vm.prank(manager);
         IFlow(flowProxy).setFlowRate(385 * 10 ** 13); // 0.00385 tokens per second
@@ -101,7 +105,11 @@ contract NounsFlowTest is Test {
     }
 
     function _setUpWithForkBlock(uint256 blockNumber) public virtual {
-        vm.createSelectFork("https://mainnet.base.org", blockNumber);
+        _setUp();
+        vm.createSelectFork(vm.rpcUrl("base"), blockNumber);
+    }
+
+    function _setUp() public virtual {
         flowMetadata = FlowTypes.RecipientMetadata({
             title: "Test Flow",
             description: "A test flow",

@@ -11,7 +11,7 @@ import { MacroForwarder, IUserDefinedMacro } from "@superfluid-finance/ethereum-
 
 contract BulkWithdrawTest is Test {
     function test_bulkPoolWithdraw() public {
-        vm.createSelectFork("https://mainnet.base.org", 21080872);
+        vm.createSelectFork(vm.rpcUrl("base"), 21080872);
 
         address bulkPoolWithdraw = address(new BulkPoolWithdraw());
 

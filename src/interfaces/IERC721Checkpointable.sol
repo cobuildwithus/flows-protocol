@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.28;
 
-import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import { IERC721Enumerable } from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 
 /// @title IERC721Checkpointable
 /// @notice A limited version of the ERC721Checkpointable interface from the nouns-monorepo
 /// @dev This interface is specifically designed for the NounsToken used by the Nouns DAO on Ethereum mainnet.
-interface IERC721Checkpointable is IERC721 {
+interface IERC721Checkpointable is IERC721Enumerable {
     /// @notice Get the current number of votes for an account
     /// @param account The address of the account to check
     /// @return The number of votes as a uint96

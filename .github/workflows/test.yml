@@ -38,6 +38,11 @@ jobs:
             echo "Error: RPC_BASE environment variable is not set"
             exit 1
           fi
+          echo "RPC_MAINNET=${{ secrets.RPC_MAINNET }}" >> $GITHUB_ENV
+          if [ -z "${{ secrets.RPC_MAINNET }}" ]; then
+            echo "Error: RPC_MAINNET environment variable is not set"
+            exit 1
+          fi
 
       - name: Run Forge build
         run: |

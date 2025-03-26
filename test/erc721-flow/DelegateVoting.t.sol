@@ -4,7 +4,6 @@ pragma solidity ^0.8.28;
 import { ERC721FlowTest } from "./ERC721Flow.t.sol";
 import { IFlowEvents, IFlow } from "../../src/interfaces/IFlow.sol";
 import { Flow } from "../../src/Flow.sol";
-import { MockERC721 } from "../mocks/MockERC721.sol";
 import { console } from "forge-std/console.sol";
 
 contract DelegateVotingTest is ERC721FlowTest {

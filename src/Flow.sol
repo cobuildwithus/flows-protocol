@@ -838,6 +838,15 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
+     * @notice Backfills the total active vote weight
+     * @param totalActive The total active vote weight to set
+     * @dev Only callable by the owner - to be removed immediately after running
+     */
+    function backfillActiveVotes(uint256 totalActive) external onlyOwner {
+        fs.totalActiveVoteWeight = totalActive;
+    }
+
+    /**
      * @notice Ensures the caller is authorized to upgrade the contract
      * @param _newImpl The new implementation address
      */

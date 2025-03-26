@@ -40,7 +40,7 @@ contract ERC721FlowTest is Test {
 
     function deployFlow(address erc721, address superTokenAddress) internal returns (ERC721Flow) {
         address flowProxy = address(new ERC1967Proxy(flowImpl, ""));
-        dummyRewardPool = deployRewardPool(superTokenAddress, manager, address(flowProxy));
+        dummyRewardPool = deployRewardPool(superTokenAddress, manager, address(flowProxy), address(manager));
 
         vm.prank(address(manager));
         IERC721Flow(flowProxy).initialize({
@@ -85,7 +85,8 @@ contract ERC721FlowTest is Test {
     function deployRewardPool(
         address superTokenAddress,
         address poolManager,
-        address flowAddress
+        address flowAddress,
+        address initialOwner
     ) internal returns (RewardPool) {
         // Deploy the implementation contract
         address rewardPoolImpl = address(new RewardPool());
@@ -94,7 +95,7 @@ contract ERC721FlowTest is Test {
         address rewardPoolProxy = address(new ERC1967Proxy(rewardPoolImpl, ""));
 
         // Initialize the proxy
-        IRewardPool(rewardPoolProxy).initialize(ISuperToken(superTokenAddress), poolManager, flowAddress);
+        IRewardPool(rewardPoolProxy).initialize(ISuperToken(superTokenAddress), poolManager, flowAddress, initialOwner);
 
         return RewardPool(rewardPoolProxy);
     }

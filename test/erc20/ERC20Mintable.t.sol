@@ -63,7 +63,7 @@ contract ERC20MintableTest is Test {
         address flow = address(0x1); //todo update if needed
 
         // Initialize the RewardPool
-        rewardPool.initialize(ISuperToken(address(superToken)), tokenProxy, flow);
+        rewardPool.initialize(ISuperToken(address(superToken)), tokenProxy, flow, owner);
 
         // Initialize the token
         vm.prank(owner);

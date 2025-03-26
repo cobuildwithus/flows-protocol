@@ -13,8 +13,9 @@ interface IRewardPool {
      * @param superToken The address of the SuperToken to be used
      * @param manager The address of the manager of the pool
      * @param funder The address of the funder of the pool
+     * @param initialOwner The address of the initial owner of the pool
      */
-    function initialize(ISuperToken superToken, address manager, address funder) external;
+    function initialize(ISuperToken superToken, address manager, address funder, address initialOwner) external;
 
     /**
      * @notice Allows the admin or owner to update the flow rate of the pool

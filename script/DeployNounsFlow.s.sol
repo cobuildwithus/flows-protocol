@@ -193,7 +193,8 @@ contract DeployNounsFlow is DeployScript {
         IRewardPool(rewardPool).initialize({
             superToken: ISuperToken(superToken),
             manager: erc20Mintable,
-            funder: nounsFlow
+            funder: nounsFlow,
+            initialOwner: initialOwner
         });
 
         address[] memory ignoreRewardsAddresses = new address[](2);

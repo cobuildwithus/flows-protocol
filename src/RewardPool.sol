@@ -38,7 +38,7 @@ contract RewardPool is UUPSUpgradeable, Ownable2StepUpgradeable, ReentrancyGuard
 
     /// The Superfluid pool configuration
     PoolConfig public poolConfig =
-        PoolConfig({ transferabilityForUnitsOwner: false, distributionFromAnyAddress: false });
+        PoolConfig({ transferabilityForUnitsOwner: false, distributionFromAnyAddress: true });
 
     error ADDRESS_ZERO();
     error FLOW_RATE_NEGATIVE();
@@ -52,11 +52,18 @@ contract RewardPool is UUPSUpgradeable, Ownable2StepUpgradeable, ReentrancyGuard
      * @param _superToken The address of the SuperToken to be used
      * @param _manager The address of the manager of the pool
      * @param _funder The address of the funder of the pool (usually the Flow contract)
+     * @param _initialOwner The address of the initial owner of the pool
      */
-    function initialize(ISuperToken _superToken, address _manager, address _funder) public initializer {
+    function initialize(
+        ISuperToken _superToken,
+        address _manager,
+        address _funder,
+        address _initialOwner
+    ) public initializer {
         if (address(_superToken) == address(0)) revert ADDRESS_ZERO();
         if (_manager == address(0)) revert ADDRESS_ZERO();
         if (_funder == address(0)) revert ADDRESS_ZERO();
+        if (_initialOwner == address(0)) revert ADDRESS_ZERO();
 
         __Ownable2Step_init();
         __ReentrancyGuard_init();
@@ -64,6 +71,8 @@ contract RewardPool is UUPSUpgradeable, Ownable2StepUpgradeable, ReentrancyGuard
         manager = _manager;
         funder = _funder;
         rewardPool = superToken.createPool(address(this), poolConfig);
+
+        _transferOwnership(_initialOwner);
     }
 
     /**

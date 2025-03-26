@@ -116,6 +116,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param tokenId The tokenId whose previous votes are to be cleared.
      * @dev This function resets the member units for all recipients that the tokenId has previously voted for.
      * It should be called before setting new votes to ensure accurate vote allocations.
+     * Note - Important - only ever delete votes for a tokenId right before adding them back, otherwise you will have to
+     * manually update the total active vote weight
      */
     function _clearPreviousVotes(uint256 tokenId) internal returns (uint256 childFlowsToUpdate) {
         VoteAllocation[] memory allocations = fs.votes[tokenId];

@@ -5,7 +5,7 @@ import { FlowTCRTest } from "./FlowTCR.t.sol";
 import { IGeneralizedTCR } from "../../src/tcr/interfaces/IGeneralizedTCR.sol";
 import { IArbitrable } from "../../src/tcr/interfaces/IArbitrable.sol";
 import { IArbitrator } from "../../src/tcr/interfaces/IArbitrator.sol";
-import { FlowTypes } from "../../src/storage/FlowStorageV1.sol";
+import { FlowTypes } from "../../src/storage/FlowStorage.sol";
 
 contract BasicTCRTest is FlowTCRTest {
     // Test Cases

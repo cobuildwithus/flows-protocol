@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 import { IArbitrator } from "../interfaces/IArbitrator.sol";
 import { IGeneralizedTCR } from "../interfaces/IGeneralizedTCR.sol";
 import { IArbitrable } from "../interfaces/IArbitrable.sol";
-import { FlowTypes } from "../../storage/FlowStorageV1.sol";
+import { FlowTypes } from "../../storage/FlowStorage.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IManagedFlow } from "../../interfaces/IManagedFlow.sol";
 import { ITCRFactory } from "../interfaces/ITCRFactory.sol";

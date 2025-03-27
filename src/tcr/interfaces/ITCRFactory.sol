@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import { IManagedFlow } from "../../interfaces/IManagedFlow.sol";
-import { FlowTypes } from "../../storage/FlowStorageV1.sol";
+import { FlowTypes } from "../../storage/FlowStorage.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperToken.sol";
 

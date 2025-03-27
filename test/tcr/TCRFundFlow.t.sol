@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import { FlowTCRTest } from "./FlowTCR.t.sol";
-import { FlowTypes } from "../../src/storage/FlowStorageV1.sol";
+import { FlowTypes } from "../../src/storage/FlowStorage.sol";
 import { IArbitrator } from "../../src/tcr/interfaces/IArbitrator.sol";
 import { IArbitrable } from "../../src/tcr/interfaces/IArbitrable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";

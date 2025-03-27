@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { FlowTypes } from "../storage/FlowStorageV1.sol";
+import { FlowTypes } from "../storage/FlowStorage.sol";
 import { IFlow } from "../interfaces/IFlow.sol";
 import { IRewardPool } from "../interfaces/IRewardPool.sol";
 
@@ -33,7 +33,7 @@ library FlowRates {
         // the max rate the bonus pool can have if it reaches full quorum
         int96 maxBonusFlowRate = _remainingFlowRate - _baselineFlowRate;
         // the quorum percentage
-        uint256 quorumBps = fs.bonusPoolQuorum.quorumBps;
+        uint256 quorumBps = fs.bonusPoolQuorumBps;
 
         // if quorum is 0 or total token supply vote weight is 0, return the max bonus flow rate
         // this is fine because when there are no votes the bonus pool is split evenly between recipients

@@ -3,7 +3,7 @@ pragma solidity ^0.8.27;
 
 import { IFlowEvents, IFlow } from "../../src/interfaces/IFlow.sol";
 import { Flow } from "../../src/Flow.sol";
-import { FlowTypes } from "../../src/storage/FlowStorageV1.sol";
+import { FlowTypes } from "../../src/storage/FlowStorage.sol";
 import { ERC721FlowTest } from "./ERC721Flow.t.sol";
 
 contract AddRecipientsTest is ERC721FlowTest {

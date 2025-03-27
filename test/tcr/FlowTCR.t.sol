@@ -12,7 +12,7 @@ import { IArbitrator } from "../../src/tcr/interfaces/IArbitrator.sol";
 import { IArbitrable } from "../../src/tcr/interfaces/IArbitrable.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { ArbitratorStorageV1 } from "../../src/tcr/storage/ArbitratorStorageV1.sol";
-import { FlowTypes } from "../../src/storage/FlowStorageV1.sol";
+import { FlowTypes } from "../../src/storage/FlowStorage.sol";
 import { IManagedFlow } from "../../src/interfaces/IManagedFlow.sol";
 import { IFlowTCR } from "../../src/tcr/interfaces/IGeneralizedTCR.sol";
 import { ERC721FlowTest } from "../erc721-flow/ERC721Flow.t.sol";

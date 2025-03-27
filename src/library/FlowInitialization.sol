@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { FlowTypes } from "../storage/FlowStorageV1.sol";
+import { FlowTypes } from "../storage/FlowStorage.sol";
 import { IFlow } from "../interfaces/IFlow.sol";
 
 import { PoolConfig, SuperTokenV1Library } from "@superfluid-finance/ethereum-contracts/contracts/apps/SuperTokenV1Library.sol";

@@ -15,7 +15,29 @@ contract TCRFundFlowTest is FlowTCRTest {
 
         address deployedFlow = address(0x0D4a25d07015ec7BdebF78f2937A617A86AF27Ff);
 
+        address softwareFlow = address(0x03bBF8812B0635774Bdf344C0DE33d94a057aA28);
+
         address nounsFlowImpl = address(new NounsFlow());
+
+        vm.prank(Flow(softwareFlow).owner());
+        Flow(softwareFlow).upgradeTo(nounsFlowImpl);
+        vm.prank(Flow(softwareFlow).owner());
+        Flow(softwareFlow).fixCorruptedSets(new address[](0));
+
+        uint256 softwareChildFlowsLength = Flow(softwareFlow).getChildFlows().length;
+        assertEq(softwareChildFlowsLength, 0);
+
+        vm.prank(Flow(softwareFlow).owner());
+        Flow(softwareFlow).backfillActiveVotes(28000 * 1e18);
+
+        uint256 outOfSync = Flow(softwareFlow).childFlowRatesOutOfSync();
+        assertEq(outOfSync, 0);
+
+        vm.prank(Flow(softwareFlow).owner());
+        Flow(softwareFlow).setBonusPoolQuorum(50000);
+
+        // top level flow
+
         // upgrade flow to current implementation
         vm.prank(Flow(deployedFlow).owner());
         Flow(deployedFlow).upgradeTo(nounsFlowImpl);
@@ -43,18 +65,21 @@ contract TCRFundFlowTest is FlowTCRTest {
         Flow(deployedFlow).fixCorruptedSets(staleAddresses);
 
         vm.prank(Flow(deployedFlow).owner());
-        Flow(deployedFlow).backfillActiveVotes(28000 * 1e18);
+        Flow(deployedFlow).backfillActiveVotes(44000 * 1e18);
 
         uint256 childFlowsLength = Flow(deployedFlow).getChildFlows().length;
         assertEq(childFlowsLength, 17);
 
-        uint256 outOfSync = Flow(deployedFlow).childFlowRatesOutOfSync();
-        assertEq(outOfSync, 0);
+        uint256 outOfSyncFlow = Flow(deployedFlow).childFlowRatesOutOfSync();
+        assertEq(outOfSyncFlow, 0);
 
         vm.prank(Flow(deployedFlow).owner());
         Flow(deployedFlow).setBonusPoolQuorum(50000);
 
-        // vm.prank(Flow(deployedFlow).owner());
-        // NounsFlow(deployedFlow).updateVerifier(0x08009Fcf85aF4724589706a22DDF2844607b8853);
+        vm.prank(Flow(deployedFlow).owner());
+        NounsFlow(deployedFlow).updateVerifier(0x08009Fcf85aF4724589706a22DDF2844607b8853);
+
+        vm.prank(Flow(softwareFlow).owner());
+        NounsFlow(softwareFlow).updateVerifier(0x08009Fcf85aF4724589706a22DDF2844607b8853);
     }
 }

@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { FlowStorageV1 } from "./storage/FlowStorageV1.sol";
+import { FlowStorageV2 } from "./storage/FlowStorage.sol";
 import { IFlow } from "./interfaces/IFlow.sol";
-import { IRewardPool } from "./interfaces/IRewardPool.sol";
 import { FlowRecipients } from "./library/FlowRecipients.sol";
 import { FlowVotes } from "./library/FlowVotes.sol";
 import { FlowPools } from "./library/FlowPools.sol";
@@ -19,7 +18,7 @@ import { ISuperToken, ISuperfluidPool } from "@superfluid-finance/ethereum-contr
 
 import { SuperTokenV1Library } from "@superfluid-finance/ethereum-contracts/contracts/apps/SuperTokenV1Library.sol";
 
-abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, FlowStorageV1 {
+abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, FlowStorageV2 {
     using SuperTokenV1Library for ISuperToken;
     using FlowRecipients for Storage;
     using FlowVotes for Storage;
@@ -174,9 +173,9 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             _setChildrenAsNeedingUpdates(address(0));
 
             // update total active vote weight
-            fs.totalActiveVoteWeight += fs.tokenVoteWeight;
+            fs2.totalActiveVoteWeight += fs.tokenVoteWeight;
 
-            if (fs.bonusPoolQuorum.quorumBps > 0) {
+            if (fs2.bonusPoolQuorum.quorumBps > 0) {
                 // since new votes affects quorum based bonus pool, we need to update the flow rate
                 shouldUpdateFlowRate = true;
             }
@@ -543,6 +542,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         if (_flowRate < 0) revert FLOW_RATE_NEGATIVE();
 
         (int96 baselineFlowRate, int96 bonusFlowRate, int96 managerRewardFlowRate) = fs.calculateFlowRates(
+            fs2,
             _flowRate,
             PERCENTAGE_SCALE,
             totalTokenSupplyVoteWeight()
@@ -584,9 +584,9 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     function setBonusPoolQuorum(uint32 _quorumBps) external onlyOwnerOrManager {
         if (_quorumBps > PERCENTAGE_SCALE) revert INVALID_PERCENTAGE();
 
-        emit BonusPoolQuorumUpdated(fs.bonusPoolQuorum.quorumBps, _quorumBps);
+        emit BonusPoolQuorumUpdated(fs2.bonusPoolQuorum.quorumBps, _quorumBps);
 
-        fs.bonusPoolQuorum = BonusPoolQuorum(_quorumBps);
+        fs2.bonusPoolQuorum = BonusPoolQuorum(_quorumBps);
 
         _setFlowRate(getTotalFlowRate());
     }
@@ -819,7 +819,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @return uint256 The total active vote weight
      */
     function totalActiveVoteWeight() external view returns (uint256) {
-        return fs.totalActiveVoteWeight;
+        return fs2.totalActiveVoteWeight;
     }
 
     /**
@@ -853,7 +853,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @dev Only callable by the owner - to be removed immediately after running
      */
     function backfillActiveVotes(uint256 totalActive) external onlyOwner {
-        fs.totalActiveVoteWeight = totalActive;
+        fs2.totalActiveVoteWeight = totalActive;
     }
 
     /**

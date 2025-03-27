@@ -18,7 +18,7 @@ import { ERC1820RegistryCompiled } from "@superfluid-finance/ethereum-contracts/
 import { SuperfluidFrameworkDeployer } from "@superfluid-finance/ethereum-contracts/contracts/utils/SuperfluidFrameworkDeployer.sol";
 import { TestToken } from "@superfluid-finance/ethereum-contracts/contracts/utils/TestToken.sol";
 import { SuperToken } from "@superfluid-finance/ethereum-contracts/contracts/superfluid/SuperToken.sol";
-import { FlowTypes } from "../../src/storage/FlowStorageV1.sol";
+import { FlowTypes } from "../../src/storage/FlowStorage.sol";
 import { RewardPool } from "../../src/RewardPool.sol";
 import { IRewardPool } from "../../src/interfaces/IRewardPool.sol";
 

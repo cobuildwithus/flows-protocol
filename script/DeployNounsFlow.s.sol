@@ -8,7 +8,7 @@ import { RewardPool } from "../src/RewardPool.sol";
 import { TCRFactory } from "../src/tcr/TCRFactory.sol";
 import { FlowTCR } from "../src/tcr/FlowTCR.sol";
 import { IFlow } from "../src/interfaces/IFlow.sol";
-import { FlowTypes } from "../src/storage/FlowStorageV1.sol";
+import { FlowTypes } from "../src/storage/FlowStorage.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { TokenVerifier } from "../src/state-proof/TokenVerifier.sol";
 import { GeneralizedTCRStorageV1 } from "../src/tcr/storage/GeneralizedTCRStorageV1.sol";

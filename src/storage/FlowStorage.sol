@@ -89,6 +89,9 @@ interface FlowTypes {
         mapping(uint256 => address) voters;
         // The cached flow rate
         int96 cachedFlowRate;
+    }
+
+    struct StorageV2 {
         /*
          * Flow Rate Quorum
          */
@@ -124,4 +127,11 @@ contract FlowStorageV1 is FlowTypes {
     // The enumerable list of child flow contracts needing flow rate updates
     /// @dev Heed warning above
     EnumerableSet.AddressSet internal _childFlowsToUpdateFlowRate;
+}
+
+/// @notice Flow Storage V2
+/// @author rocketman
+/// @notice The Flow storage contract
+contract FlowStorageV2 is FlowStorageV1 {
+    StorageV2 public fs2;
 }

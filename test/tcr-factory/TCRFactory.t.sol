@@ -12,7 +12,7 @@ import { ITCRFactory } from "../../src/tcr/interfaces/ITCRFactory.sol";
 import { IManagedFlow } from "../../src/interfaces/IManagedFlow.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IArbitrator } from "../../src/tcr/interfaces/IArbitrator.sol";
-import { FlowTypes } from "../../src/storage/FlowStorageV1.sol";
+import { FlowTypes } from "../../src/storage/FlowStorage.sol";
 import { TokenEmitter } from "../../src/TokenEmitter.sol";
 import { ProtocolRewards } from "../../src/protocol-rewards/ProtocolRewards.sol";
 import { RewardPool } from "../../src/RewardPool.sol";

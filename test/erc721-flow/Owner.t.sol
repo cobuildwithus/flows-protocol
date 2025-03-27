@@ -5,7 +5,7 @@ import { ERC721FlowTest } from "./ERC721Flow.t.sol";
 import { IFlow } from "../../src/interfaces/IFlow.sol";
 import { Flow } from "../../src/Flow.sol";
 import { ERC721Flow } from "../../src/ERC721Flow.sol";
-import { FlowTypes } from "../../src/storage/FlowStorageV1.sol";
+import { FlowTypes } from "../../src/storage/FlowStorage.sol";
 
 contract OwnerFlowTest is ERC721FlowTest {
     function setUp() public override {

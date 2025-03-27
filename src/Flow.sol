@@ -872,6 +872,14 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         }
     }
 
+    /// @notice Reinitialize corrupted sets (to be called by owner/upgrade admin only).
+    function reinitializeChildFlowSets() external {
+        assembly {
+            sstore(_childFlows.slot, 0)
+            sstore(_childFlowsToUpdateFlowRate.slot, 0)
+        }
+    }
+
     /**
      * @notice Ensures the caller is authorized to upgrade the contract
      * @param _newImpl The new implementation address

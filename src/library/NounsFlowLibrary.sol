@@ -48,7 +48,8 @@ library NounsFlowLibrary {
             flowParams: IFlow.FlowParams({
                 tokenVoteWeight: fs.tokenVoteWeight,
                 baselinePoolFlowRatePercent: fs.baselinePoolFlowRatePercent,
-                managerRewardPoolFlowRatePercent: managerRewardPoolFlowRatePercent
+                managerRewardPoolFlowRatePercent: managerRewardPoolFlowRatePercent,
+                bonusPoolQuorumBps: fs.bonusPoolQuorumBps
             }),
             metadata: metadata
         });

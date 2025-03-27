@@ -79,6 +79,7 @@ contract DeployNounsFlow is DeployScript {
         uint256 founderRewardDuration = vm.envUint("FOUNDER_REWARD_DURATION");
         int256 priceDecayPercent = int256(vm.envUint("PRICE_DECAY_PERCENT"));
         int256 perTimeUnit = int256(vm.envUint("PER_TIME_UNIT"));
+        uint32 bonusPoolQuorumBps = uint32(vm.envUint("BONUS_POOL_QUORUM_BPS"));
 
         // Deploy NounsFlow implementation
         NounsFlow nounsFlowImpl = new NounsFlow();
@@ -145,7 +146,8 @@ contract DeployNounsFlow is DeployScript {
             flowParams: IFlow.FlowParams({
                 tokenVoteWeight: tokenVoteWeight,
                 baselinePoolFlowRatePercent: baselinePoolFlowRatePercent,
-                managerRewardPoolFlowRatePercent: managerRewardPoolFlowRatePercent
+                managerRewardPoolFlowRatePercent: managerRewardPoolFlowRatePercent,
+                bonusPoolQuorumBps: bonusPoolQuorumBps
             }),
             metadata: FlowTypes.RecipientMetadata({
                 title: "Nouns Flow",

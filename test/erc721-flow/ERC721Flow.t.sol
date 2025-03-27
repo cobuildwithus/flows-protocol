@@ -127,7 +127,8 @@ contract ERC721FlowTest is Test {
         flowParams = IFlow.FlowParams({
             tokenVoteWeight: 1e18 * 1000, // Example token vote weight
             baselinePoolFlowRatePercent: 5000, // 1000 BPS
-            managerRewardPoolFlowRatePercent: 1e6 / 10 // 10%
+            managerRewardPoolFlowRatePercent: 1e6 / 10, // 10%
+            bonusPoolQuorumBps: 1e6 / 20 // 5%
         });
 
         vm.etch(ERC1820RegistryCompiled.at, ERC1820RegistryCompiled.bin);

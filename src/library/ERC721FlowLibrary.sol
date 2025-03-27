@@ -51,7 +51,8 @@ library ERC721FlowLibrary {
             flowParams: IFlow.FlowParams({
                 tokenVoteWeight: fs.tokenVoteWeight,
                 baselinePoolFlowRatePercent: fs.baselinePoolFlowRatePercent,
-                managerRewardPoolFlowRatePercent: newManagerRewardRate
+                managerRewardPoolFlowRatePercent: newManagerRewardRate,
+                bonusPoolQuorumBps: fs.bonusPoolQuorumBps
             }),
             metadata: metadata
         });

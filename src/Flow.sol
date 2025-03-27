@@ -175,7 +175,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             // update total active vote weight
             fs.totalActiveVoteWeight += fs.tokenVoteWeight;
 
-            if (fs.bonusPoolQuorum.quorumBps > 0) {
+            if (fs.bonusPoolQuorumBps > 0) {
                 // since new votes affects quorum based bonus pool, we need to update the flow rate
                 shouldUpdateFlowRate = true;
             }
@@ -583,9 +583,9 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     function setBonusPoolQuorum(uint32 _quorumBps) external onlyOwnerOrManager {
         if (_quorumBps > PERCENTAGE_SCALE) revert INVALID_PERCENTAGE();
 
-        emit BonusPoolQuorumUpdated(fs.bonusPoolQuorum.quorumBps, _quorumBps);
+        emit BonusPoolQuorumUpdated(fs.bonusPoolQuorumBps, _quorumBps);
 
-        fs.bonusPoolQuorum = BonusPoolQuorum(_quorumBps);
+        fs.bonusPoolQuorumBps = _quorumBps;
 
         _setFlowRate(getTotalFlowRate());
     }

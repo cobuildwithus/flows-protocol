@@ -134,4 +134,6 @@ contract FlowStorageV1 is FlowTypes {
 /// @notice The Flow storage contract
 contract FlowStorageV2 is FlowStorageV1 {
     StorageV2 public fs2;
+
+    // add gaps here if you plan on adding new storage variables after fs2
 }

@@ -14,7 +14,6 @@ library FlowRates {
     /**
      * @notice Calculates the bonus flow rate based on quorum and active votes
      * @param fs The storage of the Flow contract
-     * @param fs2 The v2 storage of the Flow contract
      * @param _flowRate The desired total flow rate for the flow contract
      * @param _percentageScale The percentage scale used for calculations
      * @param _totalTokenSupplyVoteWeight The total token supply vote weight
@@ -25,7 +24,6 @@ library FlowRates {
      */
     function _calculateBonusFlowRate(
         FlowTypes.Storage storage fs,
-        FlowTypes.StorageV2 storage fs2,
         int96 _flowRate,
         uint256 _percentageScale,
         uint256 _totalTokenSupplyVoteWeight,
@@ -35,7 +33,7 @@ library FlowRates {
         // the max rate the bonus pool can have if it reaches full quorum
         int96 maxBonusFlowRate = _remainingFlowRate - _baselineFlowRate;
         // the quorum percentage
-        uint256 quorumBps = fs2.bonusPoolQuorum.quorumBps;
+        uint256 quorumBps = fs.bonusPoolQuorum.quorumBps;
 
         // if quorum is 0 or total token supply vote weight is 0, return the max bonus flow rate
         // this is fine because when there are no votes the bonus pool is split evenly between recipients
@@ -44,7 +42,7 @@ library FlowRates {
         }
 
         // how many votes have actually been cast
-        uint256 totalActiveVoteWeight = fs2.totalActiveVoteWeight;
+        uint256 totalActiveVoteWeight = fs.totalActiveVoteWeight;
 
         // how many votes are needed to reach quorum
         uint256 votesToReachQuorum = _scaleAmountByPercentage(_totalTokenSupplyVoteWeight, quorumBps, _percentageScale);
@@ -74,7 +72,6 @@ library FlowRates {
     /**
      * @notice Calculates the flow rates for the flow contract
      * @param fs The storage of the Flow contract
-     * @param fs2 The v2 storage of the Flow contract
      * @param _flowRate The desired flow rate for the flow contract
      * @param _percentageScale The percentage scale
      * @param _totalTokenSupplyVoteWeight The total token supply vote weight
@@ -84,7 +81,6 @@ library FlowRates {
      */
     function calculateFlowRates(
         FlowTypes.Storage storage fs,
-        FlowTypes.StorageV2 storage fs2,
         int96 _flowRate,
         uint256 _percentageScale,
         uint256 _totalTokenSupplyVoteWeight
@@ -110,7 +106,6 @@ library FlowRates {
 
         (bonusFlowRate, leftoverFlowRate) = _calculateBonusFlowRate(
             fs,
-            fs2,
             _flowRate,
             _percentageScale,
             _totalTokenSupplyVoteWeight,

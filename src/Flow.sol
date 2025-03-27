@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { FlowStorageV2 } from "./storage/FlowStorage.sol";
+import { FlowStorageV1 } from "./storage/FlowStorage.sol";
 import { IFlow } from "./interfaces/IFlow.sol";
 import { FlowRecipients } from "./library/FlowRecipients.sol";
 import { FlowVotes } from "./library/FlowVotes.sol";
@@ -18,7 +18,7 @@ import { ISuperToken, ISuperfluidPool } from "@superfluid-finance/ethereum-contr
 
 import { SuperTokenV1Library } from "@superfluid-finance/ethereum-contracts/contracts/apps/SuperTokenV1Library.sol";
 
-abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, FlowStorageV2 {
+abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, FlowStorageV1 {
     using SuperTokenV1Library for ISuperToken;
     using FlowRecipients for Storage;
     using FlowVotes for Storage;
@@ -173,9 +173,9 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             _setChildrenAsNeedingUpdates(address(0));
 
             // update total active vote weight
-            fs2.totalActiveVoteWeight += fs.tokenVoteWeight;
+            fs.totalActiveVoteWeight += fs.tokenVoteWeight;
 
-            if (fs2.bonusPoolQuorum.quorumBps > 0) {
+            if (fs.bonusPoolQuorum.quorumBps > 0) {
                 // since new votes affects quorum based bonus pool, we need to update the flow rate
                 shouldUpdateFlowRate = true;
             }
@@ -542,7 +542,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         if (_flowRate < 0) revert FLOW_RATE_NEGATIVE();
 
         (int96 baselineFlowRate, int96 bonusFlowRate, int96 managerRewardFlowRate) = fs.calculateFlowRates(
-            fs2,
             _flowRate,
             PERCENTAGE_SCALE,
             totalTokenSupplyVoteWeight()
@@ -584,9 +583,9 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     function setBonusPoolQuorum(uint32 _quorumBps) external onlyOwnerOrManager {
         if (_quorumBps > PERCENTAGE_SCALE) revert INVALID_PERCENTAGE();
 
-        emit BonusPoolQuorumUpdated(fs2.bonusPoolQuorum.quorumBps, _quorumBps);
+        emit BonusPoolQuorumUpdated(fs.bonusPoolQuorum.quorumBps, _quorumBps);
 
-        fs2.bonusPoolQuorum = BonusPoolQuorum(_quorumBps);
+        fs.bonusPoolQuorum = BonusPoolQuorum(_quorumBps);
 
         _setFlowRate(getTotalFlowRate());
     }
@@ -819,7 +818,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @return uint256 The total active vote weight
      */
     function totalActiveVoteWeight() external view returns (uint256) {
-        return fs2.totalActiveVoteWeight;
+        return fs.totalActiveVoteWeight;
     }
 
     /**
@@ -853,7 +852,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @dev Only callable by the owner - to be removed immediately after running
      */
     function backfillActiveVotes(uint256 totalActive) external onlyOwner {
-        fs2.totalActiveVoteWeight = totalActive;
+        fs.totalActiveVoteWeight = totalActive;
     }
 
     /**
@@ -873,10 +872,37 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /// @notice Reinitialize corrupted sets (to be called by owner/upgrade admin only).
-    function reinitializeChildFlowSets() external {
+    function fixCorruptedSets(address[] memory staleAddresses) external onlyOwner {
+        // Directly reset the storage of _childFlows (assume slotX) and _childFlowsToUpdateFlowRate (slotY)
+        uint256 slotX;
+        uint256 slotY;
         assembly {
-            sstore(_childFlows.slot, 0)
-            sstore(_childFlowsToUpdateFlowRate.slot, 0)
+            slotX := _childFlows.slot // get base slot of _childFlows
+            slotY := _childFlowsToUpdateFlowRate.slot // base slot of _childFlowsToUpdateFlowRate
+            sstore(slotX, 0) // reset length of _childFlows
+            sstore(add(slotX, 1), 0) // reset _childFlows mapping seed (optional)
+            sstore(slotY, 0) // reset length of _childFlowsToUpdateFlowRate
+            sstore(add(slotY, 1), 0) // reset mapping seed for _childFlowsToUpdateFlowRate
+        }
+        // Clear mapping entries for stale addresses in _childFlows:
+        for (uint i = 0; i < staleAddresses.length; ++i) {
+            bytes32 key = bytes32(uint256(uint160(staleAddresses[i])));
+            bytes32 mapSlot = keccak256(abi.encode(key, slotX + 1));
+            assembly {
+                sstore(mapSlot, 0)
+            }
+        }
+        // Clear mapping entries for stale addresses in _childFlowsToUpdateFlowRate:
+        for (uint i = 0; i < staleAddresses.length; ++i) {
+            bytes32 key = bytes32(uint256(uint160(staleAddresses[i])));
+            bytes32 mapSlot = keccak256(abi.encode(key, slotY + 1));
+            assembly {
+                sstore(mapSlot, 0)
+            }
+        }
+        // Re-add the addresses to the set (if we want to restore them):
+        for (uint i = 0; i < staleAddresses.length; ++i) {
+            EnumerableSet.add(_childFlows, staleAddresses[i]);
         }
     }
 

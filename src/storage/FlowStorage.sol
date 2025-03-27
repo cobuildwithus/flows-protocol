@@ -89,9 +89,6 @@ interface FlowTypes {
         mapping(uint256 => address) voters;
         // The cached flow rate
         int96 cachedFlowRate;
-    }
-
-    struct StorageV2 {
         /*
          * Flow Rate Quorum
          */
@@ -112,6 +109,9 @@ contract FlowStorageV1 is FlowTypes {
     /// without also changing the libraries that access them
     Storage public fs;
 
+    // gap so that we can use the same storage layout
+    uint256[100] private __gap;
+
     /// @notice constant to scale uints into percentages (1e6 == 100%)
     /// @dev Heed warning above
     uint32 public constant PERCENTAGE_SCALE = 1e6;
@@ -127,13 +127,4 @@ contract FlowStorageV1 is FlowTypes {
     // The enumerable list of child flow contracts needing flow rate updates
     /// @dev Heed warning above
     EnumerableSet.AddressSet internal _childFlowsToUpdateFlowRate;
-}
-
-/// @notice Flow Storage V2
-/// @author rocketman
-/// @notice The Flow storage contract
-contract FlowStorageV2 is FlowStorageV1 {
-    StorageV2 public fs2;
-
-    // add gaps here if you plan on adding new storage variables after fs2
 }

@@ -1,1 +1,1 @@
-StateVerifier TokenVerifier ERC721Flow Flow GeneralizedTCR FlowTCR ERC20VotesArbitrator ERC20VotesMintable TokenEmitter TCRFactory RewardPool NounsFlow FlowStorageV1 FlowStorageV2
+StateVerifier TokenVerifier ERC721Flow Flow GeneralizedTCR FlowTCR ERC20VotesArbitrator ERC20VotesMintable TokenEmitter TCRFactory RewardPool NounsFlow FlowStorageV1

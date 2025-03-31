@@ -856,59 +856,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
-     * @notice Upgrades all child flows to a new implementation
-     * @param newImplementation The address of the new implementation contract
-     */
-    function upgradeAllChildFlows(address newImplementation) external onlyOwner {
-        address[] memory flowsToUpdate = _childFlows.values();
-
-        for (uint256 i = 0; i < flowsToUpdate.length; i++) {
-            try Flow(flowsToUpdate[i]).upgradeTo(newImplementation) {
-                // Upgrade successful, continue to next flow
-            } catch {
-                // Upgrade failed
-            }
-        }
-    }
-
-    /// @notice Reinitialize corrupted sets (to be called by owner/upgrade admin only).
-    function fixCorruptedSets(address[] memory staleAddresses) external onlyOwner {
-        // Directly reset the storage of _childFlows (assume slotX) and _childFlowsToUpdateFlowRate (slotY)
-        uint256 slotX;
-        uint256 slotY;
-        assembly {
-            slotX := _childFlows.slot // get base slot of _childFlows
-            slotY := _childFlowsToUpdateFlowRate.slot // base slot of _childFlowsToUpdateFlowRate
-            sstore(slotX, 0) // reset length of _childFlows
-            sstore(add(slotX, 1), 0) // reset _childFlows mapping seed (optional)
-            sstore(slotY, 0) // reset length of _childFlowsToUpdateFlowRate
-            sstore(add(slotY, 1), 0) // reset mapping seed for _childFlowsToUpdateFlowRate
-        }
-        // Clear mapping entries for stale addresses in _childFlows:
-        for (uint i = 0; i < staleAddresses.length; ++i) {
-            bytes32 key = bytes32(uint256(uint160(staleAddresses[i])));
-            bytes32 mapSlot = keccak256(abi.encode(key, slotX + 1));
-            assembly {
-                sstore(mapSlot, 0)
-            }
-        }
-        // Clear mapping entries for stale addresses in _childFlowsToUpdateFlowRate:
-        for (uint i = 0; i < staleAddresses.length; ++i) {
-            bytes32 key = bytes32(uint256(uint160(staleAddresses[i])));
-            bytes32 mapSlot = keccak256(abi.encode(key, slotY + 1));
-            assembly {
-                sstore(mapSlot, 0)
-            }
-        }
-        // Re-add the addresses to the set (if we want to restore them):
-        for (uint i = 0; i < staleAddresses.length; ++i) {
-            EnumerableSet.add(_childFlows, staleAddresses[i]);
-        }
-    }
-
-    /**
      * @notice Ensures the caller is authorized to upgrade the contract
      * @param _newImpl The new implementation address
      */
-    function _authorizeUpgrade(address _newImpl) internal view override onlyOwnerOrParent {}
+    function _authorizeUpgrade(address _newImpl) internal view override onlyOwner {}
 }

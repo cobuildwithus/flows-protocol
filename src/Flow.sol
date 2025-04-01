@@ -847,17 +847,20 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
-     * @notice Backfills the total active vote weight
-     * @param totalActive The total active vote weight to set
-     * @dev Only callable by the owner - to be removed immediately after running
+     * @notice Upgrades all child flows to a new implementation
+     * @param newImplementation The address of the new implementation contract
      */
-    function backfillActiveVotes(uint256 totalActive) external onlyOwner {
-        fs.totalActiveVoteWeight = totalActive;
+    function upgradeAllChildFlows(address newImplementation) external onlyOwner {
+        address[] memory flowsToUpdate = _childFlows.values();
+
+        for (uint256 i = 0; i < flowsToUpdate.length; i++) {
+            Flow(flowsToUpdate[i]).upgradeTo(newImplementation);
+        }
     }
 
     /**
      * @notice Ensures the caller is authorized to upgrade the contract
      * @param _newImpl The new implementation address
      */
-    function _authorizeUpgrade(address _newImpl) internal view override onlyOwner {}
+    function _authorizeUpgrade(address _newImpl) internal view override onlyOwnerOrParent {}
 }

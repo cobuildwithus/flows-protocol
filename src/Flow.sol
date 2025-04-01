@@ -850,11 +850,11 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @notice Upgrades all child flows to a new implementation
      * @param newImplementation The address of the new implementation contract
      */
-    function upgradeAllChildFlows(address newImplementation) external onlyOwner {
+    function upgradeAllChildFlows() external onlyOwner {
         address[] memory flowsToUpdate = _childFlows.values();
 
         for (uint256 i = 0; i < flowsToUpdate.length; i++) {
-            Flow(flowsToUpdate[i]).upgradeTo(newImplementation);
+            Flow(flowsToUpdate[i]).upgradeTo(fs.flowImpl);
         }
     }
 

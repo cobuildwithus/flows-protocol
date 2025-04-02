@@ -51,7 +51,8 @@ library NounsFlowLibrary {
                 managerRewardPoolFlowRatePercent: managerRewardPoolFlowRatePercent,
                 bonusPoolQuorumBps: fs.bonusPoolQuorumBps
             }),
-            metadata: metadata
+            metadata: metadata,
+            sanctionsOracle: fs.sanctionsOracle
         });
 
         return recipient;

@@ -21,6 +21,7 @@ import { SuperToken } from "@superfluid-finance/ethereum-contracts/contracts/sup
 import { FlowTypes } from "../../src/storage/FlowStorage.sol";
 import { RewardPool } from "../../src/RewardPool.sol";
 import { IRewardPool } from "../../src/interfaces/IRewardPool.sol";
+import { IChainalysisSanctionsList } from "../../src/interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
 contract NounsFlowTest is Test {
     using stdJson for string;
@@ -57,7 +58,8 @@ contract NounsFlowTest is Test {
             managerRewardPool: address(rewardPool),
             parent: address(0),
             flowParams: flowParams,
-            metadata: flowMetadata
+            metadata: flowMetadata,
+            sanctionsOracle: IChainalysisSanctionsList(address(0))
         });
 
         _transferTestTokenToFlow(flowProxy, 10_000 * 10 ** 18); //10k usdc a month to start

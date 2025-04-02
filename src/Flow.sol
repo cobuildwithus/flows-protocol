@@ -18,6 +18,8 @@ import { ISuperToken, ISuperfluidPool } from "@superfluid-finance/ethereum-contr
 
 import { SuperTokenV1Library } from "@superfluid-finance/ethereum-contracts/contracts/apps/SuperTokenV1Library.sol";
 
+import { IChainalysisSanctionsList } from "./interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
+
 abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, FlowStorageV1 {
     using SuperTokenV1Library for ISuperToken;
     using FlowRecipients for Storage;
@@ -36,6 +38,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param _parent The address of the parent flow contract (optional)
      * @param _flowParams The parameters for the flow contract
      * @param _metadata The metadata for the flow contract
+     * @param _sanctionsOracle The address of the sanctions oracle
      */
     function __Flow_init(
         address _initialOwner,
@@ -45,7 +48,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         address _managerRewardPool,
         address _parent,
         FlowParams memory _flowParams,
-        RecipientMetadata memory _metadata
+        RecipientMetadata memory _metadata,
+        IChainalysisSanctionsList _sanctionsOracle
     ) public {
         fs.checkAndSetInitializationParams(
             _initialOwner,
@@ -77,6 +81,10 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             fs.baselinePoolFlowRatePercent,
             fs.managerRewardPoolFlowRatePercent
         );
+
+        fs.sanctionsOracle = _sanctionsOracle;
+
+        emit SanctionsOracleSet(address(_sanctionsOracle));
     }
 
     /**
@@ -215,6 +223,16 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
+     * @notice Revert if `sanctionsOracle` is set and `account` is sanctioned.
+     */
+    function _requireNotSanctioned(address account) internal view {
+        IChainalysisSanctionsList sanctionsOracle_ = fs.sanctionsOracle;
+        if (address(sanctionsOracle_) != address(0)) {
+            if (sanctionsOracle_.isSanctioned(account)) revert SANCTIONED_RECIPIENT();
+        }
+    }
+
+    /**
      * @notice Adds an address to the list of approved recipients
      * @param _recipientId The ID of the recipient. Must be unique and not already in use.
      * @param _recipient The address to be added as an approved recipient
@@ -228,6 +246,9 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         RecipientMetadata memory _metadata
     ) external onlyManager nonReentrant returns (bytes32, address) {
         (, address recipientAddress) = fs.addRecipient(_recipientId, _recipient, _metadata);
+
+        // check if recipient is sanctioned
+        _requireNotSanctioned(_recipient);
 
         emit RecipientCreated(_recipientId, fs.recipients[_recipientId], msg.sender);
 
@@ -627,6 +648,16 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
+     * @notice Set the sanctions oracle address.
+     * @dev Only callable by the owner.
+     */
+    function setSanctionsOracle(address newSanctionsOracle) public onlyOwnerOrParent {
+        fs.sanctionsOracle = IChainalysisSanctionsList(newSanctionsOracle);
+
+        emit SanctionsOracleSet(newSanctionsOracle);
+    }
+
+    /**
      * @notice Resets the flow rate to the current total flow rate
      * @dev This function is open to all and can be called to ensure the flow rate is up-to-date
      * @dev It calls the internal _setFlowRate function with the current total flow rate
@@ -854,6 +885,19 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
         for (uint256 i = 0; i < flowsToUpdate.length; i++) {
             Flow(flowsToUpdate[i]).upgradeTo(fs.flowImpl);
+        }
+    }
+
+    /**
+     * @notice Sets the sanctions oracle address for all child flows
+     * @param newSanctionsOracle The new sanctions oracle address to be set for all child flows
+     * @dev Only callable by the owner
+     */
+    function setAllChildFlowSanctionsOracle(address newSanctionsOracle) external onlyOwner {
+        address[] memory childFlows = _childFlows.values();
+
+        for (uint256 i = 0; i < childFlows.length; i++) {
+            Flow(childFlows[i]).setSanctionsOracle(newSanctionsOracle);
         }
     }
 

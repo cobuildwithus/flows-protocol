@@ -7,6 +7,7 @@ import { ERC721Flow } from "../../src/ERC721Flow.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { FlowTypes } from "../../src/storage/FlowStorage.sol";
 import { ISuperfluidPool } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/agreements/gdav1/ISuperfluidPool.sol";
+import { IChainalysisSanctionsList } from "../../src/interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
 contract BasicERC721FlowTest is ERC721FlowTest {
     function setUp() public override {
@@ -69,7 +70,8 @@ contract BasicERC721FlowTest is ERC721FlowTest {
             managerRewardPool: address(dummyRewardPool),
             parent: address(0),
             flowParams: flowParams,
-            metadata: flowMetadata
+            metadata: flowMetadata,
+            sanctionsOracle: IChainalysisSanctionsList(address(0))
         });
     }
 
@@ -93,7 +95,8 @@ contract BasicERC721FlowTest is ERC721FlowTest {
                 "Test Description",
                 "Test Tagline",
                 "https://example.com"
-            )
+            ),
+            sanctionsOracle: IChainalysisSanctionsList(address(0))
         });
 
         // Test initialization with zero address for _flowImpl
@@ -116,7 +119,8 @@ contract BasicERC721FlowTest is ERC721FlowTest {
                 "Test Description",
                 "Test Tagline",
                 "https://example.com"
-            )
+            ),
+            sanctionsOracle: IChainalysisSanctionsList(address(0))
         });
         flowImpl = originalFlowImpl;
 
@@ -136,7 +140,8 @@ contract BasicERC721FlowTest is ERC721FlowTest {
                 "Test Description",
                 "Test Tagline",
                 "https://example.com"
-            )
+            ),
+            IChainalysisSanctionsList(address(0))
         );
 
         // Test double initialization (should revert)
@@ -156,7 +161,8 @@ contract BasicERC721FlowTest is ERC721FlowTest {
                 "Test Description",
                 "Test Tagline",
                 "https://example.com"
-            )
+            ),
+            IChainalysisSanctionsList(address(0))
         );
     }
 

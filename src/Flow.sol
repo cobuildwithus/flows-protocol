@@ -642,7 +642,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @notice Set the sanctions oracle address.
      * @dev Only callable by the owner.
      */
-    function setSanctionsOracle(address newSanctionsOracle) public onlyOwner {
+    function setSanctionsOracle(address newSanctionsOracle) public onlyOwnerOrParent {
         fs.sanctionsOracle = IChainalysisSanctionsList(newSanctionsOracle);
 
         emit SanctionsOracleSet(newSanctionsOracle);

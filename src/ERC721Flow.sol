@@ -9,6 +9,7 @@ import { FlowVotes } from "./library/FlowVotes.sol";
 import { FlowRates } from "./library/FlowRates.sol";
 import { ERC721FlowLibrary } from "./library/ERC721FlowLibrary.sol";
 import { RewardPool } from "./RewardPool.sol";
+import { IChainalysisSanctionsList } from "./interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
 contract ERC721Flow is IERC721Flow, Flow {
     using FlowVotes for Storage;
@@ -29,7 +30,8 @@ contract ERC721Flow is IERC721Flow, Flow {
         address _managerRewardPool,
         address _parent,
         FlowParams calldata _flowParams,
-        RecipientMetadata calldata _metadata
+        RecipientMetadata calldata _metadata,
+        IChainalysisSanctionsList _sanctionsOracle
     ) public initializer {
         if (_nounsToken == address(0)) revert ADDRESS_ZERO();
 
@@ -43,7 +45,8 @@ contract ERC721Flow is IERC721Flow, Flow {
             _managerRewardPool,
             _parent,
             _flowParams,
-            _metadata
+            _metadata,
+            _sanctionsOracle
         );
     }
 

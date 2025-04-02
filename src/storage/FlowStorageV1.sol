@@ -8,6 +8,8 @@ import { ISuperfluidPool } from "@superfluid-finance/ethereum-contracts/contract
 import { PoolConfig } from "@superfluid-finance/ethereum-contracts/contracts/apps/SuperTokenV1Library.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
+import { IChainalysisSanctionsList } from "../interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
+
 interface FlowTypes {
     // Struct to hold the recipientId and their corresponding BPS for a vote
     struct VoteAllocation {
@@ -98,6 +100,8 @@ interface FlowTypes {
         uint256 totalActiveVoteWeight;
         // The quorum parameters to scale up the bonus pool based on vote weight
         BonusPoolQuorum bonusPoolQuorum;
+        // The sanctions oracle
+        IChainalysisSanctionsList sanctionsOracle;
     }
 }
 

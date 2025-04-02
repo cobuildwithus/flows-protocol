@@ -50,7 +50,8 @@ library NounsFlowLibrary {
                 baselinePoolFlowRatePercent: fs.baselinePoolFlowRatePercent,
                 managerRewardPoolFlowRatePercent: managerRewardPoolFlowRatePercent
             }),
-            metadata: metadata
+            metadata: metadata,
+            sanctionsOracle: fs.sanctionsOracle
         });
 
         return recipient;

@@ -9,6 +9,7 @@ import { IRewardPool } from "./interfaces/IRewardPool.sol";
 import { FlowVotes } from "./library/FlowVotes.sol";
 import { FlowRates } from "./library/FlowRates.sol";
 import { NounsFlowLibrary } from "./library/NounsFlowLibrary.sol";
+import { IChainalysisSanctionsList } from "./interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
 contract NounsFlow is INounsFlow, Flow {
     using FlowVotes for Storage;
@@ -28,7 +29,8 @@ contract NounsFlow is INounsFlow, Flow {
         address _managerRewardPool,
         address _parent,
         FlowParams calldata _flowParams,
-        RecipientMetadata calldata _metadata
+        RecipientMetadata calldata _metadata,
+        IChainalysisSanctionsList _sanctionsOracle
     ) public initializer {
         __Flow_init(
             _initialOwner,
@@ -38,7 +40,8 @@ contract NounsFlow is INounsFlow, Flow {
             _managerRewardPool,
             _parent,
             _flowParams,
-            _metadata
+            _metadata,
+            _sanctionsOracle
         );
 
         verifier = ITokenVerifier(_verifier);

@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import { FlowTypes } from "../storage/FlowStorageV1.sol";
 import { IManagedFlow } from "./IManagedFlow.sol";
+import { IChainalysisSanctionsList } from "./external/chainalysis/IChainalysisSanctionsList.sol";
 
 /**
  * @title IFlowEvents
@@ -82,6 +83,9 @@ interface IFlowEvents {
 
     /// @notice Emitted when the bonus pool quorum is updated
     event BonusPoolQuorumUpdated(uint32 oldBonusPoolQuorum, uint32 newBonusPoolQuorum);
+
+    /// @notice Emitted when the sanctions oracle is set
+    event SanctionsOracleSet(address indexed newSanctionsOracle);
 }
 
 /**
@@ -191,6 +195,9 @@ interface IFlow is IFlowEvents, IManagedFlow {
     /// @dev Reverts if pool connection fails
     error POOL_CONNECTION_FAILED();
 
+    /// @dev Reverts if recipient is sanctioned
+    error SANCTIONED_RECIPIENT();
+
     ///                                                          ///
     ///                         STRUCTS                          ///
     ///                                                          ///
@@ -252,6 +259,7 @@ interface IERC721Flow is IFlow {
      * @param parent The address of the parent flow contract (optional)
      * @param flowParams The parameters for the flow contract
      * @param metadata The metadata for the flow contract
+     * @param sanctionsOracle The address of the sanctions oracle
      */
     function initialize(
         address initialOwner,
@@ -262,7 +270,8 @@ interface IERC721Flow is IFlow {
         address managerRewardPool,
         address parent,
         FlowParams memory flowParams,
-        FlowTypes.RecipientMetadata memory metadata
+        FlowTypes.RecipientMetadata memory metadata,
+        IChainalysisSanctionsList sanctionsOracle
     ) external;
 }
 
@@ -281,6 +290,7 @@ interface INounsFlow is IFlow {
      * @param parent The address of the parent flow contract (optional)
      * @param flowParams The parameters for the flow contract
      * @param metadata The metadata for the flow contract
+     * @param sanctionsOracle The address of the sanctions oracle
      */
     function initialize(
         address initialOwner,
@@ -291,6 +301,7 @@ interface INounsFlow is IFlow {
         address managerRewardPool,
         address parent,
         FlowParams memory flowParams,
-        FlowTypes.RecipientMetadata memory metadata
+        FlowTypes.RecipientMetadata memory metadata,
+        IChainalysisSanctionsList sanctionsOracle
     ) external;
 }

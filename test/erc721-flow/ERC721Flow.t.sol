@@ -19,6 +19,7 @@ import { FlowTypes } from "../../src/storage/FlowStorageV1.sol";
 import { RewardPool } from "../../src/RewardPool.sol";
 import { IRewardPool } from "../../src/interfaces/IRewardPool.sol";
 import { BulkPoolWithdraw } from "../../src/macros/BulkPoolWithdraw.sol";
+import { IChainalysisSanctionsList } from "../../src/interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
 contract ERC721FlowTest is Test {
     SuperfluidFrameworkDeployer.Framework internal sf;
@@ -52,7 +53,8 @@ contract ERC721FlowTest is Test {
             managerRewardPool: address(dummyRewardPool),
             parent: address(0),
             flowParams: flowParams,
-            metadata: flowMetadata
+            metadata: flowMetadata,
+            sanctionsOracle: IChainalysisSanctionsList(address(0))
         });
 
         _transferTestTokenToFlow(flowProxy, 10_000 * 10 ** 18); //10k usdc a month to start

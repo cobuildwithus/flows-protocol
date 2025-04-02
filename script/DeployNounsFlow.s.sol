@@ -25,6 +25,7 @@ import { IERC20VotesArbitrator } from "../src/tcr/interfaces/IERC20VotesArbitrat
 import { TokenEmitter } from "../src/TokenEmitter.sol";
 import { ITokenEmitter } from "../src/interfaces/ITokenEmitter.sol";
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperToken.sol";
+import { IChainalysisSanctionsList } from "../src/interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
 contract DeployNounsFlow is DeployScript {
     address public nounsFlow;
@@ -79,6 +80,7 @@ contract DeployNounsFlow is DeployScript {
         uint256 founderRewardDuration = vm.envUint("FOUNDER_REWARD_DURATION");
         int256 priceDecayPercent = int256(vm.envUint("PRICE_DECAY_PERCENT"));
         int256 perTimeUnit = int256(vm.envUint("PER_TIME_UNIT"));
+        address sanctionsOracle = vm.envAddress("SANCTIONS_ORACLE");
 
         // Deploy NounsFlow implementation
         NounsFlow nounsFlowImpl = new NounsFlow();
@@ -153,7 +155,8 @@ contract DeployNounsFlow is DeployScript {
                 image: "ipfs://QmfZMtW2vDcdfH3TZdNAbMNm4Z1y16QHjuFwf8ff2NANAt",
                 tagline: "Earn a salary with Nouns.",
                 url: "https://flows.wtf"
-            })
+            }),
+            sanctionsOracle: IChainalysisSanctionsList(sanctionsOracle)
         });
 
         // Initialize FlowTCR

@@ -53,7 +53,8 @@ library ERC721FlowLibrary {
                 baselinePoolFlowRatePercent: fs.baselinePoolFlowRatePercent,
                 managerRewardPoolFlowRatePercent: newManagerRewardRate
             }),
-            metadata: metadata
+            metadata: metadata,
+            sanctionsOracle: fs.sanctionsOracle
         });
 
         return recipient;

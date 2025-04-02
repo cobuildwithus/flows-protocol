@@ -91,10 +91,10 @@ interface FlowTypes {
         // If in the future we let people clear their votes, or we support erc20 voting,
         // ensure that the total active vote weight is decremented correctly
         uint256 totalActiveVoteWeight;
-        // The sanctions oracle
-        IChainalysisSanctionsList sanctionsOracle;
         // The quorum parameters to scale up the bonus pool based on vote weight
         uint32 bonusPoolQuorumBps;
+        // The sanctions oracle
+        IChainalysisSanctionsList sanctionsOracle;
     }
 }
 

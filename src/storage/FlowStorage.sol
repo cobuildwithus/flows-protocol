@@ -35,13 +35,6 @@ interface FlowTypes {
         string url;
     }
 
-    // Struct to hold the bonus pool quorum parameters
-    struct BonusPoolQuorum {
-        // the % of the total vote weight that is required to reach full quorum
-        // and pay out the whole bonus pool
-        uint32 quorumBps;
-    }
-
     // Struct to handle potential recipients
     struct FlowRecipient {
         // the account to stream funds to
@@ -98,10 +91,10 @@ interface FlowTypes {
         // If in the future we let people clear their votes, or we support erc20 voting,
         // ensure that the total active vote weight is decremented correctly
         uint256 totalActiveVoteWeight;
-        // The quorum parameters to scale up the bonus pool based on vote weight
-        BonusPoolQuorum bonusPoolQuorum;
         // The sanctions oracle
         IChainalysisSanctionsList sanctionsOracle;
+        // The quorum parameters to scale up the bonus pool based on vote weight
+        uint32 bonusPoolQuorumBps;
     }
 }
 
@@ -112,6 +105,9 @@ contract FlowStorageV1 is FlowTypes {
     /// @dev Warning - don't update the slot / position of these variables in the FlowStorageV1 contract
     /// without also changing the libraries that access them
     Storage public fs;
+
+    // gap so that we can use the same storage layout
+    uint256[100] private __gap;
 
     /// @notice constant to scale uints into percentages (1e6 == 100%)
     /// @dev Heed warning above

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { FlowTypes } from "../storage/FlowStorageV1.sol";
+import { FlowTypes } from "../storage/FlowStorage.sol";
 import { ISuperfluidPool } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
 
 interface IManagedFlow {

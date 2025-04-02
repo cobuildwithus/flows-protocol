@@ -63,14 +63,22 @@ contract ERC721Flow is IERC721Flow, Flow {
     ) external nonReentrant {
         fs.validateVotes(recipientIds, percentAllocations, PERCENTAGE_SCALE);
 
-        uint256 flowsToUpdate = 0;
+        uint256 totalFlowsToUpdate = 0;
+        bool shouldUpdateFlowRate = false;
 
         for (uint256 i = 0; i < tokenIds.length; i++) {
             if (!canVoteWithToken(tokenIds[i], msg.sender)) revert NOT_ABLE_TO_VOTE_WITH_TOKEN();
-            flowsToUpdate += _setVotesAllocationForTokenId(tokenIds[i], recipientIds, percentAllocations, msg.sender);
+            (uint256 flowsToUpdate, bool updateFlowRate) = _setVotesAllocationForTokenId(
+                tokenIds[i],
+                recipientIds,
+                percentAllocations,
+                msg.sender
+            );
+            totalFlowsToUpdate += flowsToUpdate;
+            shouldUpdateFlowRate = shouldUpdateFlowRate || updateFlowRate;
         }
 
-        _afterVotesCast(recipientIds, flowsToUpdate);
+        _afterVotesCast(recipientIds, totalFlowsToUpdate, shouldUpdateFlowRate);
     }
 
     /**

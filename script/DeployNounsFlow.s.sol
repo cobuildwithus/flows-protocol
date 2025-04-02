@@ -8,7 +8,7 @@ import { RewardPool } from "../src/RewardPool.sol";
 import { TCRFactory } from "../src/tcr/TCRFactory.sol";
 import { FlowTCR } from "../src/tcr/FlowTCR.sol";
 import { IFlow } from "../src/interfaces/IFlow.sol";
-import { FlowTypes } from "../src/storage/FlowStorageV1.sol";
+import { FlowTypes } from "../src/storage/FlowStorage.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { TokenVerifier } from "../src/state-proof/TokenVerifier.sol";
 import { GeneralizedTCRStorageV1 } from "../src/tcr/storage/GeneralizedTCRStorageV1.sol";
@@ -81,6 +81,7 @@ contract DeployNounsFlow is DeployScript {
         int256 priceDecayPercent = int256(vm.envUint("PRICE_DECAY_PERCENT"));
         int256 perTimeUnit = int256(vm.envUint("PER_TIME_UNIT"));
         address sanctionsOracle = vm.envAddress("SANCTIONS_ORACLE");
+        uint32 bonusPoolQuorumBps = uint32(vm.envUint("BONUS_POOL_QUORUM_BPS"));
 
         // Deploy NounsFlow implementation
         NounsFlow nounsFlowImpl = new NounsFlow();
@@ -147,7 +148,8 @@ contract DeployNounsFlow is DeployScript {
             flowParams: IFlow.FlowParams({
                 tokenVoteWeight: tokenVoteWeight,
                 baselinePoolFlowRatePercent: baselinePoolFlowRatePercent,
-                managerRewardPoolFlowRatePercent: managerRewardPoolFlowRatePercent
+                managerRewardPoolFlowRatePercent: managerRewardPoolFlowRatePercent,
+                bonusPoolQuorumBps: bonusPoolQuorumBps
             }),
             metadata: FlowTypes.RecipientMetadata({
                 title: "Nouns Flow",

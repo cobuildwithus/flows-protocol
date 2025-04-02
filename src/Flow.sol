@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { FlowStorageV1 } from "./storage/FlowStorageV1.sol";
+import { FlowStorageV1 } from "./storage/FlowStorage.sol";
 import { IFlow } from "./interfaces/IFlow.sol";
-import { IRewardPool } from "./interfaces/IRewardPool.sol";
 import { FlowRecipients } from "./library/FlowRecipients.sol";
 import { FlowVotes } from "./library/FlowVotes.sol";
 import { FlowPools } from "./library/FlowPools.sol";
@@ -174,7 +173,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         bytes32[] memory recipientIds,
         uint32[] memory percentAllocations,
         address voter
-    ) internal returns (uint256 childFlowsToUpdate) {
+    ) internal returns (uint256 childFlowsToUpdate, bool shouldUpdateFlowRate) {
         if (fs.votes[tokenId].length == 0) {
             // this is a new vote, which means we're adding new member units
             // so we need to reset child flow rates
@@ -184,9 +183,9 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             // update total active vote weight
             fs.totalActiveVoteWeight += fs.tokenVoteWeight;
 
-            if (fs.bonusPoolQuorum.quorumBps > 0) {
+            if (fs.bonusPoolQuorumBps > 0) {
                 // since new votes affects quorum based bonus pool, we need to update the flow rate
-                _setFlowRate(getTotalFlowRate());
+                shouldUpdateFlowRate = true;
             }
         }
 
@@ -331,18 +330,28 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @notice Internal function to be called after votes are cast
      * @param recipientIds - the recipientIds that were voted for
      * @param childFlowsToUpdate - the number of child flows to update
+     * @param shouldUpdateFlowRate - whether to update the flow rate
      * Useful for saving gas when there are no new votes. If there are new member units being added however,
      * we want to update all child flow rates to ensure that the correct flow rates are set
      */
-    function _afterVotesCast(bytes32[] memory recipientIds, uint256 childFlowsToUpdate) internal {
-        // set the flow rate for the child contracts that were voted for
-        for (uint256 i = 0; i < recipientIds.length; i++) {
-            bytes32 recipientId = recipientIds[i];
-            address recipientAddress = fs.recipients[recipientId].recipient;
-            if (!_childFlows.contains(recipientAddress) || fs.recipients[recipientId].removed) continue;
-            _setChildFlowRate(recipientAddress);
+    function _afterVotesCast(
+        bytes32[] memory recipientIds,
+        uint256 childFlowsToUpdate,
+        bool shouldUpdateFlowRate
+    ) internal {
+        if (shouldUpdateFlowRate) {
+            _setFlowRate(getTotalFlowRate());
+        } else {
+            // set the flow rate for the child contracts that were voted for
+            for (uint256 i = 0; i < recipientIds.length; i++) {
+                bytes32 recipientId = recipientIds[i];
+                address recipientAddress = fs.recipients[recipientId].recipient;
+                if (!_childFlows.contains(recipientAddress) || fs.recipients[recipientId].removed) continue;
+                _setChildFlowRate(recipientAddress);
+            }
+
+            _workOnChildFlowsToUpdate(childFlowsToUpdate);
         }
-        _workOnChildFlowsToUpdate(childFlowsToUpdate);
     }
 
     /**
@@ -362,7 +371,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         for (uint256 i = 0; i < max; i++) {
             address childFlow = flowsToUpdate[i];
             _setChildFlowRate(childFlow);
-            _childFlowsToUpdateFlowRate.remove(childFlow);
         }
     }
 
@@ -459,6 +467,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         // only set if balance of contract is greater than buffer required
         if (balanceRequiredToStartFlow <= fs.superToken.balanceOf(childAddress)) {
             IFlow(childAddress).setFlowRate(getMemberTotalFlowRate(childAddress));
+            _childFlowsToUpdateFlowRate.remove(childAddress);
         }
     }
 
@@ -595,9 +604,9 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     function setBonusPoolQuorum(uint32 _quorumBps) external onlyOwnerOrManager {
         if (_quorumBps > PERCENTAGE_SCALE) revert INVALID_PERCENTAGE();
 
-        emit BonusPoolQuorumUpdated(fs.bonusPoolQuorum.quorumBps, _quorumBps);
+        emit BonusPoolQuorumUpdated(fs.bonusPoolQuorumBps, _quorumBps);
 
-        fs.bonusPoolQuorum = BonusPoolQuorum(_quorumBps);
+        fs.bonusPoolQuorumBps = _quorumBps;
 
         _setFlowRate(getTotalFlowRate());
     }
@@ -869,17 +878,19 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
-     * @notice Backfills the total active vote weight
-     * @param totalActive The total active vote weight to set
-     * @dev Only callable by the owner - to be removed immediately after running
+     * @notice Upgrades all child flows to a new implementation
      */
-    function backfillActiveVotes(uint256 totalActive) external onlyOwner {
-        fs.totalActiveVoteWeight = totalActive;
+    function upgradeAllChildFlows() external onlyOwner {
+        address[] memory flowsToUpdate = _childFlows.values();
+
+        for (uint256 i = 0; i < flowsToUpdate.length; i++) {
+            Flow(flowsToUpdate[i]).upgradeTo(fs.flowImpl);
+        }
     }
 
     /**
      * @notice Ensures the caller is authorized to upgrade the contract
      * @param _newImpl The new implementation address
      */
-    function _authorizeUpgrade(address _newImpl) internal view override onlyOwner {}
+    function _authorizeUpgrade(address _newImpl) internal view override onlyOwnerOrParent {}
 }

@@ -5,7 +5,7 @@ import { GeneralizedTCR } from "./GeneralizedTCR.sol";
 import { IArbitrator } from "./interfaces/IArbitrator.sol";
 import { IManagedFlow } from "../interfaces/IManagedFlow.sol";
 import { IFlowTCR } from "./interfaces/IGeneralizedTCR.sol";
-import { FlowTypes } from "../storage/FlowStorageV1.sol";
+import { FlowTypes } from "../storage/FlowStorage.sol";
 import { ITCRFactory } from "./interfaces/ITCRFactory.sol";
 import { FlowTCRItems } from "./library/FlowTCRItems.sol";
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperToken.sol";

@@ -3,7 +3,7 @@ pragma solidity ^0.8.28;
 
 import { ERC721FlowTest } from "./ERC721Flow.t.sol";
 import { IFlowEvents, IFlow } from "../../src/interfaces/IFlow.sol";
-import { FlowTypes } from "../../src/storage/FlowStorageV1.sol";
+import { FlowTypes } from "../../src/storage/FlowStorage.sol";
 
 contract RemoveRecipientsTest is ERC721FlowTest {
     function setUp() public override {

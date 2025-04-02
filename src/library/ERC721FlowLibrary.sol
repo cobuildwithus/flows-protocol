@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import { IStateProof } from "../interfaces/IStateProof.sol";
-import { FlowTypes } from "../storage/FlowStorageV1.sol";
+import { FlowTypes } from "../storage/FlowStorage.sol";
 import { IERC721Flow, IFlow } from "../interfaces/IFlow.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
@@ -51,7 +51,8 @@ library ERC721FlowLibrary {
             flowParams: IFlow.FlowParams({
                 tokenVoteWeight: fs.tokenVoteWeight,
                 baselinePoolFlowRatePercent: fs.baselinePoolFlowRatePercent,
-                managerRewardPoolFlowRatePercent: newManagerRewardRate
+                managerRewardPoolFlowRatePercent: newManagerRewardRate,
+                bonusPoolQuorumBps: fs.bonusPoolQuorumBps
             }),
             metadata: metadata
         });

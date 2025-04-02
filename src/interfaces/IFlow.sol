@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { FlowTypes } from "../storage/FlowStorageV1.sol";
+import { FlowTypes } from "../storage/FlowStorage.sol";
 import { IManagedFlow } from "./IManagedFlow.sol";
 
 /**
@@ -206,11 +206,13 @@ interface IFlow is IFlowEvents, IManagedFlow {
      * @param tokenVoteWeight The voting weight of the individual ERC721 tokens.
      * @param baselinePoolFlowRatePercent The proportion of the total flow rate that is allocated to the baseline salary pool in BPS
      * @param managerRewardPoolFlowRatePercent The proportion of the total flow rate that is allocated to the rewards pool in BPS
+     * @param bonusPoolQuorumBps The quorum for the bonus pool in BPS
      */
     struct FlowParams {
         uint256 tokenVoteWeight; // scaled by 1e18
         uint32 baselinePoolFlowRatePercent;
         uint32 managerRewardPoolFlowRatePercent;
+        uint32 bonusPoolQuorumBps;
     }
 
     /**

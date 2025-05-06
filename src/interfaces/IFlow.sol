@@ -307,3 +307,31 @@ interface INounsFlow is IFlow {
         IChainalysisSanctionsList sanctionsOracle
     ) external;
 }
+
+interface IMangedFlow is IFlow {
+    /**
+     * @notice Initializes an ERC721Flow contract
+     * @param initialOwner The address of the initial owner
+     * @param allocator The address of the allocator - the EOA or contract that will allocate the flow
+     * @param superToken The address of the SuperToken to be used for the pool
+     * @param flowImpl The address of the flow implementation contract
+     * @param manager The address of the flow manager
+     * @param managerRewardPool The address of the manager reward pool
+     * @param parent The address of the parent flow contract (optional)
+     * @param flowParams The parameters for the flow contract
+     * @param metadata The metadata for the flow contract
+     * @param sanctionsOracle The address of the sanctions oracle
+     */
+    function initialize(
+        address initialOwner,
+        address allocator,
+        address superToken,
+        address flowImpl,
+        address manager,
+        address managerRewardPool,
+        address parent,
+        FlowParams memory flowParams,
+        FlowTypes.RecipientMetadata memory metadata,
+        IChainalysisSanctionsList sanctionsOracle
+    ) external;
+}

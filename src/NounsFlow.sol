@@ -66,7 +66,7 @@ contract NounsFlow is INounsFlow, Flow {
         bytes[][][] calldata ownershipStorageProofs,
         bytes[][] calldata delegateStorageProofs
     ) external nonReentrant {
-        fs.validateVotes(recipientIds, percentAllocations, PERCENTAGE_SCALE);
+        fs.validateAllocations(recipientIds, percentAllocations, PERCENTAGE_SCALE);
 
         uint256 totalFlowsToUpdate = 0;
         bool shouldUpdateFlowRate = false;

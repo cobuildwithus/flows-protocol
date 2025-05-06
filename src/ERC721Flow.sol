@@ -61,7 +61,7 @@ contract ERC721Flow is IERC721Flow, Flow {
         bytes32[] calldata recipientIds,
         uint32[] calldata percentAllocations
     ) external nonReentrant {
-        fs.validateVotes(recipientIds, percentAllocations, PERCENTAGE_SCALE);
+        fs.validateAllocations(recipientIds, percentAllocations, PERCENTAGE_SCALE);
 
         uint256 totalFlowsToUpdate = 0;
         bool shouldUpdateFlowRate = false;

@@ -34,18 +34,22 @@ check_command() {
   fi
 }
 
-# jq filter to drop astId keys and normalize struct‐type suffixes
+# jq filter to drop astId / types and strip digit-suffixes
 CLEAN_FILTER='
-  walk(
-    if type=="object" and has("astId")
-    then del(.astId)
+  def strip_suffix:
+    if test("\\)[0-9]+_storage$")      # t_struct(...)17228_storage
+    then sub("\\)[0-9]+_storage$"; ")_storage")
+    elif test("\\)[0-9]+$")            # t_contract(...)14518
+    then sub("\\)[0-9]+$"; ")")
     else .
-    end
-  )
-  | walk(
-    if type=="object" and has("type")
-       and (.type | test("^t_struct\\(.*\\)[0-9]+_storage$"))
-    then .type |= sub("[0-9]+_storage$"; "_storage")
+    end;
+
+  walk(
+    if type == "object" then
+         del(.astId?)                # remove key if present
+       | del(.types?)                # drop entire `types` map
+    elif type == "string" then
+         strip_suffix
     else .
     end
   )
@@ -75,7 +79,7 @@ generate_layout() {
   done < "${contracts_list_file#@}"
 
   # combine and clean before saving, so even the baseline is astId-free
-  jq -s 'add' <<<"${temp_array[@]}" | jq "$CLEAN_FILTER" > "$output_file"
+  jq -s 'add' <<<"${temp_array[@]}" | jq -c "$CLEAN_FILTER" > "$output_file"
   if ! jq -e . "$output_file" > /dev/null; then
     echo "Error: Generated file $output_file is invalid JSON."
     exit 1

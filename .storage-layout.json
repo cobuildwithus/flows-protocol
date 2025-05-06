@@ -1,12 +1,6 @@
 {
-  "StateVerifier": {
-    "storage": [],
-    "types": {}
-  },
-  "TokenVerifier": {
-    "storage": [],
-    "types": {}
-  },
+  "StateVerifier": { "storage": [] },
+  "TokenVerifier": { "storage": [] },
   "ERC721Flow": {
     "storage": [
       {
@@ -28,21 +22,21 @@
         "label": "__gap",
         "offset": 0,
         "slot": "1",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/ERC721Flow.sol:ERC721Flow",
         "label": "__gap",
         "offset": 0,
         "slot": "51",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/ERC721Flow.sol:ERC721Flow",
         "label": "__gap",
         "offset": 0,
         "slot": "101",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/ERC721Flow.sol:ERC721Flow",
@@ -56,7 +50,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "152",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/ERC721Flow.sol:ERC721Flow",
@@ -70,7 +64,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "202",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/ERC721Flow.sol:ERC721Flow",
@@ -84,7 +78,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "252",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/ERC721Flow.sol:ERC721Flow",
@@ -98,7 +92,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "323",
-        "type": "t_array(t_uint256)100_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/ERC721Flow.sol:ERC721Flow",
@@ -119,454 +113,9 @@
         "label": "erc721Votes",
         "offset": 0,
         "slot": "427",
-        "type": "t_contract(IERC721Checkpointable)14496"
+        "type": "t_contract(IERC721Checkpointable)"
       }
-    ],
-    "types": {
-      "t_address": {
-        "encoding": "inplace",
-        "label": "address",
-        "numberOfBytes": "20"
-      },
-      "t_array(t_bytes32)dyn_storage": {
-        "encoding": "dynamic_array",
-        "label": "bytes32[]",
-        "numberOfBytes": "32",
-        "base": "t_bytes32"
-      },
-      "t_array(t_struct(VoteAllocation)17127_storage)dyn_storage": {
-        "encoding": "dynamic_array",
-        "label": "struct FlowTypes.VoteAllocation[]",
-        "numberOfBytes": "32",
-        "base": "t_struct(VoteAllocation)17127_storage"
-      },
-      "t_array(t_uint256)100_storage": {
-        "encoding": "inplace",
-        "label": "uint256[100]",
-        "numberOfBytes": "3200",
-        "base": "t_uint256"
-      },
-      "t_array(t_uint256)49_storage": {
-        "encoding": "inplace",
-        "label": "uint256[49]",
-        "numberOfBytes": "1568",
-        "base": "t_uint256"
-      },
-      "t_array(t_uint256)50_storage": {
-        "encoding": "inplace",
-        "label": "uint256[50]",
-        "numberOfBytes": "1600",
-        "base": "t_uint256"
-      },
-      "t_bool": {
-        "encoding": "inplace",
-        "label": "bool",
-        "numberOfBytes": "1"
-      },
-      "t_bytes32": {
-        "encoding": "inplace",
-        "label": "bytes32",
-        "numberOfBytes": "32"
-      },
-      "t_contract(IChainalysisSanctionsList)15057": {
-        "encoding": "inplace",
-        "label": "contract IChainalysisSanctionsList",
-        "numberOfBytes": "20"
-      },
-      "t_contract(IERC721Checkpointable)14496": {
-        "encoding": "inplace",
-        "label": "contract IERC721Checkpointable",
-        "numberOfBytes": "20"
-      },
-      "t_contract(ISuperToken)10644": {
-        "encoding": "inplace",
-        "label": "contract ISuperToken",
-        "numberOfBytes": "20"
-      },
-      "t_contract(ISuperfluidPool)9476": {
-        "encoding": "inplace",
-        "label": "contract ISuperfluidPool",
-        "numberOfBytes": "20"
-      },
-      "t_enum(RecipientType)17131": {
-        "encoding": "inplace",
-        "label": "enum FlowTypes.RecipientType",
-        "numberOfBytes": "1"
-      },
-      "t_int96": {
-        "encoding": "inplace",
-        "label": "int96",
-        "numberOfBytes": "12"
-      },
-      "t_mapping(t_address,t_bool)": {
-        "encoding": "mapping",
-        "key": "t_address",
-        "label": "mapping(address => bool)",
-        "numberOfBytes": "32",
-        "value": "t_bool"
-      },
-      "t_mapping(t_address,t_uint256)": {
-        "encoding": "mapping",
-        "key": "t_address",
-        "label": "mapping(address => uint256)",
-        "numberOfBytes": "32",
-        "value": "t_uint256"
-      },
-      "t_mapping(t_bytes32,t_struct(FlowRecipient)17153_storage)": {
-        "encoding": "mapping",
-        "key": "t_bytes32",
-        "label": "mapping(bytes32 => struct FlowTypes.FlowRecipient)",
-        "numberOfBytes": "32",
-        "value": "t_struct(FlowRecipient)17153_storage"
-      },
-      "t_mapping(t_bytes32,t_uint256)": {
-        "encoding": "mapping",
-        "key": "t_bytes32",
-        "label": "mapping(bytes32 => uint256)",
-        "numberOfBytes": "32",
-        "value": "t_uint256"
-      },
-      "t_mapping(t_uint256,t_address)": {
-        "encoding": "mapping",
-        "key": "t_uint256",
-        "label": "mapping(uint256 => address)",
-        "numberOfBytes": "32",
-        "value": "t_address"
-      },
-      "t_mapping(t_uint256,t_array(t_struct(VoteAllocation)17127_storage)dyn_storage)": {
-        "encoding": "mapping",
-        "key": "t_uint256",
-        "label": "mapping(uint256 => struct FlowTypes.VoteAllocation[])",
-        "numberOfBytes": "32",
-        "value": "t_array(t_struct(VoteAllocation)17127_storage)dyn_storage"
-      },
-      "t_mapping(t_uint256,t_mapping(t_address,t_uint256))": {
-        "encoding": "mapping",
-        "key": "t_uint256",
-        "label": "mapping(uint256 => mapping(address => uint256))",
-        "numberOfBytes": "32",
-        "value": "t_mapping(t_address,t_uint256)"
-      },
-      "t_string_storage": {
-        "encoding": "bytes",
-        "label": "string",
-        "numberOfBytes": "32"
-      },
-      "t_struct(AddressSet)3139_storage": {
-        "encoding": "inplace",
-        "label": "struct EnumerableSet.AddressSet",
-        "numberOfBytes": "64",
-        "members": [
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "_inner",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_struct(Set)_storage"
-          }
-        ]
-      },
-      "t_struct(FlowRecipient)17153_storage": {
-        "encoding": "inplace",
-        "label": "struct FlowTypes.FlowRecipient",
-        "numberOfBytes": "192",
-        "members": [
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "recipient",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "removed",
-            "offset": 20,
-            "slot": "0",
-            "type": "t_bool"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "recipientType",
-            "offset": 21,
-            "slot": "0",
-            "type": "t_enum(RecipientType)17131"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "metadata",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_struct(RecipientMetadata)_storage"
-          }
-        ]
-      },
-      "t_struct(RecipientMetadata)17142_storage": {
-        "encoding": "inplace",
-        "label": "struct FlowTypes.RecipientMetadata",
-        "numberOfBytes": "160",
-        "members": [
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "title",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_string_storage"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "description",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_string_storage"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "image",
-            "offset": 0,
-            "slot": "2",
-            "type": "t_string_storage"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "tagline",
-            "offset": 0,
-            "slot": "3",
-            "type": "t_string_storage"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "url",
-            "offset": 0,
-            "slot": "4",
-            "type": "t_string_storage"
-          }
-        ]
-      },
-      "t_struct(Set)2824_storage": {
-        "encoding": "inplace",
-        "label": "struct EnumerableSet.Set",
-        "numberOfBytes": "64",
-        "members": [
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "_values",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_array(t_bytes32)dyn_storage"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "_indexes",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_mapping(t_bytes32,t_uint256)"
-          }
-        ]
-      },
-      "t_struct(Storage)17228_storage": {
-        "encoding": "inplace",
-        "label": "struct FlowTypes.Storage",
-        "numberOfBytes": "704",
-        "members": [
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "baselinePoolFlowRatePercent",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_uint32"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "managerRewardPoolFlowRatePercent",
-            "offset": 4,
-            "slot": "0",
-            "type": "t_uint32"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "flowImpl",
-            "offset": 8,
-            "slot": "0",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "parent",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "manager",
-            "offset": 0,
-            "slot": "2",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "managerRewardPool",
-            "offset": 0,
-            "slot": "3",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "activeRecipientCount",
-            "offset": 0,
-            "slot": "4",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "metadata",
-            "offset": 0,
-            "slot": "5",
-            "type": "t_struct(RecipientMetadata)_storage"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "recipients",
-            "offset": 0,
-            "slot": "10",
-            "type": "t_mapping(t_bytes32,t_struct(FlowRecipient)17153_storage)"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "recipientExists",
-            "offset": 0,
-            "slot": "11",
-            "type": "t_mapping(t_address,t_bool)"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "superToken",
-            "offset": 0,
-            "slot": "12",
-            "type": "t_contract(ISuperToken)10644"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "bonusPool",
-            "offset": 0,
-            "slot": "13",
-            "type": "t_contract(ISuperfluidPool)9476"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "baselinePool",
-            "offset": 0,
-            "slot": "14",
-            "type": "t_contract(ISuperfluidPool)9476"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "tokenIdToRecipientMemberUnits",
-            "offset": 0,
-            "slot": "15",
-            "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "tokenVoteWeight",
-            "offset": 0,
-            "slot": "16",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "votes",
-            "offset": 0,
-            "slot": "17",
-            "type": "t_mapping(t_uint256,t_array(t_struct(VoteAllocation)17127_storage)dyn_storage)"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "voters",
-            "offset": 0,
-            "slot": "18",
-            "type": "t_mapping(t_uint256,t_address)"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "cachedFlowRate",
-            "offset": 0,
-            "slot": "19",
-            "type": "t_int96"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "totalActiveVoteWeight",
-            "offset": 0,
-            "slot": "20",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "bonusPoolQuorumBps",
-            "offset": 0,
-            "slot": "21",
-            "type": "t_uint32"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "sanctionsOracle",
-            "offset": 4,
-            "slot": "21",
-            "type": "t_contract(IChainalysisSanctionsList)15057"
-          }
-        ]
-      },
-      "t_struct(VoteAllocation)17127_storage": {
-        "encoding": "inplace",
-        "label": "struct FlowTypes.VoteAllocation",
-        "numberOfBytes": "64",
-        "members": [
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "recipientId",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_bytes32"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "bps",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_uint32"
-          },
-          {
-            "contract": "src/ERC721Flow.sol:ERC721Flow",
-            "label": "memberUnits",
-            "offset": 4,
-            "slot": "1",
-            "type": "t_uint128"
-          }
-        ]
-      },
-      "t_uint128": {
-        "encoding": "inplace",
-        "label": "uint128",
-        "numberOfBytes": "16"
-      },
-      "t_uint256": {
-        "encoding": "inplace",
-        "label": "uint256",
-        "numberOfBytes": "32"
-      },
-      "t_uint32": {
-        "encoding": "inplace",
-        "label": "uint32",
-        "numberOfBytes": "4"
-      },
-      "t_uint8": {
-        "encoding": "inplace",
-        "label": "uint8",
-        "numberOfBytes": "1"
-      }
-    }
+    ]
   },
   "Flow": {
     "storage": [
@@ -589,21 +138,21 @@
         "label": "__gap",
         "offset": 0,
         "slot": "1",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/Flow.sol:Flow",
         "label": "__gap",
         "offset": 0,
         "slot": "51",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/Flow.sol:Flow",
         "label": "__gap",
         "offset": 0,
         "slot": "101",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/Flow.sol:Flow",
@@ -617,7 +166,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "152",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/Flow.sol:Flow",
@@ -631,7 +180,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "202",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/Flow.sol:Flow",
@@ -645,7 +194,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "252",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/Flow.sol:Flow",
@@ -659,7 +208,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "323",
-        "type": "t_array(t_uint256)100_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/Flow.sol:Flow",
@@ -675,447 +224,7 @@
         "slot": "425",
         "type": "t_struct(AddressSet)_storage"
       }
-    ],
-    "types": {
-      "t_address": {
-        "encoding": "inplace",
-        "label": "address",
-        "numberOfBytes": "20"
-      },
-      "t_array(t_bytes32)dyn_storage": {
-        "encoding": "dynamic_array",
-        "label": "bytes32[]",
-        "numberOfBytes": "32",
-        "base": "t_bytes32"
-      },
-      "t_array(t_struct(VoteAllocation)17127_storage)dyn_storage": {
-        "encoding": "dynamic_array",
-        "label": "struct FlowTypes.VoteAllocation[]",
-        "numberOfBytes": "32",
-        "base": "t_struct(VoteAllocation)17127_storage"
-      },
-      "t_array(t_uint256)100_storage": {
-        "encoding": "inplace",
-        "label": "uint256[100]",
-        "numberOfBytes": "3200",
-        "base": "t_uint256"
-      },
-      "t_array(t_uint256)49_storage": {
-        "encoding": "inplace",
-        "label": "uint256[49]",
-        "numberOfBytes": "1568",
-        "base": "t_uint256"
-      },
-      "t_array(t_uint256)50_storage": {
-        "encoding": "inplace",
-        "label": "uint256[50]",
-        "numberOfBytes": "1600",
-        "base": "t_uint256"
-      },
-      "t_bool": {
-        "encoding": "inplace",
-        "label": "bool",
-        "numberOfBytes": "1"
-      },
-      "t_bytes32": {
-        "encoding": "inplace",
-        "label": "bytes32",
-        "numberOfBytes": "32"
-      },
-      "t_contract(IChainalysisSanctionsList)15057": {
-        "encoding": "inplace",
-        "label": "contract IChainalysisSanctionsList",
-        "numberOfBytes": "20"
-      },
-      "t_contract(ISuperToken)10644": {
-        "encoding": "inplace",
-        "label": "contract ISuperToken",
-        "numberOfBytes": "20"
-      },
-      "t_contract(ISuperfluidPool)9476": {
-        "encoding": "inplace",
-        "label": "contract ISuperfluidPool",
-        "numberOfBytes": "20"
-      },
-      "t_enum(RecipientType)17131": {
-        "encoding": "inplace",
-        "label": "enum FlowTypes.RecipientType",
-        "numberOfBytes": "1"
-      },
-      "t_int96": {
-        "encoding": "inplace",
-        "label": "int96",
-        "numberOfBytes": "12"
-      },
-      "t_mapping(t_address,t_bool)": {
-        "encoding": "mapping",
-        "key": "t_address",
-        "label": "mapping(address => bool)",
-        "numberOfBytes": "32",
-        "value": "t_bool"
-      },
-      "t_mapping(t_address,t_uint256)": {
-        "encoding": "mapping",
-        "key": "t_address",
-        "label": "mapping(address => uint256)",
-        "numberOfBytes": "32",
-        "value": "t_uint256"
-      },
-      "t_mapping(t_bytes32,t_struct(FlowRecipient)17153_storage)": {
-        "encoding": "mapping",
-        "key": "t_bytes32",
-        "label": "mapping(bytes32 => struct FlowTypes.FlowRecipient)",
-        "numberOfBytes": "32",
-        "value": "t_struct(FlowRecipient)17153_storage"
-      },
-      "t_mapping(t_bytes32,t_uint256)": {
-        "encoding": "mapping",
-        "key": "t_bytes32",
-        "label": "mapping(bytes32 => uint256)",
-        "numberOfBytes": "32",
-        "value": "t_uint256"
-      },
-      "t_mapping(t_uint256,t_address)": {
-        "encoding": "mapping",
-        "key": "t_uint256",
-        "label": "mapping(uint256 => address)",
-        "numberOfBytes": "32",
-        "value": "t_address"
-      },
-      "t_mapping(t_uint256,t_array(t_struct(VoteAllocation)17127_storage)dyn_storage)": {
-        "encoding": "mapping",
-        "key": "t_uint256",
-        "label": "mapping(uint256 => struct FlowTypes.VoteAllocation[])",
-        "numberOfBytes": "32",
-        "value": "t_array(t_struct(VoteAllocation)17127_storage)dyn_storage"
-      },
-      "t_mapping(t_uint256,t_mapping(t_address,t_uint256))": {
-        "encoding": "mapping",
-        "key": "t_uint256",
-        "label": "mapping(uint256 => mapping(address => uint256))",
-        "numberOfBytes": "32",
-        "value": "t_mapping(t_address,t_uint256)"
-      },
-      "t_string_storage": {
-        "encoding": "bytes",
-        "label": "string",
-        "numberOfBytes": "32"
-      },
-      "t_struct(AddressSet)3139_storage": {
-        "encoding": "inplace",
-        "label": "struct EnumerableSet.AddressSet",
-        "numberOfBytes": "64",
-        "members": [
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "_inner",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_struct(Set)_storage"
-          }
-        ]
-      },
-      "t_struct(FlowRecipient)17153_storage": {
-        "encoding": "inplace",
-        "label": "struct FlowTypes.FlowRecipient",
-        "numberOfBytes": "192",
-        "members": [
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "recipient",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "removed",
-            "offset": 20,
-            "slot": "0",
-            "type": "t_bool"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "recipientType",
-            "offset": 21,
-            "slot": "0",
-            "type": "t_enum(RecipientType)17131"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "metadata",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_struct(RecipientMetadata)_storage"
-          }
-        ]
-      },
-      "t_struct(RecipientMetadata)17142_storage": {
-        "encoding": "inplace",
-        "label": "struct FlowTypes.RecipientMetadata",
-        "numberOfBytes": "160",
-        "members": [
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "title",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_string_storage"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "description",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_string_storage"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "image",
-            "offset": 0,
-            "slot": "2",
-            "type": "t_string_storage"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "tagline",
-            "offset": 0,
-            "slot": "3",
-            "type": "t_string_storage"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "url",
-            "offset": 0,
-            "slot": "4",
-            "type": "t_string_storage"
-          }
-        ]
-      },
-      "t_struct(Set)2824_storage": {
-        "encoding": "inplace",
-        "label": "struct EnumerableSet.Set",
-        "numberOfBytes": "64",
-        "members": [
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "_values",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_array(t_bytes32)dyn_storage"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "_indexes",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_mapping(t_bytes32,t_uint256)"
-          }
-        ]
-      },
-      "t_struct(Storage)17228_storage": {
-        "encoding": "inplace",
-        "label": "struct FlowTypes.Storage",
-        "numberOfBytes": "704",
-        "members": [
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "baselinePoolFlowRatePercent",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_uint32"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "managerRewardPoolFlowRatePercent",
-            "offset": 4,
-            "slot": "0",
-            "type": "t_uint32"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "flowImpl",
-            "offset": 8,
-            "slot": "0",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "parent",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "manager",
-            "offset": 0,
-            "slot": "2",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "managerRewardPool",
-            "offset": 0,
-            "slot": "3",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "activeRecipientCount",
-            "offset": 0,
-            "slot": "4",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "metadata",
-            "offset": 0,
-            "slot": "5",
-            "type": "t_struct(RecipientMetadata)_storage"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "recipients",
-            "offset": 0,
-            "slot": "10",
-            "type": "t_mapping(t_bytes32,t_struct(FlowRecipient)17153_storage)"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "recipientExists",
-            "offset": 0,
-            "slot": "11",
-            "type": "t_mapping(t_address,t_bool)"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "superToken",
-            "offset": 0,
-            "slot": "12",
-            "type": "t_contract(ISuperToken)10644"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "bonusPool",
-            "offset": 0,
-            "slot": "13",
-            "type": "t_contract(ISuperfluidPool)9476"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "baselinePool",
-            "offset": 0,
-            "slot": "14",
-            "type": "t_contract(ISuperfluidPool)9476"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "tokenIdToRecipientMemberUnits",
-            "offset": 0,
-            "slot": "15",
-            "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "tokenVoteWeight",
-            "offset": 0,
-            "slot": "16",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "votes",
-            "offset": 0,
-            "slot": "17",
-            "type": "t_mapping(t_uint256,t_array(t_struct(VoteAllocation)17127_storage)dyn_storage)"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "voters",
-            "offset": 0,
-            "slot": "18",
-            "type": "t_mapping(t_uint256,t_address)"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "cachedFlowRate",
-            "offset": 0,
-            "slot": "19",
-            "type": "t_int96"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "totalActiveVoteWeight",
-            "offset": 0,
-            "slot": "20",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "bonusPoolQuorumBps",
-            "offset": 0,
-            "slot": "21",
-            "type": "t_uint32"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "sanctionsOracle",
-            "offset": 4,
-            "slot": "21",
-            "type": "t_contract(IChainalysisSanctionsList)15057"
-          }
-        ]
-      },
-      "t_struct(VoteAllocation)17127_storage": {
-        "encoding": "inplace",
-        "label": "struct FlowTypes.VoteAllocation",
-        "numberOfBytes": "64",
-        "members": [
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "recipientId",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_bytes32"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "bps",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_uint32"
-          },
-          {
-            "contract": "src/Flow.sol:Flow",
-            "label": "memberUnits",
-            "offset": 4,
-            "slot": "1",
-            "type": "t_uint128"
-          }
-        ]
-      },
-      "t_uint128": {
-        "encoding": "inplace",
-        "label": "uint128",
-        "numberOfBytes": "16"
-      },
-      "t_uint256": {
-        "encoding": "inplace",
-        "label": "uint256",
-        "numberOfBytes": "32"
-      },
-      "t_uint32": {
-        "encoding": "inplace",
-        "label": "uint32",
-        "numberOfBytes": "4"
-      },
-      "t_uint8": {
-        "encoding": "inplace",
-        "label": "uint8",
-        "numberOfBytes": "1"
-      }
-    }
+    ]
   },
   "GeneralizedTCR": {
     "storage": [
@@ -1138,21 +247,21 @@
         "label": "__gap",
         "offset": 0,
         "slot": "1",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
         "label": "__gap",
         "offset": 0,
         "slot": "51",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
         "label": "__gap",
         "offset": 0,
         "slot": "101",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
@@ -1166,7 +275,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "152",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
@@ -1180,7 +289,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "202",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
@@ -1194,14 +303,14 @@
         "label": "__gap",
         "offset": 0,
         "slot": "252",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
         "label": "arbitrator",
         "offset": 0,
         "slot": "301",
-        "type": "t_contract(IArbitrator)13982"
+        "type": "t_contract(IArbitrator)"
       },
       {
         "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
@@ -1222,7 +331,7 @@
         "label": "erc20",
         "offset": 0,
         "slot": "304",
-        "type": "t_contract(IERC20)1565"
+        "type": "t_contract(IERC20)"
       },
       {
         "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
@@ -1308,294 +417,7 @@
         "slot": "316",
         "type": "t_mapping(t_bytes32,t_uint256)"
       }
-    ],
-    "types": {
-      "t_address": {
-        "encoding": "inplace",
-        "label": "address",
-        "numberOfBytes": "20"
-      },
-      "t_array(t_address)3_storage": {
-        "encoding": "inplace",
-        "label": "address[3]",
-        "numberOfBytes": "96",
-        "base": "t_address"
-      },
-      "t_array(t_bool)3_storage": {
-        "encoding": "inplace",
-        "label": "bool[3]",
-        "numberOfBytes": "32",
-        "base": "t_bool"
-      },
-      "t_array(t_bytes32)dyn_storage": {
-        "encoding": "dynamic_array",
-        "label": "bytes32[]",
-        "numberOfBytes": "32",
-        "base": "t_bytes32"
-      },
-      "t_array(t_struct(Request)14785_storage)dyn_storage": {
-        "encoding": "dynamic_array",
-        "label": "struct GeneralizedTCRStorageV1.Request[]",
-        "numberOfBytes": "32",
-        "base": "t_struct(Request)14785_storage"
-      },
-      "t_array(t_struct(Round)14803_storage)dyn_storage": {
-        "encoding": "dynamic_array",
-        "label": "struct GeneralizedTCRStorageV1.Round[]",
-        "numberOfBytes": "32",
-        "base": "t_struct(Round)14803_storage"
-      },
-      "t_array(t_uint256)3_storage": {
-        "encoding": "inplace",
-        "label": "uint256[3]",
-        "numberOfBytes": "96",
-        "base": "t_uint256"
-      },
-      "t_array(t_uint256)49_storage": {
-        "encoding": "inplace",
-        "label": "uint256[49]",
-        "numberOfBytes": "1568",
-        "base": "t_uint256"
-      },
-      "t_array(t_uint256)50_storage": {
-        "encoding": "inplace",
-        "label": "uint256[50]",
-        "numberOfBytes": "1600",
-        "base": "t_uint256"
-      },
-      "t_bool": {
-        "encoding": "inplace",
-        "label": "bool",
-        "numberOfBytes": "1"
-      },
-      "t_bytes32": {
-        "encoding": "inplace",
-        "label": "bytes32",
-        "numberOfBytes": "32"
-      },
-      "t_bytes_storage": {
-        "encoding": "bytes",
-        "label": "bytes",
-        "numberOfBytes": "32"
-      },
-      "t_contract(IArbitrator)13982": {
-        "encoding": "inplace",
-        "label": "contract IArbitrator",
-        "numberOfBytes": "20"
-      },
-      "t_contract(IERC20)1565": {
-        "encoding": "inplace",
-        "label": "contract IERC20",
-        "numberOfBytes": "20"
-      },
-      "t_enum(Party)13919": {
-        "encoding": "inplace",
-        "label": "enum IArbitrable.Party",
-        "numberOfBytes": "1"
-      },
-      "t_enum(Status)14095": {
-        "encoding": "inplace",
-        "label": "enum IGeneralizedTCR.Status",
-        "numberOfBytes": "1"
-      },
-      "t_mapping(t_address,t_array(t_uint256)3_storage)": {
-        "encoding": "mapping",
-        "key": "t_address",
-        "label": "mapping(address => uint256[3])",
-        "numberOfBytes": "32",
-        "value": "t_array(t_uint256)3_storage"
-      },
-      "t_mapping(t_address,t_mapping(t_uint256,t_bytes32))": {
-        "encoding": "mapping",
-        "key": "t_address",
-        "label": "mapping(address => mapping(uint256 => bytes32))",
-        "numberOfBytes": "32",
-        "value": "t_mapping(t_uint256,t_bytes32)"
-      },
-      "t_mapping(t_bytes32,t_struct(Item)14757_storage)": {
-        "encoding": "mapping",
-        "key": "t_bytes32",
-        "label": "mapping(bytes32 => struct GeneralizedTCRStorageV1.Item)",
-        "numberOfBytes": "32",
-        "value": "t_struct(Item)14757_storage"
-      },
-      "t_mapping(t_bytes32,t_uint256)": {
-        "encoding": "mapping",
-        "key": "t_bytes32",
-        "label": "mapping(bytes32 => uint256)",
-        "numberOfBytes": "32",
-        "value": "t_uint256"
-      },
-      "t_mapping(t_uint256,t_bytes32)": {
-        "encoding": "mapping",
-        "key": "t_uint256",
-        "label": "mapping(uint256 => bytes32)",
-        "numberOfBytes": "32",
-        "value": "t_bytes32"
-      },
-      "t_string_storage": {
-        "encoding": "bytes",
-        "label": "string",
-        "numberOfBytes": "32"
-      },
-      "t_struct(Item)14757_storage": {
-        "encoding": "inplace",
-        "label": "struct GeneralizedTCRStorageV1.Item",
-        "numberOfBytes": "96",
-        "members": [
-          {
-            "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
-            "label": "data",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_bytes_storage"
-          },
-          {
-            "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
-            "label": "manager",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
-            "label": "status",
-            "offset": 20,
-            "slot": "1",
-            "type": "t_enum(Status)14095"
-          },
-          {
-            "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
-            "label": "requests",
-            "offset": 0,
-            "slot": "2",
-            "type": "t_array(t_struct(Request)14785_storage)dyn_storage"
-          }
-        ]
-      },
-      "t_struct(Request)14785_storage": {
-        "encoding": "inplace",
-        "label": "struct GeneralizedTCRStorageV1.Request",
-        "numberOfBytes": "352",
-        "members": [
-          {
-            "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
-            "label": "disputed",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_bool"
-          },
-          {
-            "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
-            "label": "disputeID",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
-            "label": "submissionTime",
-            "offset": 0,
-            "slot": "2",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
-            "label": "resolved",
-            "offset": 0,
-            "slot": "3",
-            "type": "t_bool"
-          },
-          {
-            "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
-            "label": "parties",
-            "offset": 0,
-            "slot": "4",
-            "type": "t_array(t_address)3_storage"
-          },
-          {
-            "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
-            "label": "rounds",
-            "offset": 0,
-            "slot": "7",
-            "type": "t_array(t_struct(Round)14803_storage)dyn_storage"
-          },
-          {
-            "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
-            "label": "ruling",
-            "offset": 0,
-            "slot": "8",
-            "type": "t_enum(Party)13919"
-          },
-          {
-            "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
-            "label": "arbitrator",
-            "offset": 1,
-            "slot": "8",
-            "type": "t_contract(IArbitrator)13982"
-          },
-          {
-            "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
-            "label": "arbitratorExtraData",
-            "offset": 0,
-            "slot": "9",
-            "type": "t_bytes_storage"
-          },
-          {
-            "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
-            "label": "metaEvidenceID",
-            "offset": 0,
-            "slot": "10",
-            "type": "t_uint256"
-          }
-        ]
-      },
-      "t_struct(Round)14803_storage": {
-        "encoding": "inplace",
-        "label": "struct GeneralizedTCRStorageV1.Round",
-        "numberOfBytes": "192",
-        "members": [
-          {
-            "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
-            "label": "amountPaid",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_array(t_uint256)3_storage"
-          },
-          {
-            "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
-            "label": "hasPaid",
-            "offset": 0,
-            "slot": "3",
-            "type": "t_array(t_bool)3_storage"
-          },
-          {
-            "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
-            "label": "feeRewards",
-            "offset": 0,
-            "slot": "4",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
-            "label": "contributions",
-            "offset": 0,
-            "slot": "5",
-            "type": "t_mapping(t_address,t_array(t_uint256)3_storage)"
-          }
-        ]
-      },
-      "t_uint256": {
-        "encoding": "inplace",
-        "label": "uint256",
-        "numberOfBytes": "32"
-      },
-      "t_uint8": {
-        "encoding": "inplace",
-        "label": "uint8",
-        "numberOfBytes": "1"
-      }
-    }
+    ]
   },
   "FlowTCR": {
     "storage": [
@@ -1618,21 +440,21 @@
         "label": "__gap",
         "offset": 0,
         "slot": "1",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/tcr/FlowTCR.sol:FlowTCR",
         "label": "__gap",
         "offset": 0,
         "slot": "51",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/tcr/FlowTCR.sol:FlowTCR",
         "label": "__gap",
         "offset": 0,
         "slot": "101",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/tcr/FlowTCR.sol:FlowTCR",
@@ -1646,7 +468,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "152",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/tcr/FlowTCR.sol:FlowTCR",
@@ -1660,7 +482,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "202",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/tcr/FlowTCR.sol:FlowTCR",
@@ -1674,14 +496,14 @@
         "label": "__gap",
         "offset": 0,
         "slot": "252",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/tcr/FlowTCR.sol:FlowTCR",
         "label": "arbitrator",
         "offset": 0,
         "slot": "301",
-        "type": "t_contract(IArbitrator)15173"
+        "type": "t_contract(IArbitrator)"
       },
       {
         "contract": "src/tcr/FlowTCR.sol:FlowTCR",
@@ -1702,7 +524,7 @@
         "label": "erc20",
         "offset": 0,
         "slot": "304",
-        "type": "t_contract(IERC20)1565"
+        "type": "t_contract(IERC20)"
       },
       {
         "contract": "src/tcr/FlowTCR.sol:FlowTCR",
@@ -1793,21 +615,21 @@
         "label": "flowContract",
         "offset": 0,
         "slot": "317",
-        "type": "t_contract(IManagedFlow)12192"
+        "type": "t_contract(IManagedFlow)"
       },
       {
         "contract": "src/tcr/FlowTCR.sol:FlowTCR",
         "label": "tcrFactory",
         "offset": 0,
         "slot": "318",
-        "type": "t_contract(ITCRFactory)15560"
+        "type": "t_contract(ITCRFactory)"
       },
       {
         "contract": "src/tcr/FlowTCR.sol:FlowTCR",
         "label": "requiredRecipientType",
         "offset": 20,
         "slot": "318",
-        "type": "t_enum(RecipientType)12589"
+        "type": "t_enum(RecipientType)"
       },
       {
         "contract": "src/tcr/FlowTCR.sol:FlowTCR",
@@ -1865,314 +687,7 @@
         "slot": "326",
         "type": "t_uint256"
       }
-    ],
-    "types": {
-      "t_address": {
-        "encoding": "inplace",
-        "label": "address",
-        "numberOfBytes": "20"
-      },
-      "t_array(t_address)3_storage": {
-        "encoding": "inplace",
-        "label": "address[3]",
-        "numberOfBytes": "96",
-        "base": "t_address"
-      },
-      "t_array(t_bool)3_storage": {
-        "encoding": "inplace",
-        "label": "bool[3]",
-        "numberOfBytes": "32",
-        "base": "t_bool"
-      },
-      "t_array(t_bytes32)dyn_storage": {
-        "encoding": "dynamic_array",
-        "label": "bytes32[]",
-        "numberOfBytes": "32",
-        "base": "t_bytes32"
-      },
-      "t_array(t_struct(Request)16120_storage)dyn_storage": {
-        "encoding": "dynamic_array",
-        "label": "struct GeneralizedTCRStorageV1.Request[]",
-        "numberOfBytes": "32",
-        "base": "t_struct(Request)16120_storage"
-      },
-      "t_array(t_struct(Round)16138_storage)dyn_storage": {
-        "encoding": "dynamic_array",
-        "label": "struct GeneralizedTCRStorageV1.Round[]",
-        "numberOfBytes": "32",
-        "base": "t_struct(Round)16138_storage"
-      },
-      "t_array(t_uint256)3_storage": {
-        "encoding": "inplace",
-        "label": "uint256[3]",
-        "numberOfBytes": "96",
-        "base": "t_uint256"
-      },
-      "t_array(t_uint256)49_storage": {
-        "encoding": "inplace",
-        "label": "uint256[49]",
-        "numberOfBytes": "1568",
-        "base": "t_uint256"
-      },
-      "t_array(t_uint256)50_storage": {
-        "encoding": "inplace",
-        "label": "uint256[50]",
-        "numberOfBytes": "1600",
-        "base": "t_uint256"
-      },
-      "t_bool": {
-        "encoding": "inplace",
-        "label": "bool",
-        "numberOfBytes": "1"
-      },
-      "t_bytes32": {
-        "encoding": "inplace",
-        "label": "bytes32",
-        "numberOfBytes": "32"
-      },
-      "t_bytes_storage": {
-        "encoding": "bytes",
-        "label": "bytes",
-        "numberOfBytes": "32"
-      },
-      "t_contract(IArbitrator)15173": {
-        "encoding": "inplace",
-        "label": "contract IArbitrator",
-        "numberOfBytes": "20"
-      },
-      "t_contract(IERC20)1565": {
-        "encoding": "inplace",
-        "label": "contract IERC20",
-        "numberOfBytes": "20"
-      },
-      "t_contract(IManagedFlow)12192": {
-        "encoding": "inplace",
-        "label": "contract IManagedFlow",
-        "numberOfBytes": "20"
-      },
-      "t_contract(ITCRFactory)15560": {
-        "encoding": "inplace",
-        "label": "contract ITCRFactory",
-        "numberOfBytes": "20"
-      },
-      "t_enum(Party)15110": {
-        "encoding": "inplace",
-        "label": "enum IArbitrable.Party",
-        "numberOfBytes": "1"
-      },
-      "t_enum(RecipientType)12589": {
-        "encoding": "inplace",
-        "label": "enum FlowTypes.RecipientType",
-        "numberOfBytes": "1"
-      },
-      "t_enum(Status)15286": {
-        "encoding": "inplace",
-        "label": "enum IGeneralizedTCR.Status",
-        "numberOfBytes": "1"
-      },
-      "t_int256": {
-        "encoding": "inplace",
-        "label": "int256",
-        "numberOfBytes": "32"
-      },
-      "t_mapping(t_address,t_array(t_uint256)3_storage)": {
-        "encoding": "mapping",
-        "key": "t_address",
-        "label": "mapping(address => uint256[3])",
-        "numberOfBytes": "32",
-        "value": "t_array(t_uint256)3_storage"
-      },
-      "t_mapping(t_address,t_mapping(t_uint256,t_bytes32))": {
-        "encoding": "mapping",
-        "key": "t_address",
-        "label": "mapping(address => mapping(uint256 => bytes32))",
-        "numberOfBytes": "32",
-        "value": "t_mapping(t_uint256,t_bytes32)"
-      },
-      "t_mapping(t_bytes32,t_struct(Item)16092_storage)": {
-        "encoding": "mapping",
-        "key": "t_bytes32",
-        "label": "mapping(bytes32 => struct GeneralizedTCRStorageV1.Item)",
-        "numberOfBytes": "32",
-        "value": "t_struct(Item)16092_storage"
-      },
-      "t_mapping(t_bytes32,t_uint256)": {
-        "encoding": "mapping",
-        "key": "t_bytes32",
-        "label": "mapping(bytes32 => uint256)",
-        "numberOfBytes": "32",
-        "value": "t_uint256"
-      },
-      "t_mapping(t_uint256,t_bytes32)": {
-        "encoding": "mapping",
-        "key": "t_uint256",
-        "label": "mapping(uint256 => bytes32)",
-        "numberOfBytes": "32",
-        "value": "t_bytes32"
-      },
-      "t_string_storage": {
-        "encoding": "bytes",
-        "label": "string",
-        "numberOfBytes": "32"
-      },
-      "t_struct(Item)16092_storage": {
-        "encoding": "inplace",
-        "label": "struct GeneralizedTCRStorageV1.Item",
-        "numberOfBytes": "96",
-        "members": [
-          {
-            "contract": "src/tcr/FlowTCR.sol:FlowTCR",
-            "label": "data",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_bytes_storage"
-          },
-          {
-            "contract": "src/tcr/FlowTCR.sol:FlowTCR",
-            "label": "manager",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/tcr/FlowTCR.sol:FlowTCR",
-            "label": "status",
-            "offset": 20,
-            "slot": "1",
-            "type": "t_enum(Status)15286"
-          },
-          {
-            "contract": "src/tcr/FlowTCR.sol:FlowTCR",
-            "label": "requests",
-            "offset": 0,
-            "slot": "2",
-            "type": "t_array(t_struct(Request)16120_storage)dyn_storage"
-          }
-        ]
-      },
-      "t_struct(Request)16120_storage": {
-        "encoding": "inplace",
-        "label": "struct GeneralizedTCRStorageV1.Request",
-        "numberOfBytes": "352",
-        "members": [
-          {
-            "contract": "src/tcr/FlowTCR.sol:FlowTCR",
-            "label": "disputed",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_bool"
-          },
-          {
-            "contract": "src/tcr/FlowTCR.sol:FlowTCR",
-            "label": "disputeID",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/tcr/FlowTCR.sol:FlowTCR",
-            "label": "submissionTime",
-            "offset": 0,
-            "slot": "2",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/tcr/FlowTCR.sol:FlowTCR",
-            "label": "resolved",
-            "offset": 0,
-            "slot": "3",
-            "type": "t_bool"
-          },
-          {
-            "contract": "src/tcr/FlowTCR.sol:FlowTCR",
-            "label": "parties",
-            "offset": 0,
-            "slot": "4",
-            "type": "t_array(t_address)3_storage"
-          },
-          {
-            "contract": "src/tcr/FlowTCR.sol:FlowTCR",
-            "label": "rounds",
-            "offset": 0,
-            "slot": "7",
-            "type": "t_array(t_struct(Round)16138_storage)dyn_storage"
-          },
-          {
-            "contract": "src/tcr/FlowTCR.sol:FlowTCR",
-            "label": "ruling",
-            "offset": 0,
-            "slot": "8",
-            "type": "t_enum(Party)15110"
-          },
-          {
-            "contract": "src/tcr/FlowTCR.sol:FlowTCR",
-            "label": "arbitrator",
-            "offset": 1,
-            "slot": "8",
-            "type": "t_contract(IArbitrator)15173"
-          },
-          {
-            "contract": "src/tcr/FlowTCR.sol:FlowTCR",
-            "label": "arbitratorExtraData",
-            "offset": 0,
-            "slot": "9",
-            "type": "t_bytes_storage"
-          },
-          {
-            "contract": "src/tcr/FlowTCR.sol:FlowTCR",
-            "label": "metaEvidenceID",
-            "offset": 0,
-            "slot": "10",
-            "type": "t_uint256"
-          }
-        ]
-      },
-      "t_struct(Round)16138_storage": {
-        "encoding": "inplace",
-        "label": "struct GeneralizedTCRStorageV1.Round",
-        "numberOfBytes": "192",
-        "members": [
-          {
-            "contract": "src/tcr/FlowTCR.sol:FlowTCR",
-            "label": "amountPaid",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_array(t_uint256)3_storage"
-          },
-          {
-            "contract": "src/tcr/FlowTCR.sol:FlowTCR",
-            "label": "hasPaid",
-            "offset": 0,
-            "slot": "3",
-            "type": "t_array(t_bool)3_storage"
-          },
-          {
-            "contract": "src/tcr/FlowTCR.sol:FlowTCR",
-            "label": "feeRewards",
-            "offset": 0,
-            "slot": "4",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/tcr/FlowTCR.sol:FlowTCR",
-            "label": "contributions",
-            "offset": 0,
-            "slot": "5",
-            "type": "t_mapping(t_address,t_array(t_uint256)3_storage)"
-          }
-        ]
-      },
-      "t_uint256": {
-        "encoding": "inplace",
-        "label": "uint256",
-        "numberOfBytes": "32"
-      },
-      "t_uint8": {
-        "encoding": "inplace",
-        "label": "uint8",
-        "numberOfBytes": "1"
-      }
-    }
+    ]
   },
   "ERC20VotesArbitrator": {
     "storage": [
@@ -2181,14 +696,14 @@
         "label": "votingToken",
         "offset": 0,
         "slot": "0",
-        "type": "t_contract(ERC20VotesMintable)16686"
+        "type": "t_contract(ERC20VotesMintable)"
       },
       {
         "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
         "label": "arbitrable",
         "offset": 0,
         "slot": "1",
-        "type": "t_contract(IArbitrable)19838"
+        "type": "t_contract(IArbitrable)"
       },
       {
         "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
@@ -2251,21 +766,21 @@
         "label": "__gap",
         "offset": 0,
         "slot": "9",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
         "label": "__gap",
         "offset": 0,
         "slot": "59",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
         "label": "__gap",
         "offset": 0,
         "slot": "109",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
@@ -2279,7 +794,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "160",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
@@ -2293,7 +808,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "210",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
@@ -2307,299 +822,9 @@
         "label": "__gap",
         "offset": 0,
         "slot": "260",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       }
-    ],
-    "types": {
-      "t_address": {
-        "encoding": "inplace",
-        "label": "address",
-        "numberOfBytes": "20"
-      },
-      "t_array(t_uint256)49_storage": {
-        "encoding": "inplace",
-        "label": "uint256[49]",
-        "numberOfBytes": "1568",
-        "base": "t_uint256"
-      },
-      "t_array(t_uint256)50_storage": {
-        "encoding": "inplace",
-        "label": "uint256[50]",
-        "numberOfBytes": "1600",
-        "base": "t_uint256"
-      },
-      "t_bool": {
-        "encoding": "inplace",
-        "label": "bool",
-        "numberOfBytes": "1"
-      },
-      "t_bytes32": {
-        "encoding": "inplace",
-        "label": "bytes32",
-        "numberOfBytes": "32"
-      },
-      "t_bytes_storage": {
-        "encoding": "bytes",
-        "label": "bytes",
-        "numberOfBytes": "32"
-      },
-      "t_contract(ERC20VotesMintable)16686": {
-        "encoding": "inplace",
-        "label": "contract ERC20VotesMintable",
-        "numberOfBytes": "20"
-      },
-      "t_contract(IArbitrable)19838": {
-        "encoding": "inplace",
-        "label": "contract IArbitrable",
-        "numberOfBytes": "20"
-      },
-      "t_enum(Party)19837": {
-        "encoding": "inplace",
-        "label": "enum IArbitrable.Party",
-        "numberOfBytes": "1"
-      },
-      "t_mapping(t_address,t_bool)": {
-        "encoding": "mapping",
-        "key": "t_address",
-        "label": "mapping(address => bool)",
-        "numberOfBytes": "32",
-        "value": "t_bool"
-      },
-      "t_mapping(t_address,t_struct(Receipt)20412_storage)": {
-        "encoding": "mapping",
-        "key": "t_address",
-        "label": "mapping(address => struct ArbitratorStorageV1.Receipt)",
-        "numberOfBytes": "32",
-        "value": "t_struct(Receipt)20412_storage"
-      },
-      "t_mapping(t_uint256,t_struct(Dispute)20444_storage)": {
-        "encoding": "mapping",
-        "key": "t_uint256",
-        "label": "mapping(uint256 => struct ArbitratorStorageV1.Dispute)",
-        "numberOfBytes": "32",
-        "value": "t_struct(Dispute)20444_storage"
-      },
-      "t_mapping(t_uint256,t_struct(VotingRound)20492_storage)": {
-        "encoding": "mapping",
-        "key": "t_uint256",
-        "label": "mapping(uint256 => struct ArbitratorStorageV1.VotingRound)",
-        "numberOfBytes": "32",
-        "value": "t_struct(VotingRound)20492_storage"
-      },
-      "t_mapping(t_uint256,t_uint256)": {
-        "encoding": "mapping",
-        "key": "t_uint256",
-        "label": "mapping(uint256 => uint256)",
-        "numberOfBytes": "32",
-        "value": "t_uint256"
-      },
-      "t_struct(Dispute)20444_storage": {
-        "encoding": "inplace",
-        "label": "struct ArbitratorStorageV1.Dispute",
-        "numberOfBytes": "192",
-        "members": [
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "id",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "arbitrable",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "executed",
-            "offset": 20,
-            "slot": "1",
-            "type": "t_bool"
-          },
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "rounds",
-            "offset": 0,
-            "slot": "2",
-            "type": "t_mapping(t_uint256,t_struct(VotingRound)20492_storage)"
-          },
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "currentRound",
-            "offset": 0,
-            "slot": "3",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "choices",
-            "offset": 0,
-            "slot": "4",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "winningChoice",
-            "offset": 0,
-            "slot": "5",
-            "type": "t_uint256"
-          }
-        ]
-      },
-      "t_struct(Receipt)20412_storage": {
-        "encoding": "inplace",
-        "label": "struct ArbitratorStorageV1.Receipt",
-        "numberOfBytes": "128",
-        "members": [
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "hasCommitted",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_bool"
-          },
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "hasRevealed",
-            "offset": 1,
-            "slot": "0",
-            "type": "t_bool"
-          },
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "commitHash",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_bytes32"
-          },
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "choice",
-            "offset": 0,
-            "slot": "2",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "votes",
-            "offset": 0,
-            "slot": "3",
-            "type": "t_uint256"
-          }
-        ]
-      },
-      "t_struct(VotingRound)20492_storage": {
-        "encoding": "inplace",
-        "label": "struct ArbitratorStorageV1.VotingRound",
-        "numberOfBytes": "416",
-        "members": [
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "cost",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "votingStartTime",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "votingEndTime",
-            "offset": 0,
-            "slot": "2",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "revealPeriodStartTime",
-            "offset": 0,
-            "slot": "3",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "revealPeriodEndTime",
-            "offset": 0,
-            "slot": "4",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "votes",
-            "offset": 0,
-            "slot": "5",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "ruling",
-            "offset": 0,
-            "slot": "6",
-            "type": "t_enum(Party)19837"
-          },
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "choiceVotes",
-            "offset": 0,
-            "slot": "7",
-            "type": "t_mapping(t_uint256,t_uint256)"
-          },
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "extraData",
-            "offset": 0,
-            "slot": "8",
-            "type": "t_bytes_storage"
-          },
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "creationBlock",
-            "offset": 0,
-            "slot": "9",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "totalSupply",
-            "offset": 0,
-            "slot": "10",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "receipts",
-            "offset": 0,
-            "slot": "11",
-            "type": "t_mapping(t_address,t_struct(Receipt)20412_storage)"
-          },
-          {
-            "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
-            "label": "rewardsClaimed",
-            "offset": 0,
-            "slot": "12",
-            "type": "t_mapping(t_address,t_bool)"
-          }
-        ]
-      },
-      "t_uint256": {
-        "encoding": "inplace",
-        "label": "uint256",
-        "numberOfBytes": "32"
-      },
-      "t_uint8": {
-        "encoding": "inplace",
-        "label": "uint8",
-        "numberOfBytes": "1"
-      }
-    }
+    ]
   },
   "ERC20VotesMintable": {
     "storage": [
@@ -2622,21 +847,21 @@
         "label": "__gap",
         "offset": 0,
         "slot": "1",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "__gap",
         "offset": 0,
         "slot": "51",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "__gap",
         "offset": 0,
         "slot": "101",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
@@ -2650,7 +875,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "152",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
@@ -2664,7 +889,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "202",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
@@ -2678,7 +903,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "252",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
@@ -2720,7 +945,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "306",
-        "type": "t_array(t_uint256)45_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
@@ -2755,7 +980,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "355",
-        "type": "t_array(t_uint256)48_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
@@ -2776,7 +1001,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "405",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
@@ -2804,7 +1029,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "457",
-        "type": "t_array(t_uint256)47_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
@@ -2834,203 +1059,7 @@
         "slot": "506",
         "type": "t_struct(AddressSet)_storage"
       }
-    ],
-    "types": {
-      "t_address": {
-        "encoding": "inplace",
-        "label": "address",
-        "numberOfBytes": "20"
-      },
-      "t_array(t_bytes32)dyn_storage": {
-        "encoding": "dynamic_array",
-        "label": "bytes32[]",
-        "numberOfBytes": "32",
-        "base": "t_bytes32"
-      },
-      "t_array(t_struct(Checkpoint)16706_storage)dyn_storage": {
-        "encoding": "dynamic_array",
-        "label": "struct ERC20VotesUpgradeable.Checkpoint[]",
-        "numberOfBytes": "32",
-        "base": "t_struct(Checkpoint)16706_storage"
-      },
-      "t_array(t_uint256)45_storage": {
-        "encoding": "inplace",
-        "label": "uint256[45]",
-        "numberOfBytes": "1440",
-        "base": "t_uint256"
-      },
-      "t_array(t_uint256)47_storage": {
-        "encoding": "inplace",
-        "label": "uint256[47]",
-        "numberOfBytes": "1504",
-        "base": "t_uint256"
-      },
-      "t_array(t_uint256)48_storage": {
-        "encoding": "inplace",
-        "label": "uint256[48]",
-        "numberOfBytes": "1536",
-        "base": "t_uint256"
-      },
-      "t_array(t_uint256)49_storage": {
-        "encoding": "inplace",
-        "label": "uint256[49]",
-        "numberOfBytes": "1568",
-        "base": "t_uint256"
-      },
-      "t_array(t_uint256)50_storage": {
-        "encoding": "inplace",
-        "label": "uint256[50]",
-        "numberOfBytes": "1600",
-        "base": "t_uint256"
-      },
-      "t_bool": {
-        "encoding": "inplace",
-        "label": "bool",
-        "numberOfBytes": "1"
-      },
-      "t_bytes32": {
-        "encoding": "inplace",
-        "label": "bytes32",
-        "numberOfBytes": "32"
-      },
-      "t_mapping(t_address,t_address)": {
-        "encoding": "mapping",
-        "key": "t_address",
-        "label": "mapping(address => address)",
-        "numberOfBytes": "32",
-        "value": "t_address"
-      },
-      "t_mapping(t_address,t_array(t_struct(Checkpoint)16706_storage)dyn_storage)": {
-        "encoding": "mapping",
-        "key": "t_address",
-        "label": "mapping(address => struct ERC20VotesUpgradeable.Checkpoint[])",
-        "numberOfBytes": "32",
-        "value": "t_array(t_struct(Checkpoint)16706_storage)dyn_storage"
-      },
-      "t_mapping(t_address,t_mapping(t_address,t_uint256))": {
-        "encoding": "mapping",
-        "key": "t_address",
-        "label": "mapping(address => mapping(address => uint256))",
-        "numberOfBytes": "32",
-        "value": "t_mapping(t_address,t_uint256)"
-      },
-      "t_mapping(t_address,t_struct(Counter)2454_storage)": {
-        "encoding": "mapping",
-        "key": "t_address",
-        "label": "mapping(address => struct CountersUpgradeable.Counter)",
-        "numberOfBytes": "32",
-        "value": "t_struct(Counter)2454_storage"
-      },
-      "t_mapping(t_address,t_uint256)": {
-        "encoding": "mapping",
-        "key": "t_address",
-        "label": "mapping(address => uint256)",
-        "numberOfBytes": "32",
-        "value": "t_uint256"
-      },
-      "t_mapping(t_bytes32,t_uint256)": {
-        "encoding": "mapping",
-        "key": "t_bytes32",
-        "label": "mapping(bytes32 => uint256)",
-        "numberOfBytes": "32",
-        "value": "t_uint256"
-      },
-      "t_string_storage": {
-        "encoding": "bytes",
-        "label": "string",
-        "numberOfBytes": "32"
-      },
-      "t_struct(AddressSet)7544_storage": {
-        "encoding": "inplace",
-        "label": "struct EnumerableSet.AddressSet",
-        "numberOfBytes": "64",
-        "members": [
-          {
-            "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
-            "label": "_inner",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_struct(Set)_storage"
-          }
-        ]
-      },
-      "t_struct(Checkpoint)16706_storage": {
-        "encoding": "inplace",
-        "label": "struct ERC20VotesUpgradeable.Checkpoint",
-        "numberOfBytes": "32",
-        "members": [
-          {
-            "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
-            "label": "fromBlock",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_uint32"
-          },
-          {
-            "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
-            "label": "votes",
-            "offset": 4,
-            "slot": "0",
-            "type": "t_uint224"
-          }
-        ]
-      },
-      "t_struct(Counter)2454_storage": {
-        "encoding": "inplace",
-        "label": "struct CountersUpgradeable.Counter",
-        "numberOfBytes": "32",
-        "members": [
-          {
-            "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
-            "label": "_value",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_uint256"
-          }
-        ]
-      },
-      "t_struct(Set)7229_storage": {
-        "encoding": "inplace",
-        "label": "struct EnumerableSet.Set",
-        "numberOfBytes": "64",
-        "members": [
-          {
-            "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
-            "label": "_values",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_array(t_bytes32)dyn_storage"
-          },
-          {
-            "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
-            "label": "_indexes",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_mapping(t_bytes32,t_uint256)"
-          }
-        ]
-      },
-      "t_uint224": {
-        "encoding": "inplace",
-        "label": "uint224",
-        "numberOfBytes": "28"
-      },
-      "t_uint256": {
-        "encoding": "inplace",
-        "label": "uint256",
-        "numberOfBytes": "32"
-      },
-      "t_uint32": {
-        "encoding": "inplace",
-        "label": "uint32",
-        "numberOfBytes": "4"
-      },
-      "t_uint8": {
-        "encoding": "inplace",
-        "label": "uint8",
-        "numberOfBytes": "1"
-      }
-    }
+    ]
   },
   "TokenEmitter": {
     "storage": [
@@ -3102,7 +1131,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "8",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/TokenEmitter.sol:TokenEmitter",
@@ -3116,21 +1145,21 @@
         "label": "__gap",
         "offset": 0,
         "slot": "59",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/TokenEmitter.sol:TokenEmitter",
         "label": "__gap",
         "offset": 0,
         "slot": "108",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/TokenEmitter.sol:TokenEmitter",
         "label": "__gap",
         "offset": 0,
         "slot": "158",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/TokenEmitter.sol:TokenEmitter",
@@ -3144,21 +1173,21 @@
         "label": "__gap",
         "offset": 0,
         "slot": "209",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/TokenEmitter.sol:TokenEmitter",
         "label": "erc20",
         "offset": 0,
         "slot": "258",
-        "type": "t_contract(ERC20VotesMintable)8482"
+        "type": "t_contract(ERC20VotesMintable)"
       },
       {
         "contract": "src/TokenEmitter.sol:TokenEmitter",
         "label": "WETH",
         "offset": 0,
         "slot": "259",
-        "type": "t_contract(IWETH)10318"
+        "type": "t_contract(IWETH)"
       },
       {
         "contract": "src/TokenEmitter.sol:TokenEmitter",
@@ -3188,56 +1217,7 @@
         "slot": "263",
         "type": "t_uint256"
       }
-    ],
-    "types": {
-      "t_address": {
-        "encoding": "inplace",
-        "label": "address",
-        "numberOfBytes": "20"
-      },
-      "t_array(t_uint256)49_storage": {
-        "encoding": "inplace",
-        "label": "uint256[49]",
-        "numberOfBytes": "1568",
-        "base": "t_uint256"
-      },
-      "t_array(t_uint256)50_storage": {
-        "encoding": "inplace",
-        "label": "uint256[50]",
-        "numberOfBytes": "1600",
-        "base": "t_uint256"
-      },
-      "t_bool": {
-        "encoding": "inplace",
-        "label": "bool",
-        "numberOfBytes": "1"
-      },
-      "t_contract(ERC20VotesMintable)8482": {
-        "encoding": "inplace",
-        "label": "contract ERC20VotesMintable",
-        "numberOfBytes": "20"
-      },
-      "t_contract(IWETH)10318": {
-        "encoding": "inplace",
-        "label": "contract IWETH",
-        "numberOfBytes": "20"
-      },
-      "t_int256": {
-        "encoding": "inplace",
-        "label": "int256",
-        "numberOfBytes": "32"
-      },
-      "t_uint256": {
-        "encoding": "inplace",
-        "label": "uint256",
-        "numberOfBytes": "32"
-      },
-      "t_uint8": {
-        "encoding": "inplace",
-        "label": "uint8",
-        "numberOfBytes": "1"
-      }
-    }
+    ]
   },
   "TCRFactory": {
     "storage": [
@@ -3260,7 +1240,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "1",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/tcr/TCRFactory.sol:TCRFactory",
@@ -3274,7 +1254,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "52",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/tcr/TCRFactory.sol:TCRFactory",
@@ -3288,21 +1268,21 @@
         "label": "__gap",
         "offset": 0,
         "slot": "102",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/tcr/TCRFactory.sol:TCRFactory",
         "label": "__gap",
         "offset": 0,
         "slot": "151",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/tcr/TCRFactory.sol:TCRFactory",
         "label": "__gap",
         "offset": 0,
         "slot": "201",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/tcr/TCRFactory.sol:TCRFactory",
@@ -3346,41 +1326,7 @@
         "slot": "256",
         "type": "t_address"
       }
-    ],
-    "types": {
-      "t_address": {
-        "encoding": "inplace",
-        "label": "address",
-        "numberOfBytes": "20"
-      },
-      "t_array(t_uint256)49_storage": {
-        "encoding": "inplace",
-        "label": "uint256[49]",
-        "numberOfBytes": "1568",
-        "base": "t_uint256"
-      },
-      "t_array(t_uint256)50_storage": {
-        "encoding": "inplace",
-        "label": "uint256[50]",
-        "numberOfBytes": "1600",
-        "base": "t_uint256"
-      },
-      "t_bool": {
-        "encoding": "inplace",
-        "label": "bool",
-        "numberOfBytes": "1"
-      },
-      "t_uint256": {
-        "encoding": "inplace",
-        "label": "uint256",
-        "numberOfBytes": "32"
-      },
-      "t_uint8": {
-        "encoding": "inplace",
-        "label": "uint8",
-        "numberOfBytes": "1"
-      }
-    }
+    ]
   },
   "RewardPool": {
     "storage": [
@@ -3403,21 +1349,21 @@
         "label": "__gap",
         "offset": 0,
         "slot": "1",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/RewardPool.sol:RewardPool",
         "label": "__gap",
         "offset": 0,
         "slot": "51",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/RewardPool.sol:RewardPool",
         "label": "__gap",
         "offset": 0,
         "slot": "101",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/RewardPool.sol:RewardPool",
@@ -3431,7 +1377,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "152",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/RewardPool.sol:RewardPool",
@@ -3445,7 +1391,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "202",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/RewardPool.sol:RewardPool",
@@ -3459,21 +1405,21 @@
         "label": "__gap",
         "offset": 0,
         "slot": "252",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/RewardPool.sol:RewardPool",
         "label": "superToken",
         "offset": 0,
         "slot": "301",
-        "type": "t_contract(ISuperToken)10644"
+        "type": "t_contract(ISuperToken)"
       },
       {
         "contract": "src/RewardPool.sol:RewardPool",
         "label": "rewardPool",
         "offset": 0,
         "slot": "302",
-        "type": "t_contract(ISuperfluidPool)9476"
+        "type": "t_contract(ISuperfluidPool)"
       },
       {
         "contract": "src/RewardPool.sol:RewardPool",
@@ -3503,77 +1449,7 @@
         "slot": "305",
         "type": "t_struct(PoolConfig)_storage"
       }
-    ],
-    "types": {
-      "t_address": {
-        "encoding": "inplace",
-        "label": "address",
-        "numberOfBytes": "20"
-      },
-      "t_array(t_uint256)49_storage": {
-        "encoding": "inplace",
-        "label": "uint256[49]",
-        "numberOfBytes": "1568",
-        "base": "t_uint256"
-      },
-      "t_array(t_uint256)50_storage": {
-        "encoding": "inplace",
-        "label": "uint256[50]",
-        "numberOfBytes": "1600",
-        "base": "t_uint256"
-      },
-      "t_bool": {
-        "encoding": "inplace",
-        "label": "bool",
-        "numberOfBytes": "1"
-      },
-      "t_contract(ISuperToken)10644": {
-        "encoding": "inplace",
-        "label": "contract ISuperToken",
-        "numberOfBytes": "20"
-      },
-      "t_contract(ISuperfluidPool)9476": {
-        "encoding": "inplace",
-        "label": "contract ISuperfluidPool",
-        "numberOfBytes": "20"
-      },
-      "t_int96": {
-        "encoding": "inplace",
-        "label": "int96",
-        "numberOfBytes": "12"
-      },
-      "t_struct(PoolConfig)8766_storage": {
-        "encoding": "inplace",
-        "label": "struct PoolConfig",
-        "numberOfBytes": "32",
-        "members": [
-          {
-            "contract": "src/RewardPool.sol:RewardPool",
-            "label": "transferabilityForUnitsOwner",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_bool"
-          },
-          {
-            "contract": "src/RewardPool.sol:RewardPool",
-            "label": "distributionFromAnyAddress",
-            "offset": 1,
-            "slot": "0",
-            "type": "t_bool"
-          }
-        ]
-      },
-      "t_uint256": {
-        "encoding": "inplace",
-        "label": "uint256",
-        "numberOfBytes": "32"
-      },
-      "t_uint8": {
-        "encoding": "inplace",
-        "label": "uint8",
-        "numberOfBytes": "1"
-      }
-    }
+    ]
   },
   "NounsFlow": {
     "storage": [
@@ -3596,21 +1472,21 @@
         "label": "__gap",
         "offset": 0,
         "slot": "1",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/NounsFlow.sol:NounsFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "51",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/NounsFlow.sol:NounsFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "101",
-        "type": "t_array(t_uint256)50_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/NounsFlow.sol:NounsFlow",
@@ -3624,7 +1500,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "152",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/NounsFlow.sol:NounsFlow",
@@ -3638,7 +1514,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "202",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/NounsFlow.sol:NounsFlow",
@@ -3652,7 +1528,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "252",
-        "type": "t_array(t_uint256)49_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/NounsFlow.sol:NounsFlow",
@@ -3666,7 +1542,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "323",
-        "type": "t_array(t_uint256)100_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/NounsFlow.sol:NounsFlow",
@@ -3687,454 +1563,9 @@
         "label": "verifier",
         "offset": 0,
         "slot": "427",
-        "type": "t_contract(ITokenVerifier)14875"
+        "type": "t_contract(ITokenVerifier)"
       }
-    ],
-    "types": {
-      "t_address": {
-        "encoding": "inplace",
-        "label": "address",
-        "numberOfBytes": "20"
-      },
-      "t_array(t_bytes32)dyn_storage": {
-        "encoding": "dynamic_array",
-        "label": "bytes32[]",
-        "numberOfBytes": "32",
-        "base": "t_bytes32"
-      },
-      "t_array(t_struct(VoteAllocation)16954_storage)dyn_storage": {
-        "encoding": "dynamic_array",
-        "label": "struct FlowTypes.VoteAllocation[]",
-        "numberOfBytes": "32",
-        "base": "t_struct(VoteAllocation)16954_storage"
-      },
-      "t_array(t_uint256)100_storage": {
-        "encoding": "inplace",
-        "label": "uint256[100]",
-        "numberOfBytes": "3200",
-        "base": "t_uint256"
-      },
-      "t_array(t_uint256)49_storage": {
-        "encoding": "inplace",
-        "label": "uint256[49]",
-        "numberOfBytes": "1568",
-        "base": "t_uint256"
-      },
-      "t_array(t_uint256)50_storage": {
-        "encoding": "inplace",
-        "label": "uint256[50]",
-        "numberOfBytes": "1600",
-        "base": "t_uint256"
-      },
-      "t_bool": {
-        "encoding": "inplace",
-        "label": "bool",
-        "numberOfBytes": "1"
-      },
-      "t_bytes32": {
-        "encoding": "inplace",
-        "label": "bytes32",
-        "numberOfBytes": "32"
-      },
-      "t_contract(IChainalysisSanctionsList)14885": {
-        "encoding": "inplace",
-        "label": "contract IChainalysisSanctionsList",
-        "numberOfBytes": "20"
-      },
-      "t_contract(ISuperToken)10644": {
-        "encoding": "inplace",
-        "label": "contract ISuperToken",
-        "numberOfBytes": "20"
-      },
-      "t_contract(ISuperfluidPool)9476": {
-        "encoding": "inplace",
-        "label": "contract ISuperfluidPool",
-        "numberOfBytes": "20"
-      },
-      "t_contract(ITokenVerifier)14875": {
-        "encoding": "inplace",
-        "label": "contract ITokenVerifier",
-        "numberOfBytes": "20"
-      },
-      "t_enum(RecipientType)16958": {
-        "encoding": "inplace",
-        "label": "enum FlowTypes.RecipientType",
-        "numberOfBytes": "1"
-      },
-      "t_int96": {
-        "encoding": "inplace",
-        "label": "int96",
-        "numberOfBytes": "12"
-      },
-      "t_mapping(t_address,t_bool)": {
-        "encoding": "mapping",
-        "key": "t_address",
-        "label": "mapping(address => bool)",
-        "numberOfBytes": "32",
-        "value": "t_bool"
-      },
-      "t_mapping(t_address,t_uint256)": {
-        "encoding": "mapping",
-        "key": "t_address",
-        "label": "mapping(address => uint256)",
-        "numberOfBytes": "32",
-        "value": "t_uint256"
-      },
-      "t_mapping(t_bytes32,t_struct(FlowRecipient)16980_storage)": {
-        "encoding": "mapping",
-        "key": "t_bytes32",
-        "label": "mapping(bytes32 => struct FlowTypes.FlowRecipient)",
-        "numberOfBytes": "32",
-        "value": "t_struct(FlowRecipient)16980_storage"
-      },
-      "t_mapping(t_bytes32,t_uint256)": {
-        "encoding": "mapping",
-        "key": "t_bytes32",
-        "label": "mapping(bytes32 => uint256)",
-        "numberOfBytes": "32",
-        "value": "t_uint256"
-      },
-      "t_mapping(t_uint256,t_address)": {
-        "encoding": "mapping",
-        "key": "t_uint256",
-        "label": "mapping(uint256 => address)",
-        "numberOfBytes": "32",
-        "value": "t_address"
-      },
-      "t_mapping(t_uint256,t_array(t_struct(VoteAllocation)16954_storage)dyn_storage)": {
-        "encoding": "mapping",
-        "key": "t_uint256",
-        "label": "mapping(uint256 => struct FlowTypes.VoteAllocation[])",
-        "numberOfBytes": "32",
-        "value": "t_array(t_struct(VoteAllocation)16954_storage)dyn_storage"
-      },
-      "t_mapping(t_uint256,t_mapping(t_address,t_uint256))": {
-        "encoding": "mapping",
-        "key": "t_uint256",
-        "label": "mapping(uint256 => mapping(address => uint256))",
-        "numberOfBytes": "32",
-        "value": "t_mapping(t_address,t_uint256)"
-      },
-      "t_string_storage": {
-        "encoding": "bytes",
-        "label": "string",
-        "numberOfBytes": "32"
-      },
-      "t_struct(AddressSet)3139_storage": {
-        "encoding": "inplace",
-        "label": "struct EnumerableSet.AddressSet",
-        "numberOfBytes": "64",
-        "members": [
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "_inner",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_struct(Set)_storage"
-          }
-        ]
-      },
-      "t_struct(FlowRecipient)16980_storage": {
-        "encoding": "inplace",
-        "label": "struct FlowTypes.FlowRecipient",
-        "numberOfBytes": "192",
-        "members": [
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "recipient",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "removed",
-            "offset": 20,
-            "slot": "0",
-            "type": "t_bool"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "recipientType",
-            "offset": 21,
-            "slot": "0",
-            "type": "t_enum(RecipientType)16958"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "metadata",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_struct(RecipientMetadata)_storage"
-          }
-        ]
-      },
-      "t_struct(RecipientMetadata)16969_storage": {
-        "encoding": "inplace",
-        "label": "struct FlowTypes.RecipientMetadata",
-        "numberOfBytes": "160",
-        "members": [
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "title",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_string_storage"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "description",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_string_storage"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "image",
-            "offset": 0,
-            "slot": "2",
-            "type": "t_string_storage"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "tagline",
-            "offset": 0,
-            "slot": "3",
-            "type": "t_string_storage"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "url",
-            "offset": 0,
-            "slot": "4",
-            "type": "t_string_storage"
-          }
-        ]
-      },
-      "t_struct(Set)2824_storage": {
-        "encoding": "inplace",
-        "label": "struct EnumerableSet.Set",
-        "numberOfBytes": "64",
-        "members": [
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "_values",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_array(t_bytes32)dyn_storage"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "_indexes",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_mapping(t_bytes32,t_uint256)"
-          }
-        ]
-      },
-      "t_struct(Storage)17055_storage": {
-        "encoding": "inplace",
-        "label": "struct FlowTypes.Storage",
-        "numberOfBytes": "704",
-        "members": [
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "baselinePoolFlowRatePercent",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_uint32"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "managerRewardPoolFlowRatePercent",
-            "offset": 4,
-            "slot": "0",
-            "type": "t_uint32"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "flowImpl",
-            "offset": 8,
-            "slot": "0",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "parent",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "manager",
-            "offset": 0,
-            "slot": "2",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "managerRewardPool",
-            "offset": 0,
-            "slot": "3",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "activeRecipientCount",
-            "offset": 0,
-            "slot": "4",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "metadata",
-            "offset": 0,
-            "slot": "5",
-            "type": "t_struct(RecipientMetadata)_storage"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "recipients",
-            "offset": 0,
-            "slot": "10",
-            "type": "t_mapping(t_bytes32,t_struct(FlowRecipient)16980_storage)"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "recipientExists",
-            "offset": 0,
-            "slot": "11",
-            "type": "t_mapping(t_address,t_bool)"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "superToken",
-            "offset": 0,
-            "slot": "12",
-            "type": "t_contract(ISuperToken)10644"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "bonusPool",
-            "offset": 0,
-            "slot": "13",
-            "type": "t_contract(ISuperfluidPool)9476"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "baselinePool",
-            "offset": 0,
-            "slot": "14",
-            "type": "t_contract(ISuperfluidPool)9476"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "tokenIdToRecipientMemberUnits",
-            "offset": 0,
-            "slot": "15",
-            "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "tokenVoteWeight",
-            "offset": 0,
-            "slot": "16",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "votes",
-            "offset": 0,
-            "slot": "17",
-            "type": "t_mapping(t_uint256,t_array(t_struct(VoteAllocation)16954_storage)dyn_storage)"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "voters",
-            "offset": 0,
-            "slot": "18",
-            "type": "t_mapping(t_uint256,t_address)"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "cachedFlowRate",
-            "offset": 0,
-            "slot": "19",
-            "type": "t_int96"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "totalActiveVoteWeight",
-            "offset": 0,
-            "slot": "20",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "bonusPoolQuorumBps",
-            "offset": 0,
-            "slot": "21",
-            "type": "t_uint32"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "sanctionsOracle",
-            "offset": 4,
-            "slot": "21",
-            "type": "t_contract(IChainalysisSanctionsList)14885"
-          }
-        ]
-      },
-      "t_struct(VoteAllocation)16954_storage": {
-        "encoding": "inplace",
-        "label": "struct FlowTypes.VoteAllocation",
-        "numberOfBytes": "64",
-        "members": [
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "recipientId",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_bytes32"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "bps",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_uint32"
-          },
-          {
-            "contract": "src/NounsFlow.sol:NounsFlow",
-            "label": "memberUnits",
-            "offset": 4,
-            "slot": "1",
-            "type": "t_uint128"
-          }
-        ]
-      },
-      "t_uint128": {
-        "encoding": "inplace",
-        "label": "uint128",
-        "numberOfBytes": "16"
-      },
-      "t_uint256": {
-        "encoding": "inplace",
-        "label": "uint256",
-        "numberOfBytes": "32"
-      },
-      "t_uint32": {
-        "encoding": "inplace",
-        "label": "uint32",
-        "numberOfBytes": "4"
-      },
-      "t_uint8": {
-        "encoding": "inplace",
-        "label": "uint8",
-        "numberOfBytes": "1"
-      }
-    }
+    ]
   },
   "FlowStorageV1": {
     "storage": [
@@ -4150,7 +1581,7 @@
         "label": "__gap",
         "offset": 0,
         "slot": "22",
-        "type": "t_array(t_uint256)100_storage"
+        "type": "t_array(t_uint256)_storage"
       },
       {
         "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
@@ -4166,429 +1597,6 @@
         "slot": "124",
         "type": "t_struct(AddressSet)_storage"
       }
-    ],
-    "types": {
-      "t_address": {
-        "encoding": "inplace",
-        "label": "address",
-        "numberOfBytes": "20"
-      },
-      "t_array(t_bytes32)dyn_storage": {
-        "encoding": "dynamic_array",
-        "label": "bytes32[]",
-        "numberOfBytes": "32",
-        "base": "t_bytes32"
-      },
-      "t_array(t_struct(VoteAllocation)17127_storage)dyn_storage": {
-        "encoding": "dynamic_array",
-        "label": "struct FlowTypes.VoteAllocation[]",
-        "numberOfBytes": "32",
-        "base": "t_struct(VoteAllocation)17127_storage"
-      },
-      "t_array(t_uint256)100_storage": {
-        "encoding": "inplace",
-        "label": "uint256[100]",
-        "numberOfBytes": "3200",
-        "base": "t_uint256"
-      },
-      "t_bool": {
-        "encoding": "inplace",
-        "label": "bool",
-        "numberOfBytes": "1"
-      },
-      "t_bytes32": {
-        "encoding": "inplace",
-        "label": "bytes32",
-        "numberOfBytes": "32"
-      },
-      "t_contract(IChainalysisSanctionsList)15057": {
-        "encoding": "inplace",
-        "label": "contract IChainalysisSanctionsList",
-        "numberOfBytes": "20"
-      },
-      "t_contract(ISuperToken)10644": {
-        "encoding": "inplace",
-        "label": "contract ISuperToken",
-        "numberOfBytes": "20"
-      },
-      "t_contract(ISuperfluidPool)9476": {
-        "encoding": "inplace",
-        "label": "contract ISuperfluidPool",
-        "numberOfBytes": "20"
-      },
-      "t_enum(RecipientType)17131": {
-        "encoding": "inplace",
-        "label": "enum FlowTypes.RecipientType",
-        "numberOfBytes": "1"
-      },
-      "t_int96": {
-        "encoding": "inplace",
-        "label": "int96",
-        "numberOfBytes": "12"
-      },
-      "t_mapping(t_address,t_bool)": {
-        "encoding": "mapping",
-        "key": "t_address",
-        "label": "mapping(address => bool)",
-        "numberOfBytes": "32",
-        "value": "t_bool"
-      },
-      "t_mapping(t_address,t_uint256)": {
-        "encoding": "mapping",
-        "key": "t_address",
-        "label": "mapping(address => uint256)",
-        "numberOfBytes": "32",
-        "value": "t_uint256"
-      },
-      "t_mapping(t_bytes32,t_struct(FlowRecipient)17153_storage)": {
-        "encoding": "mapping",
-        "key": "t_bytes32",
-        "label": "mapping(bytes32 => struct FlowTypes.FlowRecipient)",
-        "numberOfBytes": "32",
-        "value": "t_struct(FlowRecipient)17153_storage"
-      },
-      "t_mapping(t_bytes32,t_uint256)": {
-        "encoding": "mapping",
-        "key": "t_bytes32",
-        "label": "mapping(bytes32 => uint256)",
-        "numberOfBytes": "32",
-        "value": "t_uint256"
-      },
-      "t_mapping(t_uint256,t_address)": {
-        "encoding": "mapping",
-        "key": "t_uint256",
-        "label": "mapping(uint256 => address)",
-        "numberOfBytes": "32",
-        "value": "t_address"
-      },
-      "t_mapping(t_uint256,t_array(t_struct(VoteAllocation)17127_storage)dyn_storage)": {
-        "encoding": "mapping",
-        "key": "t_uint256",
-        "label": "mapping(uint256 => struct FlowTypes.VoteAllocation[])",
-        "numberOfBytes": "32",
-        "value": "t_array(t_struct(VoteAllocation)17127_storage)dyn_storage"
-      },
-      "t_mapping(t_uint256,t_mapping(t_address,t_uint256))": {
-        "encoding": "mapping",
-        "key": "t_uint256",
-        "label": "mapping(uint256 => mapping(address => uint256))",
-        "numberOfBytes": "32",
-        "value": "t_mapping(t_address,t_uint256)"
-      },
-      "t_string_storage": {
-        "encoding": "bytes",
-        "label": "string",
-        "numberOfBytes": "32"
-      },
-      "t_struct(AddressSet)3139_storage": {
-        "encoding": "inplace",
-        "label": "struct EnumerableSet.AddressSet",
-        "numberOfBytes": "64",
-        "members": [
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "_inner",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_struct(Set)_storage"
-          }
-        ]
-      },
-      "t_struct(FlowRecipient)17153_storage": {
-        "encoding": "inplace",
-        "label": "struct FlowTypes.FlowRecipient",
-        "numberOfBytes": "192",
-        "members": [
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "recipient",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "removed",
-            "offset": 20,
-            "slot": "0",
-            "type": "t_bool"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "recipientType",
-            "offset": 21,
-            "slot": "0",
-            "type": "t_enum(RecipientType)17131"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "metadata",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_struct(RecipientMetadata)_storage"
-          }
-        ]
-      },
-      "t_struct(RecipientMetadata)17142_storage": {
-        "encoding": "inplace",
-        "label": "struct FlowTypes.RecipientMetadata",
-        "numberOfBytes": "160",
-        "members": [
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "title",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_string_storage"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "description",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_string_storage"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "image",
-            "offset": 0,
-            "slot": "2",
-            "type": "t_string_storage"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "tagline",
-            "offset": 0,
-            "slot": "3",
-            "type": "t_string_storage"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "url",
-            "offset": 0,
-            "slot": "4",
-            "type": "t_string_storage"
-          }
-        ]
-      },
-      "t_struct(Set)2824_storage": {
-        "encoding": "inplace",
-        "label": "struct EnumerableSet.Set",
-        "numberOfBytes": "64",
-        "members": [
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "_values",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_array(t_bytes32)dyn_storage"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "_indexes",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_mapping(t_bytes32,t_uint256)"
-          }
-        ]
-      },
-      "t_struct(Storage)17228_storage": {
-        "encoding": "inplace",
-        "label": "struct FlowTypes.Storage",
-        "numberOfBytes": "704",
-        "members": [
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "baselinePoolFlowRatePercent",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_uint32"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "managerRewardPoolFlowRatePercent",
-            "offset": 4,
-            "slot": "0",
-            "type": "t_uint32"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "flowImpl",
-            "offset": 8,
-            "slot": "0",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "parent",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "manager",
-            "offset": 0,
-            "slot": "2",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "managerRewardPool",
-            "offset": 0,
-            "slot": "3",
-            "type": "t_address"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "activeRecipientCount",
-            "offset": 0,
-            "slot": "4",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "metadata",
-            "offset": 0,
-            "slot": "5",
-            "type": "t_struct(RecipientMetadata)_storage"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "recipients",
-            "offset": 0,
-            "slot": "10",
-            "type": "t_mapping(t_bytes32,t_struct(FlowRecipient)17153_storage)"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "recipientExists",
-            "offset": 0,
-            "slot": "11",
-            "type": "t_mapping(t_address,t_bool)"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "superToken",
-            "offset": 0,
-            "slot": "12",
-            "type": "t_contract(ISuperToken)10644"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "bonusPool",
-            "offset": 0,
-            "slot": "13",
-            "type": "t_contract(ISuperfluidPool)9476"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "baselinePool",
-            "offset": 0,
-            "slot": "14",
-            "type": "t_contract(ISuperfluidPool)9476"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "tokenIdToRecipientMemberUnits",
-            "offset": 0,
-            "slot": "15",
-            "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "tokenVoteWeight",
-            "offset": 0,
-            "slot": "16",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "votes",
-            "offset": 0,
-            "slot": "17",
-            "type": "t_mapping(t_uint256,t_array(t_struct(VoteAllocation)17127_storage)dyn_storage)"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "voters",
-            "offset": 0,
-            "slot": "18",
-            "type": "t_mapping(t_uint256,t_address)"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "cachedFlowRate",
-            "offset": 0,
-            "slot": "19",
-            "type": "t_int96"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "totalActiveVoteWeight",
-            "offset": 0,
-            "slot": "20",
-            "type": "t_uint256"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "bonusPoolQuorumBps",
-            "offset": 0,
-            "slot": "21",
-            "type": "t_uint32"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "sanctionsOracle",
-            "offset": 4,
-            "slot": "21",
-            "type": "t_contract(IChainalysisSanctionsList)15057"
-          }
-        ]
-      },
-      "t_struct(VoteAllocation)17127_storage": {
-        "encoding": "inplace",
-        "label": "struct FlowTypes.VoteAllocation",
-        "numberOfBytes": "64",
-        "members": [
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "recipientId",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_bytes32"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "bps",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_uint32"
-          },
-          {
-            "contract": "src/storage/FlowStorage.sol:FlowStorageV1",
-            "label": "memberUnits",
-            "offset": 4,
-            "slot": "1",
-            "type": "t_uint128"
-          }
-        ]
-      },
-      "t_uint128": {
-        "encoding": "inplace",
-        "label": "uint128",
-        "numberOfBytes": "16"
-      },
-      "t_uint256": {
-        "encoding": "inplace",
-        "label": "uint256",
-        "numberOfBytes": "32"
-      },
-      "t_uint32": {
-        "encoding": "inplace",
-        "label": "uint32",
-        "numberOfBytes": "4"
-      }
-    }
+    ]
   }
 }

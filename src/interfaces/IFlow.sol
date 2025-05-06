@@ -253,7 +253,7 @@ interface IERC721Flow is IFlow {
     /**
      * @notice Initializes an ERC721Flow contract
      * @param initialOwner The address of the initial owner
-     * @param nounsToken The address of the ERC721 token used for voting
+     * @param erc721Token The address of the ERC721 token used for voting
      * @param superToken The address of the SuperToken to be used for the pool
      * @param flowImpl The address of the flow implementation contract
      * @param manager The address of the flow manager
@@ -265,7 +265,7 @@ interface IERC721Flow is IFlow {
      */
     function initialize(
         address initialOwner,
-        address nounsToken,
+        address erc721Token,
         address superToken,
         address flowImpl,
         address manager,

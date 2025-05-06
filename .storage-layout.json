@@ -401,7 +401,7 @@
         "label": "items",
         "offset": 0,
         "slot": "314",
-        "type": "t_mapping(t_bytes32,t_struct(Item)14757_storage)"
+        "type": "t_mapping(t_bytes32,t_struct(Item)_storage)"
       },
       {
         "contract": "src/tcr/GeneralizedTCR.sol:GeneralizedTCR",
@@ -594,7 +594,7 @@
         "label": "items",
         "offset": 0,
         "slot": "314",
-        "type": "t_mapping(t_bytes32,t_struct(Item)16092_storage)"
+        "type": "t_mapping(t_bytes32,t_struct(Item)_storage)"
       },
       {
         "contract": "src/tcr/FlowTCR.sol:FlowTCR",
@@ -745,7 +745,7 @@
         "label": "disputes",
         "offset": 0,
         "slot": "7",
-        "type": "t_mapping(t_uint256,t_struct(Dispute)20444_storage)"
+        "type": "t_mapping(t_uint256,t_struct(Dispute)_storage)"
       },
       {
         "contract": "src/tcr/ERC20VotesArbitrator.sol:ERC20VotesArbitrator",
@@ -987,7 +987,7 @@
         "label": "_nonces",
         "offset": 0,
         "slot": "403",
-        "type": "t_mapping(t_address,t_struct(Counter)2454_storage)"
+        "type": "t_mapping(t_address,t_struct(Counter)_storage)"
       },
       {
         "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
@@ -1015,14 +1015,14 @@
         "label": "_checkpoints",
         "offset": 0,
         "slot": "455",
-        "type": "t_mapping(t_address,t_array(t_struct(Checkpoint)16706_storage)dyn_storage)"
+        "type": "t_mapping(t_address,t_array(t_struct(Checkpoint)_storage)dyn_storage)"
       },
       {
         "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "_totalSupplyCheckpoints",
         "offset": 0,
         "slot": "456",
-        "type": "t_array(t_struct(Checkpoint)16706_storage)dyn_storage"
+        "type": "t_array(t_struct(Checkpoint)_storage)dyn_storage"
       },
       {
         "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",

@@ -5,16 +5,16 @@ import { FlowTCRTest } from "./FlowTCR.t.sol";
 
 import { NounsFlow } from "../../src/NounsFlow.sol";
 import { Flow } from "../../src/Flow.sol";
+import { ERC20VotesArbitrator } from "../../src/tcr/ERC20VotesArbitrator.sol";
 
 contract TCRFundFlowTest is FlowTCRTest {
-    function test_storage_issue() public {
-        uint256 blockNumber = 28156695;
-        vm.createSelectFork(vm.rpcUrl("base"), blockNumber);
+    function test_issue() public {
+        vm.createSelectFork(vm.rpcUrl("base"));
 
-        address deployedFlow = address(0x0D4a25d07015ec7BdebF78f2937A617A86AF27Ff);
+        address arbitrator = address(0xb0EB99c30E9E0aCAB592b0F696E78E719543913F);
 
-        address softwareFlow = address(0x03bBF8812B0635774Bdf344C0DE33d94a057aA28);
+        address newImpl = address(new ERC20VotesArbitrator());
 
-        address nounsFlowImpl = address(new NounsFlow());
+        ERC20VotesArbitrator(arbitrator).executeRuling(11);
     }
 }

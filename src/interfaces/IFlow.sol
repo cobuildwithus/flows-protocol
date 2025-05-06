@@ -308,7 +308,16 @@ interface INounsFlow is IFlow {
     ) external;
 }
 
-interface IMangedFlow is IFlow {
+interface IAllocatorFlow is IFlow {
+    // Errors
+    error NOT_ALLOCATOR();
+
+    /**
+     * @dev Emitted when the allocator is changed
+     * @param newAllocator The address of the new allocator
+     */
+    event AllocatorChanged(address indexed newAllocator);
+
     /**
      * @notice Initializes an ERC721Flow contract
      * @param initialOwner The address of the initial owner

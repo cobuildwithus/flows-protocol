@@ -34,22 +34,19 @@ check_command() {
   fi
 }
 
-# jq filter to drop astId / types and strip digit-suffixes
+# jq filter to drop astId / types and strip digit-suffixes anywhere in type strings
 CLEAN_FILTER='
   def strip_suffix:
-    if test("\\)[0-9]+_storage$")      # t_struct(...)17228_storage
-    then sub("\\)[0-9]+_storage$"; ")_storage")
-    elif test("\\)[0-9]+$")            # t_contract(...)14518
-    then sub("\\)[0-9]+$"; ")")
-    else .
-    end;
+    gsub("\\)[0-9]+_storage"; ")_storage")  # remove struct-type IDs
+    | gsub("\\)[0-9]+"; ")")                # remove standalone type IDs
+  ;
 
   walk(
     if type == "object" then
-         del(.astId?)                # remove key if present
-       | del(.types?)                # drop entire `types` map
+      del(.astId?)                           # remove optional astId
+      | del(.types?)                         # remove entire types map
     elif type == "string" then
-         strip_suffix
+      strip_suffix
     else .
     end
   )
@@ -70,7 +67,7 @@ generate_layout() {
   while IFS= read -r contract || [[ -n "$contract" ]]; do
     [[ -z "$contract" ]] || [[ "$contract" =~ ^#.* ]] && continue
     echo "Processing contract: $contract ..."
-    layout_json=$(FOUNDRY_PROFILE=default forge inspect "$contract" storage-layout --json)
+    layout_json="$(FOUNDRY_PROFILE=default forge inspect "$contract" storage-layout --json)"
     if ! jq -e . >/dev/null <<<"$layout_json"; then
       echo "Error generating layout for $contract"
       exit 1

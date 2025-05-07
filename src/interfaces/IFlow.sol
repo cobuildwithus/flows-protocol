@@ -250,10 +250,13 @@ interface IFlow is IFlowEvents, IManagedFlow {
 }
 
 interface IERC721Flow is IFlow {
+    /// @notice Emitted when the voting token is changed
+    event VotingTokenChanged(address indexed erc721Token);
+
     /**
      * @notice Initializes an ERC721Flow contract
      * @param initialOwner The address of the initial owner
-     * @param nounsToken The address of the ERC721 token used for voting
+     * @param erc721Token The address of the ERC721 token used for voting
      * @param superToken The address of the SuperToken to be used for the pool
      * @param flowImpl The address of the flow implementation contract
      * @param manager The address of the flow manager
@@ -265,7 +268,7 @@ interface IERC721Flow is IFlow {
      */
     function initialize(
         address initialOwner,
-        address nounsToken,
+        address erc721Token,
         address superToken,
         address flowImpl,
         address manager,
@@ -297,6 +300,74 @@ interface INounsFlow is IFlow {
     function initialize(
         address initialOwner,
         address verifier,
+        address superToken,
+        address flowImpl,
+        address manager,
+        address managerRewardPool,
+        address parent,
+        FlowParams memory flowParams,
+        FlowTypes.RecipientMetadata memory metadata,
+        IChainalysisSanctionsList sanctionsOracle
+    ) external;
+}
+
+interface IAllocatorFlow is IFlow {
+    // Errors
+    error NOT_ALLOCATOR();
+
+    /**
+     * @dev Emitted when the allocator is changed
+     * @param newAllocator The address of the new allocator
+     */
+    event AllocatorChanged(address indexed newAllocator);
+
+    /**
+     * @notice Initializes an ERC721Flow contract
+     * @param initialOwner The address of the initial owner
+     * @param allocator The address of the allocator - the EOA or contract that will allocate the flow
+     * @param superToken The address of the SuperToken to be used for the pool
+     * @param flowImpl The address of the flow implementation contract
+     * @param manager The address of the flow manager
+     * @param managerRewardPool The address of the manager reward pool
+     * @param parent The address of the parent flow contract (optional)
+     * @param flowParams The parameters for the flow contract
+     * @param metadata The metadata for the flow contract
+     * @param sanctionsOracle The address of the sanctions oracle
+     */
+    function initialize(
+        address initialOwner,
+        address allocator,
+        address superToken,
+        address flowImpl,
+        address manager,
+        address managerRewardPool,
+        address parent,
+        FlowParams memory flowParams,
+        FlowTypes.RecipientMetadata memory metadata,
+        IChainalysisSanctionsList sanctionsOracle
+    ) external;
+}
+
+interface IVrbsFlow is IERC721Flow {
+    // Errors
+    error VOTING_DISABLED();
+
+    /**
+     * @notice Initializes an ERC721Flow contract
+     * @param initialOwner The address of the initial owner
+     * @param erc721Token The address of the ERC721 token used for voting
+     * @param superToken The address of the SuperToken to be used for the pool
+     * @param flowImpl The address of the flow implementation contract
+     * @param manager The address of the flow manager
+     * @param managerRewardPool The address of the manager reward pool
+     * @param parent The address of the parent flow contract (optional)
+     * @param flowParams The parameters for the flow contract
+     * @param metadata The metadata for the flow contract
+     * @param sanctionsOracle The address of the sanctions oracle
+     */
+    function initialize(
+        address initialOwner,
+        address erc721Token,
         address superToken,
         address flowImpl,
         address manager,

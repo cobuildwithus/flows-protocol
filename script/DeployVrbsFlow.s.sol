@@ -47,7 +47,7 @@ contract DeployVrbsFlow is DeployScript {
             }),
             metadata: FlowTypes.RecipientMetadata({
                 title: "Vrbs Flow",
-                description: "Create Vrbs-branded products, services, experiences, and art that reach and empower the public, improve public spaces, and generate positive externalities—always in an open, daring, and sustainable way.",
+                description: unicode"Create Vrbs-branded products, services, experiences, and art that reach and empower the public, improve public spaces, and generate positive externalities—always in an open, daring, and sustainable way.",
                 image: "ipfs://QmfZMtW2vDcdfH3TZdNAbMNm4Z1y16QHjuFwf8ff2NANAt",
                 tagline: "Build something that matters with Vrbs.",
                 url: "https://flows.wtf/vrbs"

@@ -2,14 +2,14 @@
 pragma solidity ^0.8.28;
 
 import { Flow } from "./Flow.sol";
-import { IERC721Flow } from "./interfaces/IFlow.sol";
+import { IVrbsFlow } from "./interfaces/IFlow.sol";
 import { IERC721Checkpointable } from "./interfaces/IERC721Checkpointable.sol";
 import { FlowVotes } from "./library/FlowVotes.sol";
 import { FlowRates } from "./library/FlowRates.sol";
 import { ERC721FlowLibrary } from "./library/ERC721FlowLibrary.sol";
 import { IChainalysisSanctionsList } from "./interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
-contract VrbsFlow is IERC721Flow, Flow {
+contract VrbsFlow is IVrbsFlow, Flow {
     using FlowVotes for Storage;
     using FlowRates for Storage;
     using ERC721FlowLibrary for Storage;
@@ -19,9 +19,6 @@ contract VrbsFlow is IERC721Flow, Flow {
 
     // Whether voting is enabled or not
     bool public votingEnabled;
-
-    // Errors
-    error VOTING_DISABLED();
 
     constructor() payable initializer {}
 
@@ -41,6 +38,8 @@ contract VrbsFlow is IERC721Flow, Flow {
 
         erc721Votes = IERC721Checkpointable(_vrbsToken);
 
+        emit VotingTokenChanged(_vrbsToken);
+
         __Flow_init(
             _initialOwner,
             _superToken,
@@ -51,30 +50,6 @@ contract VrbsFlow is IERC721Flow, Flow {
             _flowParams,
             _metadata,
             _sanctionsOracle
-        );
-    }
-
-    /**
-     * @notice Deploys a new Flow contract as a recipient
-     * @dev This function is virtual to allow for different deployment strategies in derived contracts
-     * @param metadata The recipient's metadata like title, description, etc.
-     * @param flowManager The address of the flow manager for the new contract
-     * @param managerRewardPool The address of the manager reward pool for the new contract
-     * @return recipient address The address of the newly created Flow contract
-     */
-    function _deployFlowRecipient(
-        RecipientMetadata calldata metadata,
-        address flowManager,
-        address managerRewardPool
-    ) internal override returns (address recipient) {
-        recipient = fs.deployFlowRecipient(
-            metadata,
-            flowManager,
-            managerRewardPool,
-            owner(),
-            address(this),
-            address(erc721Votes),
-            PERCENTAGE_SCALE
         );
     }
 
@@ -153,5 +128,29 @@ contract VrbsFlow is IERC721Flow, Flow {
     modifier onlyVotingEnabled() {
         if (!votingEnabled) revert VOTING_DISABLED();
         _;
+    }
+
+    /**
+     * @notice Deploys a new Flow contract as a recipient
+     * @dev This function is virtual to allow for different deployment strategies in derived contracts
+     * @param metadata The recipient's metadata like title, description, etc.
+     * @param flowManager The address of the flow manager for the new contract
+     * @param managerRewardPool The address of the manager reward pool for the new contract
+     * @return recipient address The address of the newly created Flow contract
+     */
+    function _deployFlowRecipient(
+        RecipientMetadata calldata metadata,
+        address flowManager,
+        address managerRewardPool
+    ) internal override returns (address recipient) {
+        recipient = fs.deployFlowRecipient(
+            metadata,
+            flowManager,
+            managerRewardPool,
+            owner(),
+            address(this),
+            address(erc721Votes),
+            PERCENTAGE_SCALE
+        );
     }
 }

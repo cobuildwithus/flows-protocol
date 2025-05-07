@@ -69,9 +69,6 @@ interface IFlowEvents {
     /// @notice Emitted when a new grants recipient is set
     event RecipientCreated(bytes32 indexed recipientId, FlowTypes.FlowRecipient recipient, address indexed approvedBy);
 
-    /// @notice Emitted when a new grants recipient is set
-    event RecipientMetadataSet(bytes32 indexed recipientId, FlowTypes.RecipientMetadata metadata);
-
     /// @notice Emitted when a new flow implementation is set
     event FlowImplementationSet(address indexed flowImpl);
 

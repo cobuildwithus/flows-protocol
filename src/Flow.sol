@@ -251,7 +251,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         _requireNotSanctioned(_recipient);
 
         emit RecipientCreated(_recipientId, fs.recipients[_recipientId], msg.sender);
-        emit RecipientMetadataSet(_recipientId, _metadata);
 
         fs.updateBaselineMemberUnits(recipientAddress, BASELINE_MEMBER_UNITS);
         // 10 units for each recipient in case there are no votes yet, everyone will split the bonus salary
@@ -294,7 +293,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             IFlow(recipient).baselinePoolFlowRatePercent()
         );
         emit RecipientCreated(_recipientId, fs.recipients[_recipientId], msg.sender);
-        emit RecipientMetadataSet(_recipientId, _metadata);
 
         // do this after so member units based indexer can work
         // for indexer, need to connect tcr item in database to recipient BEFORE handling member units

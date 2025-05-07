@@ -46,8 +46,8 @@ contract DeployVrbsFlow is DeployScript {
                 bonusPoolQuorumBps: bonusPoolQuorumBps
             }),
             metadata: FlowTypes.RecipientMetadata({
-                title: "Nouns Flow",
-                description: "An MVP of the Nouns Flow. Built by rocketman21.eth and wojci.eth",
+                title: "Vrbs Flow",
+                description: "Create Vrbs-branded products, services, experiences, and art that reach and empower the public, improve public spaces, and generate positive externalities—always in an open, daring, and sustainable way.",
                 image: "ipfs://QmfZMtW2vDcdfH3TZdNAbMNm4Z1y16QHjuFwf8ff2NANAt",
                 tagline: "Build something that matters with Vrbs.",
                 url: "https://flows.wtf/vrbs"

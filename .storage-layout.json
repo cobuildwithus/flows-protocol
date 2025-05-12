@@ -4,112 +4,112 @@
   "ERC721Flow": {
     "storage": [
       {
-        "contract": "src/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
         "label": "_initialized",
         "offset": 0,
         "slot": "0",
         "type": "t_uint8"
       },
       {
-        "contract": "src/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
         "label": "_initializing",
         "offset": 1,
         "slot": "0",
         "type": "t_bool"
       },
       {
-        "contract": "src/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
         "label": "__gap",
         "offset": 0,
         "slot": "1",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
         "label": "__gap",
         "offset": 0,
         "slot": "51",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
         "label": "__gap",
         "offset": 0,
         "slot": "101",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
         "label": "_owner",
         "offset": 0,
         "slot": "151",
         "type": "t_address"
       },
       {
-        "contract": "src/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
         "label": "__gap",
         "offset": 0,
         "slot": "152",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
         "label": "_pendingOwner",
         "offset": 0,
         "slot": "201",
         "type": "t_address"
       },
       {
-        "contract": "src/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
         "label": "__gap",
         "offset": 0,
         "slot": "202",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
         "label": "_status",
         "offset": 0,
         "slot": "251",
         "type": "t_uint256"
       },
       {
-        "contract": "src/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
         "label": "__gap",
         "offset": 0,
         "slot": "252",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
         "label": "fs",
         "offset": 0,
         "slot": "301",
         "type": "t_struct(Storage)_storage"
       },
       {
-        "contract": "src/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
         "label": "__gap",
         "offset": 0,
         "slot": "323",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
         "label": "_childFlows",
         "offset": 0,
         "slot": "423",
         "type": "t_struct(AddressSet)_storage"
       },
       {
-        "contract": "src/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
         "label": "_childFlowsToUpdateFlowRate",
         "offset": 0,
         "slot": "425",
         "type": "t_struct(AddressSet)_storage"
       },
       {
-        "contract": "src/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
         "label": "erc721Votes",
         "offset": 0,
         "slot": "427",
@@ -829,231 +829,231 @@
   "ERC20VotesMintable": {
     "storage": [
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "_initialized",
         "offset": 0,
         "slot": "0",
         "type": "t_uint8"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "_initializing",
         "offset": 1,
         "slot": "0",
         "type": "t_bool"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "__gap",
         "offset": 0,
         "slot": "1",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "__gap",
         "offset": 0,
         "slot": "51",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "__gap",
         "offset": 0,
         "slot": "101",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "_owner",
         "offset": 0,
         "slot": "151",
         "type": "t_address"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "__gap",
         "offset": 0,
         "slot": "152",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "_pendingOwner",
         "offset": 0,
         "slot": "201",
         "type": "t_address"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "__gap",
         "offset": 0,
         "slot": "202",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "_status",
         "offset": 0,
         "slot": "251",
         "type": "t_uint256"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "__gap",
         "offset": 0,
         "slot": "252",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "_balances",
         "offset": 0,
         "slot": "301",
         "type": "t_mapping(t_address,t_uint256)"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "_allowances",
         "offset": 0,
         "slot": "302",
         "type": "t_mapping(t_address,t_mapping(t_address,t_uint256))"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "_totalSupply",
         "offset": 0,
         "slot": "303",
         "type": "t_uint256"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "_name",
         "offset": 0,
         "slot": "304",
         "type": "t_string_storage"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "_symbol",
         "offset": 0,
         "slot": "305",
         "type": "t_string_storage"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "__gap",
         "offset": 0,
         "slot": "306",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "_hashedName",
         "offset": 0,
         "slot": "351",
         "type": "t_bytes32"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "_hashedVersion",
         "offset": 0,
         "slot": "352",
         "type": "t_bytes32"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "_name",
         "offset": 0,
         "slot": "353",
         "type": "t_string_storage"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "_version",
         "offset": 0,
         "slot": "354",
         "type": "t_string_storage"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "__gap",
         "offset": 0,
         "slot": "355",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "_nonces",
         "offset": 0,
         "slot": "403",
         "type": "t_mapping(t_address,t_struct(Counter)_storage)"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "_PERMIT_TYPEHASH_DEPRECATED_SLOT",
         "offset": 0,
         "slot": "404",
         "type": "t_bytes32"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "__gap",
         "offset": 0,
         "slot": "405",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "_delegates",
         "offset": 0,
         "slot": "454",
         "type": "t_mapping(t_address,t_address)"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "_checkpoints",
         "offset": 0,
         "slot": "455",
         "type": "t_mapping(t_address,t_array(t_struct(Checkpoint)_storage)dyn_storage)"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "_totalSupplyCheckpoints",
         "offset": 0,
         "slot": "456",
         "type": "t_array(t_struct(Checkpoint)_storage)dyn_storage"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "__gap",
         "offset": 0,
         "slot": "457",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "minter",
         "offset": 0,
         "slot": "504",
         "type": "t_address"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "isMinterLocked",
         "offset": 20,
         "slot": "504",
         "type": "t_bool"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "rewardPool",
         "offset": 0,
         "slot": "505",
         "type": "t_address"
       },
       {
-        "contract": "src/ERC20VotesMintable.sol:ERC20VotesMintable",
+        "contract": "src/base/erc20/ERC20VotesMintable.sol:ERC20VotesMintable",
         "label": "_ignoreRewardsAddresses",
         "offset": 0,
         "slot": "506",
@@ -1064,154 +1064,154 @@
   "TokenEmitter": {
     "storage": [
       {
-        "contract": "src/TokenEmitter.sol:TokenEmitter",
+        "contract": "src/token-issuance/TokenEmitter.sol:TokenEmitter",
         "label": "curveSteepness",
         "offset": 0,
         "slot": "0",
         "type": "t_int256"
       },
       {
-        "contract": "src/TokenEmitter.sol:TokenEmitter",
+        "contract": "src/token-issuance/TokenEmitter.sol:TokenEmitter",
         "label": "basePrice",
         "offset": 0,
         "slot": "1",
         "type": "t_int256"
       },
       {
-        "contract": "src/TokenEmitter.sol:TokenEmitter",
+        "contract": "src/token-issuance/TokenEmitter.sol:TokenEmitter",
         "label": "maxPriceIncrease",
         "offset": 0,
         "slot": "2",
         "type": "t_int256"
       },
       {
-        "contract": "src/TokenEmitter.sol:TokenEmitter",
+        "contract": "src/token-issuance/TokenEmitter.sol:TokenEmitter",
         "label": "supplyOffset",
         "offset": 0,
         "slot": "3",
         "type": "t_int256"
       },
       {
-        "contract": "src/TokenEmitter.sol:TokenEmitter",
+        "contract": "src/token-issuance/TokenEmitter.sol:TokenEmitter",
         "label": "perTimeUnit",
         "offset": 0,
         "slot": "4",
         "type": "t_int256"
       },
       {
-        "contract": "src/TokenEmitter.sol:TokenEmitter",
+        "contract": "src/token-issuance/TokenEmitter.sol:TokenEmitter",
         "label": "decayConstant",
         "offset": 0,
         "slot": "5",
         "type": "t_int256"
       },
       {
-        "contract": "src/TokenEmitter.sol:TokenEmitter",
+        "contract": "src/token-issuance/TokenEmitter.sol:TokenEmitter",
         "label": "priceDecayPercent",
         "offset": 0,
         "slot": "6",
         "type": "t_int256"
       },
       {
-        "contract": "src/TokenEmitter.sol:TokenEmitter",
+        "contract": "src/token-issuance/TokenEmitter.sol:TokenEmitter",
         "label": "_initialized",
         "offset": 0,
         "slot": "7",
         "type": "t_uint8"
       },
       {
-        "contract": "src/TokenEmitter.sol:TokenEmitter",
+        "contract": "src/token-issuance/TokenEmitter.sol:TokenEmitter",
         "label": "_initializing",
         "offset": 1,
         "slot": "7",
         "type": "t_bool"
       },
       {
-        "contract": "src/TokenEmitter.sol:TokenEmitter",
+        "contract": "src/token-issuance/TokenEmitter.sol:TokenEmitter",
         "label": "__gap",
         "offset": 0,
         "slot": "8",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/TokenEmitter.sol:TokenEmitter",
+        "contract": "src/token-issuance/TokenEmitter.sol:TokenEmitter",
         "label": "_owner",
         "offset": 0,
         "slot": "58",
         "type": "t_address"
       },
       {
-        "contract": "src/TokenEmitter.sol:TokenEmitter",
+        "contract": "src/token-issuance/TokenEmitter.sol:TokenEmitter",
         "label": "__gap",
         "offset": 0,
         "slot": "59",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/TokenEmitter.sol:TokenEmitter",
+        "contract": "src/token-issuance/TokenEmitter.sol:TokenEmitter",
         "label": "__gap",
         "offset": 0,
         "slot": "108",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/TokenEmitter.sol:TokenEmitter",
+        "contract": "src/token-issuance/TokenEmitter.sol:TokenEmitter",
         "label": "__gap",
         "offset": 0,
         "slot": "158",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/TokenEmitter.sol:TokenEmitter",
+        "contract": "src/token-issuance/TokenEmitter.sol:TokenEmitter",
         "label": "_status",
         "offset": 0,
         "slot": "208",
         "type": "t_uint256"
       },
       {
-        "contract": "src/TokenEmitter.sol:TokenEmitter",
+        "contract": "src/token-issuance/TokenEmitter.sol:TokenEmitter",
         "label": "__gap",
         "offset": 0,
         "slot": "209",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/TokenEmitter.sol:TokenEmitter",
+        "contract": "src/token-issuance/TokenEmitter.sol:TokenEmitter",
         "label": "erc20",
         "offset": 0,
         "slot": "258",
         "type": "t_contract(ERC20VotesMintable)"
       },
       {
-        "contract": "src/TokenEmitter.sol:TokenEmitter",
+        "contract": "src/token-issuance/TokenEmitter.sol:TokenEmitter",
         "label": "WETH",
         "offset": 0,
         "slot": "259",
         "type": "t_contract(IWETH)"
       },
       {
-        "contract": "src/TokenEmitter.sol:TokenEmitter",
+        "contract": "src/token-issuance/TokenEmitter.sol:TokenEmitter",
         "label": "founderRewardAddress",
         "offset": 0,
         "slot": "260",
         "type": "t_address"
       },
       {
-        "contract": "src/TokenEmitter.sol:TokenEmitter",
+        "contract": "src/token-issuance/TokenEmitter.sol:TokenEmitter",
         "label": "founderRewardExpiration",
         "offset": 0,
         "slot": "261",
         "type": "t_uint256"
       },
       {
-        "contract": "src/TokenEmitter.sol:TokenEmitter",
+        "contract": "src/token-issuance/TokenEmitter.sol:TokenEmitter",
         "label": "vrgdaCapStartTime",
         "offset": 0,
         "slot": "262",
         "type": "t_uint256"
       },
       {
-        "contract": "src/TokenEmitter.sol:TokenEmitter",
+        "contract": "src/token-issuance/TokenEmitter.sol:TokenEmitter",
         "label": "vrgdaCapExtraETH",
         "offset": 0,
         "slot": "263",
@@ -1331,119 +1331,119 @@
   "RewardPool": {
     "storage": [
       {
-        "contract": "src/RewardPool.sol:RewardPool",
+        "contract": "src/token-issuance/RewardPool.sol:RewardPool",
         "label": "_initialized",
         "offset": 0,
         "slot": "0",
         "type": "t_uint8"
       },
       {
-        "contract": "src/RewardPool.sol:RewardPool",
+        "contract": "src/token-issuance/RewardPool.sol:RewardPool",
         "label": "_initializing",
         "offset": 1,
         "slot": "0",
         "type": "t_bool"
       },
       {
-        "contract": "src/RewardPool.sol:RewardPool",
+        "contract": "src/token-issuance/RewardPool.sol:RewardPool",
         "label": "__gap",
         "offset": 0,
         "slot": "1",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/RewardPool.sol:RewardPool",
+        "contract": "src/token-issuance/RewardPool.sol:RewardPool",
         "label": "__gap",
         "offset": 0,
         "slot": "51",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/RewardPool.sol:RewardPool",
+        "contract": "src/token-issuance/RewardPool.sol:RewardPool",
         "label": "__gap",
         "offset": 0,
         "slot": "101",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/RewardPool.sol:RewardPool",
+        "contract": "src/token-issuance/RewardPool.sol:RewardPool",
         "label": "_owner",
         "offset": 0,
         "slot": "151",
         "type": "t_address"
       },
       {
-        "contract": "src/RewardPool.sol:RewardPool",
+        "contract": "src/token-issuance/RewardPool.sol:RewardPool",
         "label": "__gap",
         "offset": 0,
         "slot": "152",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/RewardPool.sol:RewardPool",
+        "contract": "src/token-issuance/RewardPool.sol:RewardPool",
         "label": "_pendingOwner",
         "offset": 0,
         "slot": "201",
         "type": "t_address"
       },
       {
-        "contract": "src/RewardPool.sol:RewardPool",
+        "contract": "src/token-issuance/RewardPool.sol:RewardPool",
         "label": "__gap",
         "offset": 0,
         "slot": "202",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/RewardPool.sol:RewardPool",
+        "contract": "src/token-issuance/RewardPool.sol:RewardPool",
         "label": "_status",
         "offset": 0,
         "slot": "251",
         "type": "t_uint256"
       },
       {
-        "contract": "src/RewardPool.sol:RewardPool",
+        "contract": "src/token-issuance/RewardPool.sol:RewardPool",
         "label": "__gap",
         "offset": 0,
         "slot": "252",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/RewardPool.sol:RewardPool",
+        "contract": "src/token-issuance/RewardPool.sol:RewardPool",
         "label": "superToken",
         "offset": 0,
         "slot": "301",
         "type": "t_contract(ISuperToken)"
       },
       {
-        "contract": "src/RewardPool.sol:RewardPool",
+        "contract": "src/token-issuance/RewardPool.sol:RewardPool",
         "label": "rewardPool",
         "offset": 0,
         "slot": "302",
         "type": "t_contract(ISuperfluidPool)"
       },
       {
-        "contract": "src/RewardPool.sol:RewardPool",
+        "contract": "src/token-issuance/RewardPool.sol:RewardPool",
         "label": "manager",
         "offset": 0,
         "slot": "303",
         "type": "t_address"
       },
       {
-        "contract": "src/RewardPool.sol:RewardPool",
+        "contract": "src/token-issuance/RewardPool.sol:RewardPool",
         "label": "funder",
         "offset": 0,
         "slot": "304",
         "type": "t_address"
       },
       {
-        "contract": "src/RewardPool.sol:RewardPool",
+        "contract": "src/token-issuance/RewardPool.sol:RewardPool",
         "label": "cachedFlowRate",
         "offset": 20,
         "slot": "304",
         "type": "t_int96"
       },
       {
-        "contract": "src/RewardPool.sol:RewardPool",
+        "contract": "src/token-issuance/RewardPool.sol:RewardPool",
         "label": "poolConfig",
         "offset": 0,
         "slot": "305",
@@ -1454,112 +1454,112 @@
   "NounsFlow": {
     "storage": [
       {
-        "contract": "src/NounsFlow.sol:NounsFlow",
+        "contract": "src/flows/NounsFlow.sol:NounsFlow",
         "label": "_initialized",
         "offset": 0,
         "slot": "0",
         "type": "t_uint8"
       },
       {
-        "contract": "src/NounsFlow.sol:NounsFlow",
+        "contract": "src/flows/NounsFlow.sol:NounsFlow",
         "label": "_initializing",
         "offset": 1,
         "slot": "0",
         "type": "t_bool"
       },
       {
-        "contract": "src/NounsFlow.sol:NounsFlow",
+        "contract": "src/flows/NounsFlow.sol:NounsFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "1",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/NounsFlow.sol:NounsFlow",
+        "contract": "src/flows/NounsFlow.sol:NounsFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "51",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/NounsFlow.sol:NounsFlow",
+        "contract": "src/flows/NounsFlow.sol:NounsFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "101",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/NounsFlow.sol:NounsFlow",
+        "contract": "src/flows/NounsFlow.sol:NounsFlow",
         "label": "_owner",
         "offset": 0,
         "slot": "151",
         "type": "t_address"
       },
       {
-        "contract": "src/NounsFlow.sol:NounsFlow",
+        "contract": "src/flows/NounsFlow.sol:NounsFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "152",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/NounsFlow.sol:NounsFlow",
+        "contract": "src/flows/NounsFlow.sol:NounsFlow",
         "label": "_pendingOwner",
         "offset": 0,
         "slot": "201",
         "type": "t_address"
       },
       {
-        "contract": "src/NounsFlow.sol:NounsFlow",
+        "contract": "src/flows/NounsFlow.sol:NounsFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "202",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/NounsFlow.sol:NounsFlow",
+        "contract": "src/flows/NounsFlow.sol:NounsFlow",
         "label": "_status",
         "offset": 0,
         "slot": "251",
         "type": "t_uint256"
       },
       {
-        "contract": "src/NounsFlow.sol:NounsFlow",
+        "contract": "src/flows/NounsFlow.sol:NounsFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "252",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/NounsFlow.sol:NounsFlow",
+        "contract": "src/flows/NounsFlow.sol:NounsFlow",
         "label": "fs",
         "offset": 0,
         "slot": "301",
         "type": "t_struct(Storage)_storage"
       },
       {
-        "contract": "src/NounsFlow.sol:NounsFlow",
+        "contract": "src/flows/NounsFlow.sol:NounsFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "323",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/NounsFlow.sol:NounsFlow",
+        "contract": "src/flows/NounsFlow.sol:NounsFlow",
         "label": "_childFlows",
         "offset": 0,
         "slot": "423",
         "type": "t_struct(AddressSet)_storage"
       },
       {
-        "contract": "src/NounsFlow.sol:NounsFlow",
+        "contract": "src/flows/NounsFlow.sol:NounsFlow",
         "label": "_childFlowsToUpdateFlowRate",
         "offset": 0,
         "slot": "425",
         "type": "t_struct(AddressSet)_storage"
       },
       {
-        "contract": "src/NounsFlow.sol:NounsFlow",
+        "contract": "src/flows/NounsFlow.sol:NounsFlow",
         "label": "verifier",
         "offset": 0,
         "slot": "427",
@@ -1602,119 +1602,119 @@
   "VrbsFlow": {
     "storage": [
       {
-        "contract": "src/VrbsFlow.sol:VrbsFlow",
+        "contract": "src/flows/VrbsFlow.sol:VrbsFlow",
         "label": "_initialized",
         "offset": 0,
         "slot": "0",
         "type": "t_uint8"
       },
       {
-        "contract": "src/VrbsFlow.sol:VrbsFlow",
+        "contract": "src/flows/VrbsFlow.sol:VrbsFlow",
         "label": "_initializing",
         "offset": 1,
         "slot": "0",
         "type": "t_bool"
       },
       {
-        "contract": "src/VrbsFlow.sol:VrbsFlow",
+        "contract": "src/flows/VrbsFlow.sol:VrbsFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "1",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/VrbsFlow.sol:VrbsFlow",
+        "contract": "src/flows/VrbsFlow.sol:VrbsFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "51",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/VrbsFlow.sol:VrbsFlow",
+        "contract": "src/flows/VrbsFlow.sol:VrbsFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "101",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/VrbsFlow.sol:VrbsFlow",
+        "contract": "src/flows/VrbsFlow.sol:VrbsFlow",
         "label": "_owner",
         "offset": 0,
         "slot": "151",
         "type": "t_address"
       },
       {
-        "contract": "src/VrbsFlow.sol:VrbsFlow",
+        "contract": "src/flows/VrbsFlow.sol:VrbsFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "152",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/VrbsFlow.sol:VrbsFlow",
+        "contract": "src/flows/VrbsFlow.sol:VrbsFlow",
         "label": "_pendingOwner",
         "offset": 0,
         "slot": "201",
         "type": "t_address"
       },
       {
-        "contract": "src/VrbsFlow.sol:VrbsFlow",
+        "contract": "src/flows/VrbsFlow.sol:VrbsFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "202",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/VrbsFlow.sol:VrbsFlow",
+        "contract": "src/flows/VrbsFlow.sol:VrbsFlow",
         "label": "_status",
         "offset": 0,
         "slot": "251",
         "type": "t_uint256"
       },
       {
-        "contract": "src/VrbsFlow.sol:VrbsFlow",
+        "contract": "src/flows/VrbsFlow.sol:VrbsFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "252",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/VrbsFlow.sol:VrbsFlow",
+        "contract": "src/flows/VrbsFlow.sol:VrbsFlow",
         "label": "fs",
         "offset": 0,
         "slot": "301",
         "type": "t_struct(Storage)_storage"
       },
       {
-        "contract": "src/VrbsFlow.sol:VrbsFlow",
+        "contract": "src/flows/VrbsFlow.sol:VrbsFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "323",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/VrbsFlow.sol:VrbsFlow",
+        "contract": "src/flows/VrbsFlow.sol:VrbsFlow",
         "label": "_childFlows",
         "offset": 0,
         "slot": "423",
         "type": "t_struct(AddressSet)_storage"
       },
       {
-        "contract": "src/VrbsFlow.sol:VrbsFlow",
+        "contract": "src/flows/VrbsFlow.sol:VrbsFlow",
         "label": "_childFlowsToUpdateFlowRate",
         "offset": 0,
         "slot": "425",
         "type": "t_struct(AddressSet)_storage"
       },
       {
-        "contract": "src/VrbsFlow.sol:VrbsFlow",
+        "contract": "src/flows/VrbsFlow.sol:VrbsFlow",
         "label": "erc721Votes",
         "offset": 0,
         "slot": "427",
         "type": "t_contract(IERC721Checkpointable)"
       },
       {
-        "contract": "src/VrbsFlow.sol:VrbsFlow",
+        "contract": "src/flows/VrbsFlow.sol:VrbsFlow",
         "label": "votingEnabled",
         "offset": 20,
         "slot": "427",
@@ -1722,122 +1722,122 @@
       }
     ]
   },
-  "AllocatorFlow": {
+  "SelfManagedFlow": {
     "storage": [
       {
-        "contract": "src/AllocatorFlow.sol:AllocatorFlow",
+        "contract": "src/flows/SelfManagedFlow.sol:SelfManagedFlow",
         "label": "_initialized",
         "offset": 0,
         "slot": "0",
         "type": "t_uint8"
       },
       {
-        "contract": "src/AllocatorFlow.sol:AllocatorFlow",
+        "contract": "src/flows/SelfManagedFlow.sol:SelfManagedFlow",
         "label": "_initializing",
         "offset": 1,
         "slot": "0",
         "type": "t_bool"
       },
       {
-        "contract": "src/AllocatorFlow.sol:AllocatorFlow",
+        "contract": "src/flows/SelfManagedFlow.sol:SelfManagedFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "1",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/AllocatorFlow.sol:AllocatorFlow",
+        "contract": "src/flows/SelfManagedFlow.sol:SelfManagedFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "51",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/AllocatorFlow.sol:AllocatorFlow",
+        "contract": "src/flows/SelfManagedFlow.sol:SelfManagedFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "101",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/AllocatorFlow.sol:AllocatorFlow",
+        "contract": "src/flows/SelfManagedFlow.sol:SelfManagedFlow",
         "label": "_owner",
         "offset": 0,
         "slot": "151",
         "type": "t_address"
       },
       {
-        "contract": "src/AllocatorFlow.sol:AllocatorFlow",
+        "contract": "src/flows/SelfManagedFlow.sol:SelfManagedFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "152",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/AllocatorFlow.sol:AllocatorFlow",
+        "contract": "src/flows/SelfManagedFlow.sol:SelfManagedFlow",
         "label": "_pendingOwner",
         "offset": 0,
         "slot": "201",
         "type": "t_address"
       },
       {
-        "contract": "src/AllocatorFlow.sol:AllocatorFlow",
+        "contract": "src/flows/SelfManagedFlow.sol:SelfManagedFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "202",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/AllocatorFlow.sol:AllocatorFlow",
+        "contract": "src/flows/SelfManagedFlow.sol:SelfManagedFlow",
         "label": "_status",
         "offset": 0,
         "slot": "251",
         "type": "t_uint256"
       },
       {
-        "contract": "src/AllocatorFlow.sol:AllocatorFlow",
+        "contract": "src/flows/SelfManagedFlow.sol:SelfManagedFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "252",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/AllocatorFlow.sol:AllocatorFlow",
+        "contract": "src/flows/SelfManagedFlow.sol:SelfManagedFlow",
         "label": "fs",
         "offset": 0,
         "slot": "301",
         "type": "t_struct(Storage)_storage"
       },
       {
-        "contract": "src/AllocatorFlow.sol:AllocatorFlow",
+        "contract": "src/flows/SelfManagedFlow.sol:SelfManagedFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "323",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/AllocatorFlow.sol:AllocatorFlow",
+        "contract": "src/flows/SelfManagedFlow.sol:SelfManagedFlow",
         "label": "_childFlows",
         "offset": 0,
         "slot": "423",
         "type": "t_struct(AddressSet)_storage"
       },
       {
-        "contract": "src/AllocatorFlow.sol:AllocatorFlow",
+        "contract": "src/flows/SelfManagedFlow.sol:SelfManagedFlow",
         "label": "_childFlowsToUpdateFlowRate",
         "offset": 0,
         "slot": "425",
         "type": "t_struct(AddressSet)_storage"
       },
       {
-        "contract": "src/AllocatorFlow.sol:AllocatorFlow",
+        "contract": "src/flows/SelfManagedFlow.sol:SelfManagedFlow",
         "label": "allocator",
         "offset": 0,
         "slot": "427",
         "type": "t_address"
       },
       {
-        "contract": "src/AllocatorFlow.sol:AllocatorFlow",
+        "contract": "src/flows/SelfManagedFlow.sol:SelfManagedFlow",
         "label": "_manualRecipients",
         "offset": 0,
         "slot": "428",

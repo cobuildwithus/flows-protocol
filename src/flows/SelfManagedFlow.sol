@@ -120,6 +120,6 @@ contract SelfManagedFlow is ISelfManagedFlow, Flow {
         address,
         address
     ) internal override returns (address recipient) {
-        revert("AllocatorFlow: cannot currently deploy a new flow recipient");
+        revert("SelfManagedFlow: cannot currently deploy a new flow recipient");
     }
 }

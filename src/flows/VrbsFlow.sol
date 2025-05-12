@@ -38,8 +38,6 @@ contract VrbsFlow is IVrbsFlow, Flow {
 
         erc721Votes = IERC721Checkpointable(_vrbsToken);
 
-        emit VotingTokenChanged(_vrbsToken);
-
         __Flow_init(
             _initialOwner,
             _superToken,
@@ -51,6 +49,8 @@ contract VrbsFlow is IVrbsFlow, Flow {
             _metadata,
             _sanctionsOracle
         );
+
+        emit VotingTokenChanged(_vrbsToken);
     }
 
     /**

@@ -17,9 +17,10 @@ contract AllocatorFlow is IAllocatorFlow, Flow {
     address public allocator;
 
     // The virtual weight used for sub-BPS resolution in allocation calculations
-    uint256 public constant virtualWeight = 1e21;
+    uint256 public constant VIRTUAL_WEIGHT = 1e21;
 
-    EnumerableSet.AddressSet private _manualRecipients; // NEW storage var
+    // The set of recipients that have been manually allocated to
+    EnumerableSet.AddressSet private _manualRecipients;
 
     modifier onlyAllocator() {
         if (msg.sender != allocator) revert NOT_ALLOCATOR();
@@ -43,8 +44,6 @@ contract AllocatorFlow is IAllocatorFlow, Flow {
         if (_allocator == address(0)) revert ADDRESS_ZERO();
         allocator = _allocator;
 
-        emit AllocatorChanged(_allocator);
-
         __Flow_init(
             _initialOwner,
             _superToken,
@@ -61,6 +60,8 @@ contract AllocatorFlow is IAllocatorFlow, Flow {
         // No need to split the flow rate evenly, make it entirely bonus pool
         _setBaselineFlowRatePercent(0);
         _setBonusPoolQuorum(0);
+
+        emit AllocatorChanged(_allocator);
     }
 
     /**
@@ -98,7 +99,7 @@ contract AllocatorFlow is IAllocatorFlow, Flow {
         for (uint256 i = 0; i < recipientIds.length; ++i) {
             address r = fs.recipients[recipientIds[i]].recipient;
             uint128 units = uint128(
-                FlowVotes._scaleAmountByPercentage(virtualWeight, bps[i], PERCENTAGE_SCALE) / 1e15 // same down-scaling factor
+                FlowVotes._scaleAmountByPercentage(VIRTUAL_WEIGHT, bps[i], PERCENTAGE_SCALE) / 1e15 // same down-scaling factor
             );
             fs.updateBonusMemberUnits(r, units);
             _manualRecipients.add(r);

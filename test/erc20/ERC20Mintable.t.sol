@@ -2,10 +2,10 @@
 pragma solidity ^0.8.28;
 
 import { Test } from "forge-std/Test.sol";
-import { ERC20VotesMintable } from "../../src/ERC20VotesMintable.sol";
+import { ERC20VotesMintable } from "../../src/base/erc20/ERC20VotesMintable.sol";
 import { IERC20VotesMintable } from "../../src/interfaces/IERC20VotesMintable.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import { RewardPool } from "../../src/RewardPool.sol";
+import { RewardPool } from "../../src/token-issuance/RewardPool.sol";
 import { IRewardPool } from "../../src/interfaces/IRewardPool.sol";
 
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperToken.sol";

@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { Flow } from "./Flow.sol";
-import { INounsFlow } from "./interfaces/IFlow.sol";
-import { ITokenVerifier } from "./interfaces/ITokenVerifier.sol";
-import { IStateProof } from "./interfaces/IStateProof.sol";
-import { IRewardPool } from "./interfaces/IRewardPool.sol";
-import { FlowVotes } from "./library/FlowVotes.sol";
-import { FlowRates } from "./library/FlowRates.sol";
-import { NounsFlowLibrary } from "./library/NounsFlowLibrary.sol";
-import { IChainalysisSanctionsList } from "./interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
+import { Flow } from "../Flow.sol";
+import { INounsFlow } from "../interfaces/IFlow.sol";
+import { ITokenVerifier } from "../interfaces/ITokenVerifier.sol";
+import { IStateProof } from "../interfaces/IStateProof.sol";
+import { IRewardPool } from "../interfaces/IRewardPool.sol";
+import { FlowVotes } from "../library/FlowVotes.sol";
+import { FlowRates } from "../library/FlowRates.sol";
+import { NounsFlowLibrary } from "../library/NounsFlowLibrary.sol";
+import { IChainalysisSanctionsList } from "../interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
 contract NounsFlow is INounsFlow, Flow {
     using FlowVotes for Storage;

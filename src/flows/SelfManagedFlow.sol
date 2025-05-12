@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { Flow } from "./Flow.sol";
-import { IAllocatorFlow } from "./interfaces/IFlow.sol";
-import { FlowVotes } from "./library/FlowVotes.sol";
-import { FlowPools } from "./library/FlowPools.sol";
+import { Flow } from "../Flow.sol";
+import { ISelfManagedFlow } from "../interfaces/IFlow.sol";
+import { FlowVotes } from "../library/FlowVotes.sol";
+import { FlowPools } from "../library/FlowPools.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { IChainalysisSanctionsList } from "./interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
+import { IChainalysisSanctionsList } from "../interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
-contract AllocatorFlow is IAllocatorFlow, Flow {
+contract SelfManagedFlow is ISelfManagedFlow, Flow {
     using FlowVotes for Storage;
     using FlowPools for Storage;
     using EnumerableSet for EnumerableSet.AddressSet;

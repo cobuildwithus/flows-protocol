@@ -7,7 +7,7 @@ import { TokenVerifier } from "../src/state-proof/TokenVerifier.sol";
 import { FlowTypes } from "../src/storage/FlowStorage.sol";
 import { IFlow, IERC721Flow } from "../src/interfaces/IFlow.sol";
 import { IChainalysisSanctionsList } from "../src/interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
-import { VrbsFlow } from "../src/VrbsFlow.sol";
+import { VrbsFlow } from "../src/flows/VrbsFlow.sol";
 
 contract DeployVrbsFlow is DeployScript {
     address public vrbsFlow;

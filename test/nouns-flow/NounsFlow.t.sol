@@ -5,7 +5,7 @@ import { Test } from "forge-std/Test.sol";
 import "forge-std/StdJson.sol";
 
 import { IFlow, INounsFlow } from "../../src/interfaces/IFlow.sol";
-import { NounsFlow } from "../../src/NounsFlow.sol";
+import { NounsFlow } from "../../src/flows/NounsFlow.sol";
 import { TokenVerifier } from "../../src/state-proof/TokenVerifier.sol";
 import { IStateProof } from "../../src/interfaces/IStateProof.sol";
 
@@ -19,7 +19,7 @@ import { SuperfluidFrameworkDeployer } from "@superfluid-finance/ethereum-contra
 import { TestToken } from "@superfluid-finance/ethereum-contracts/contracts/utils/TestToken.sol";
 import { SuperToken } from "@superfluid-finance/ethereum-contracts/contracts/superfluid/SuperToken.sol";
 import { FlowTypes } from "../../src/storage/FlowStorage.sol";
-import { RewardPool } from "../../src/RewardPool.sol";
+import { RewardPool } from "../../src/token-issuance/RewardPool.sol";
 import { IRewardPool } from "../../src/interfaces/IRewardPool.sol";
 import { IChainalysisSanctionsList } from "../../src/interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 

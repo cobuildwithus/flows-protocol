@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import { DeployScript } from "./DeployScript.s.sol";
-import { NounsFlow } from "../src/NounsFlow.sol";
+import { NounsFlow } from "../src/flows/NounsFlow.sol";
 
 contract DeployNounsFlowUpgrade is DeployScript {
     address public nounsFlowImplementation;

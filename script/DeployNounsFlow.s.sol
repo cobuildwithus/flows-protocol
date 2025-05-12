@@ -2,9 +2,9 @@
 pragma solidity ^0.8.28;
 
 import { DeployScript } from "./DeployScript.s.sol";
-import { NounsFlow } from "../src/NounsFlow.sol";
-import { ERC20VotesMintable } from "../src/ERC20VotesMintable.sol";
-import { RewardPool } from "../src/RewardPool.sol";
+import { NounsFlow } from "../src/flows/NounsFlow.sol";
+import { ERC20VotesMintable } from "../src/base/erc20/ERC20VotesMintable.sol";
+import { RewardPool } from "../src/token-issuance/RewardPool.sol";
 import { TCRFactory } from "../src/tcr/TCRFactory.sol";
 import { FlowTCR } from "../src/tcr/FlowTCR.sol";
 import { IFlow } from "../src/interfaces/IFlow.sol";
@@ -22,7 +22,7 @@ import { IRewardPool } from "../src/interfaces/IRewardPool.sol";
 import { IERC20VotesMintable } from "../src/interfaces/IERC20VotesMintable.sol";
 import { ERC20VotesArbitrator } from "../src/tcr/ERC20VotesArbitrator.sol";
 import { IERC20VotesArbitrator } from "../src/tcr/interfaces/IERC20VotesArbitrator.sol";
-import { TokenEmitter } from "../src/TokenEmitter.sol";
+import { TokenEmitter } from "../src/token-issuance/TokenEmitter.sol";
 import { ITokenEmitter } from "../src/interfaces/ITokenEmitter.sol";
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperToken.sol";
 import { IChainalysisSanctionsList } from "../src/interfaces/external/chainalysis/IChainalysisSanctionsList.sol";

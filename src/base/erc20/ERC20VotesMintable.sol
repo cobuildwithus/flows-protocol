@@ -10,10 +10,10 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import { ERC20VotesUpgradeable } from "./base/erc20/ERC20VotesUpgradeable.sol";
+import { ERC20VotesUpgradeable } from "./ERC20VotesUpgradeable.sol";
 
-import { IERC20VotesMintable } from "./interfaces/IERC20VotesMintable.sol";
-import { IRewardPool } from "./interfaces/IRewardPool.sol";
+import { IERC20VotesMintable } from "../../interfaces/IERC20VotesMintable.sol";
+import { IRewardPool } from "../../interfaces/IRewardPool.sol";
 
 contract ERC20VotesMintable is
     IERC20VotesMintable,

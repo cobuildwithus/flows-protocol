@@ -311,7 +311,7 @@ interface INounsFlow is IFlow {
     ) external;
 }
 
-interface IAllocatorFlow is IFlow {
+interface ISelfManagedFlow is IFlow {
     // Errors
     error NOT_ALLOCATOR();
 
@@ -322,7 +322,7 @@ interface IAllocatorFlow is IFlow {
     event AllocatorChanged(address indexed newAllocator);
 
     /**
-     * @notice Initializes an ERC721Flow contract
+     * @notice Initializes an SelfManagedFlow contract
      * @param initialOwner The address of the initial owner
      * @param allocator The address of the allocator - the EOA or contract that will allocate the flow
      * @param superToken The address of the SuperToken to be used for the pool

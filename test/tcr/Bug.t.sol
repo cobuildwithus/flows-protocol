@@ -3,7 +3,7 @@ pragma solidity ^0.8.28;
 
 import { FlowTCRTest } from "./FlowTCR.t.sol";
 
-import { NounsFlow } from "../../src/NounsFlow.sol";
+import { NounsFlow } from "../../src/flows/NounsFlow.sol";
 import { Flow } from "../../src/Flow.sol";
 
 contract TCRFundFlowTest is FlowTCRTest {

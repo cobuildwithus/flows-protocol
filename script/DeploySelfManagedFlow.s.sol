@@ -2,25 +2,25 @@
 pragma solidity ^0.8.28;
 
 import { DeployScript } from "./DeployScript.s.sol";
-import { AllocatorFlow } from "../src/AllocatorFlow.sol";
+import { SelfManagedFlow } from "../src/flows/SelfManagedFlow.sol";
 
-contract DeployAllocatorFlow is DeployScript {
-    address public allocatorFlowImplementation;
+contract DeploySelfManagedFlow is DeployScript {
+    address public selfManagedFlowImplementation;
 
     function deploy() internal override {
         // Deploy new ERC20VotesArbitrator implementation
-        AllocatorFlow allocatorFlowImpl = new AllocatorFlow();
-        allocatorFlowImplementation = address(allocatorFlowImpl);
+        SelfManagedFlow selfManagedFlowImpl = new SelfManagedFlow();
+        selfManagedFlowImplementation = address(selfManagedFlowImpl);
     }
 
     function writeAdditionalDeploymentDetails(string memory filePath) internal override {
         vm.writeLine(
             filePath,
-            string(abi.encodePacked("New AllocatorFlowImpl: ", addressToString(allocatorFlowImplementation)))
+            string(abi.encodePacked("New SelfManagedFlowImpl: ", addressToString(selfManagedFlowImplementation)))
         );
     }
 
     function getContractName() internal pure override returns (string memory) {
-        return "AllocatorFlow";
+        return "SelfManagedFlow";
     }
 }

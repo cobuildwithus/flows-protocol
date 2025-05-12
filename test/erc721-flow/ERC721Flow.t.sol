@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 import { Test } from "forge-std/Test.sol";
 
 import { IFlow, IERC721Flow } from "../../src/interfaces/IFlow.sol";
-import { ERC721Flow } from "../../src/ERC721Flow.sol";
+import { ERC721Flow } from "../../src/flows/ERC721Flow.sol";
 import { MockERC721 } from "../mocks/MockERC721.sol";
 
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
@@ -16,7 +16,7 @@ import { SuperfluidFrameworkDeployer } from "@superfluid-finance/ethereum-contra
 import { TestToken } from "@superfluid-finance/ethereum-contracts/contracts/utils/TestToken.sol";
 import { SuperToken } from "@superfluid-finance/ethereum-contracts/contracts/superfluid/SuperToken.sol";
 import { FlowTypes } from "../../src/storage/FlowStorage.sol";
-import { RewardPool } from "../../src/RewardPool.sol";
+import { RewardPool } from "../../src/token-issuance/RewardPool.sol";
 import { IRewardPool } from "../../src/interfaces/IRewardPool.sol";
 import { BulkPoolWithdraw } from "../../src/macros/BulkPoolWithdraw.sol";
 import { IChainalysisSanctionsList } from "../../src/interfaces/external/chainalysis/IChainalysisSanctionsList.sol";

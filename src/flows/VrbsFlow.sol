@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { Flow } from "./Flow.sol";
-import { IVrbsFlow } from "./interfaces/IFlow.sol";
-import { IERC721Checkpointable } from "./interfaces/IERC721Checkpointable.sol";
-import { FlowVotes } from "./library/FlowVotes.sol";
-import { FlowRates } from "./library/FlowRates.sol";
-import { ERC721FlowLibrary } from "./library/ERC721FlowLibrary.sol";
-import { IChainalysisSanctionsList } from "./interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
+import { Flow } from "../Flow.sol";
+import { IVrbsFlow } from "../interfaces/IFlow.sol";
+import { IERC721Checkpointable } from "../interfaces/IERC721Checkpointable.sol";
+import { FlowVotes } from "../library/FlowVotes.sol";
+import { FlowRates } from "../library/FlowRates.sol";
+import { ERC721FlowLibrary } from "../library/ERC721FlowLibrary.sol";
+import { IChainalysisSanctionsList } from "../interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
 contract VrbsFlow is IVrbsFlow, Flow {
     using FlowVotes for Storage;

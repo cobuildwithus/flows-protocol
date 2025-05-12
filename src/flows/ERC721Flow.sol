@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { Flow } from "./Flow.sol";
-import { IERC721Flow } from "./interfaces/IFlow.sol";
-import { IERC721Checkpointable } from "./interfaces/IERC721Checkpointable.sol";
-import { IRewardPool } from "./interfaces/IRewardPool.sol";
-import { FlowVotes } from "./library/FlowVotes.sol";
-import { FlowRates } from "./library/FlowRates.sol";
-import { ERC721FlowLibrary } from "./library/ERC721FlowLibrary.sol";
-import { RewardPool } from "./RewardPool.sol";
-import { IChainalysisSanctionsList } from "./interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
+import { Flow } from "../Flow.sol";
+import { IERC721Flow } from "../interfaces/IFlow.sol";
+import { IERC721Checkpointable } from "../interfaces/IERC721Checkpointable.sol";
+import { IRewardPool } from "../interfaces/IRewardPool.sol";
+import { FlowVotes } from "../library/FlowVotes.sol";
+import { FlowRates } from "../library/FlowRates.sol";
+import { ERC721FlowLibrary } from "../library/ERC721FlowLibrary.sol";
+import { IChainalysisSanctionsList } from "../interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
 contract ERC721Flow is IERC721Flow, Flow {
     using FlowVotes for Storage;

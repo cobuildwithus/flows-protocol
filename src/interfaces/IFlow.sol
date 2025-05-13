@@ -251,7 +251,7 @@ interface IFlow is IFlowEvents, IManagedFlow {
 
 interface IERC721Flow is IFlow {
     /// @notice Emitted when the voting token is changed
-    event VotingTokenChanged(address indexed erc721Token);
+    event ERC721VotingTokenChanged(address indexed erc721Token);
 
     /**
      * @notice Initializes an ERC721Flow contract

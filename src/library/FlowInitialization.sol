@@ -58,7 +58,7 @@ library FlowInitialization {
 
         PoolConfig memory poolConfig = PoolConfig({
             transferabilityForUnitsOwner: false,
-            distributionFromAnyAddress: false
+            distributionFromAnyAddress: true
         });
 
         fs.superToken = ISuperToken(_superToken);

@@ -36,7 +36,7 @@ contract ERC721Flow is IERC721Flow, Flow {
 
         erc721Votes = IERC721Checkpointable(_erc721Token);
 
-        emit VotingTokenChanged(_erc721Token);
+        emit ERC721VotingTokenChanged(_erc721Token);
 
         __Flow_init(
             _initialOwner,

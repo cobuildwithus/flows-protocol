@@ -50,7 +50,7 @@ contract VrbsFlow is IVrbsFlow, Flow {
             _sanctionsOracle
         );
 
-        emit VotingTokenChanged(_vrbsToken);
+        emit ERC721VotingTokenChanged(_vrbsToken);
     }
 
     /**

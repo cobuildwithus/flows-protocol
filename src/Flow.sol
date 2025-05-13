@@ -903,19 +903,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
-     * @notice Sets the sanctions oracle address for all child flows
-     * @param newSanctionsOracle The new sanctions oracle address to be set for all child flows
-     * @dev Only callable by the owner
-     */
-    function setAllChildFlowSanctionsOracle(address newSanctionsOracle) external onlyOwner {
-        address[] memory childFlows = _childFlows.values();
-
-        for (uint256 i = 0; i < childFlows.length; i++) {
-            Flow(childFlows[i]).setSanctionsOracle(newSanctionsOracle);
-        }
-    }
-
-    /**
      * @notice Ensures the caller is authorized to upgrade the contract
      * @param _newImpl The new implementation address
      */

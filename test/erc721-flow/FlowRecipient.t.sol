@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import { IFlowEvents, IFlow } from "../../src/interfaces/IFlow.sol";
-import { ERC721Flow } from "../../src/ERC721Flow.sol";
+import { ERC721Flow } from "../../src/flows/ERC721Flow.sol";
 import { FlowTypes } from "../../src/storage/FlowStorage.sol";
 import { ERC721FlowTest } from "./ERC721Flow.t.sol";
 

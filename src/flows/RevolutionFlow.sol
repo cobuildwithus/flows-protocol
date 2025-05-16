@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { Flow } from "./Flow.sol";
-import { IERC721Flow } from "./interfaces/IFlow.sol";
-import { IERC721Checkpointable } from "./interfaces/IERC721Checkpointable.sol";
-import { IRewardPool } from "./interfaces/IRewardPool.sol";
-import { FlowVotes } from "./library/FlowVotes.sol";
-import { FlowRates } from "./library/FlowRates.sol";
-import { ERC721FlowLibrary } from "./library/ERC721FlowLibrary.sol";
-import { RewardPool } from "./RewardPool.sol";
-import { IChainalysisSanctionsList } from "./interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
+import { Flow } from "../Flow.sol";
+import { IRevolutionFlow } from "../interfaces/IFlow.sol";
+import { IERC721Checkpointable } from "../interfaces/IERC721Checkpointable.sol";
+import { FlowVotes } from "../library/FlowVotes.sol";
+import { FlowRates } from "../library/FlowRates.sol";
+import { ERC721FlowLibrary } from "../library/ERC721FlowLibrary.sol";
+import { IChainalysisSanctionsList } from "../interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
-contract ERC721Flow is IERC721Flow, Flow {
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+contract RevolutionFlow is IRevolutionFlow, Flow {
     using FlowVotes for Storage;
     using FlowRates for Storage;
     using ERC721FlowLibrary for Storage;
@@ -19,11 +19,22 @@ contract ERC721Flow is IERC721Flow, Flow {
     // The ERC721 voting token contract used to get the voting power of an account
     IERC721Checkpointable public erc721Votes;
 
+    // The ERC20 voting token contract used to get the voting power of an account
+    IERC20 public erc20Votes;
+
+    // The weight of each single erc20 token
+    uint256 public erc20TokenVoteWeight;
+
+    // Whether voting is enabled or not
+    bool public votingEnabled;
+
     constructor() payable initializer {}
 
     function initialize(
         address _initialOwner,
-        address _nounsToken,
+        address _erc721Token,
+        address _erc20Token,
+        uint256 _erc20TokenVoteWeight,
         address _superToken,
         address _flowImpl,
         address _manager,
@@ -33,9 +44,12 @@ contract ERC721Flow is IERC721Flow, Flow {
         RecipientMetadata calldata _metadata,
         IChainalysisSanctionsList _sanctionsOracle
     ) public initializer {
-        if (_nounsToken == address(0)) revert ADDRESS_ZERO();
+        if (_erc721Token == address(0)) revert ADDRESS_ZERO();
+        if (_erc20Token == address(0)) revert ADDRESS_ZERO();
 
-        erc721Votes = IERC721Checkpointable(_nounsToken);
+        erc721Votes = IERC721Checkpointable(_erc721Token);
+        erc20Votes = IERC20(_erc20Token);
+        erc20TokenVoteWeight = _erc20TokenVoteWeight;
 
         __Flow_init(
             _initialOwner,
@@ -48,6 +62,10 @@ contract ERC721Flow is IERC721Flow, Flow {
             _metadata,
             _sanctionsOracle
         );
+
+        emit ERC721VotingTokenChanged(_erc721Token);
+        emit ERC20VotingTokenChanged(_erc20Token);
+        emit ERC20VotingWeightChanged(0, _erc20TokenVoteWeight);
     }
 
     /**
@@ -60,8 +78,8 @@ contract ERC721Flow is IERC721Flow, Flow {
         uint256[] calldata tokenIds,
         bytes32[] calldata recipientIds,
         uint32[] calldata percentAllocations
-    ) external nonReentrant {
-        fs.validateVotes(recipientIds, percentAllocations, PERCENTAGE_SCALE);
+    ) external nonReentrant onlyVotingEnabled {
+        fs.validateAllocations(recipientIds, percentAllocations, PERCENTAGE_SCALE);
 
         uint256 totalFlowsToUpdate = 0;
         bool shouldUpdateFlowRate = false;
@@ -97,6 +115,37 @@ contract ERC721Flow is IERC721Flow, Flow {
     }
 
     /**
+     * @notice Function to calculate the total vote weight of all tokens used for voting
+     * @dev This function can be overridden in derived contracts to implement custom logic
+     * @return uint256 The total vote weight of all tokens used for voting
+     */
+    function totalTokenSupplyVoteWeight() public view override returns (uint256) {
+        return erc721Votes.totalSupply() * fs.tokenVoteWeight;
+    }
+
+    /**
+     * @notice Enable voting for the flow
+     */
+    function enableVoting() external onlyManager {
+        votingEnabled = true;
+    }
+
+    /**
+     * @notice Disable voting for the flow
+     */
+    function disableVoting() external onlyManager {
+        votingEnabled = false;
+    }
+
+    /**
+     * @notice Modifier to ensure voting is enabled
+     */
+    modifier onlyVotingEnabled() {
+        if (!votingEnabled) revert VOTING_DISABLED();
+        _;
+    }
+
+    /**
      * @notice Deploys a new Flow contract as a recipient
      * @dev This function is virtual to allow for different deployment strategies in derived contracts
      * @param metadata The recipient's metadata like title, description, etc.
@@ -118,36 +167,5 @@ contract ERC721Flow is IERC721Flow, Flow {
             address(erc721Votes),
             PERCENTAGE_SCALE
         );
-    }
-
-    /**
-     * @notice Function to be called after updating the reward pool flow rate in Flow.sol
-     * @dev This is used to update the rewards for ERC20 curators automatically when the flow rate changes
-     */
-    function _afterRewardPoolFlowUpdate(int96 newFlowRate) internal virtual override {
-        address rewardPool = fs.managerRewardPool;
-        if (rewardPool == address(0)) revert ADDRESS_ZERO();
-
-        (bool shouldTransfer, uint256 transferAmount, uint256 balanceRequiredToStartFlow) = fs
-            .calculateBufferAmountForRewardPool(rewardPool, address(this), newFlowRate);
-
-        if (shouldTransfer) {
-            fs.superToken.transfer(rewardPool, transferAmount);
-        }
-
-        // Call setFlowRate on the child contract
-        // only set if buffer required is less than balance of contract
-        if (balanceRequiredToStartFlow <= fs.superToken.balanceOf(rewardPool)) {
-            IRewardPool(rewardPool).setFlowRate(getManagerRewardPoolFlowRate());
-        }
-    }
-
-    /**
-     * @notice Function to calculate the total vote weight of all tokens used for voting
-     * @dev This function can be overridden in derived contracts to implement custom logic
-     * @return uint256 The total vote weight of all tokens used for voting
-     */
-    function totalTokenSupplyVoteWeight() public view override returns (uint256) {
-        return erc721Votes.totalSupply() * fs.tokenVoteWeight;
     }
 }

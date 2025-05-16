@@ -3,7 +3,7 @@ pragma solidity ^0.8.28;
 
 import { ERC721FlowTest } from "./ERC721Flow.t.sol";
 import { IFlowEvents, IFlow, IERC721Flow } from "../../src/interfaces/IFlow.sol";
-import { ERC721Flow } from "../../src/ERC721Flow.sol";
+import { ERC721Flow } from "../../src/flows/ERC721Flow.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { FlowTypes } from "../../src/storage/FlowStorage.sol";
 import { ISuperfluidPool } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/agreements/gdav1/ISuperfluidPool.sol";
@@ -63,7 +63,7 @@ contract BasicERC721FlowTest is ERC721FlowTest {
         vm.prank(address(manager));
         IERC721Flow(flowProxy).initialize({
             initialOwner: address(manager),
-            nounsToken: address(nounsToken),
+            erc721Token: address(nounsToken),
             superToken: address(superToken),
             flowImpl: flowImpl,
             manager: manager,
@@ -82,7 +82,7 @@ contract BasicERC721FlowTest is ERC721FlowTest {
         vm.expectRevert(IFlow.ADDRESS_ZERO.selector);
         IERC721Flow(flowProxy).initialize({
             initialOwner: address(manager),
-            nounsToken: address(0),
+            erc721Token: address(0),
             superToken: address(superToken),
             flowImpl: flowImpl,
             manager: manager,
@@ -106,7 +106,7 @@ contract BasicERC721FlowTest is ERC721FlowTest {
         vm.expectRevert(IFlow.ADDRESS_ZERO.selector);
         IERC721Flow(flowProxy).initialize({
             initialOwner: address(manager),
-            nounsToken: address(0x1),
+            erc721Token: address(0x1),
             superToken: address(superToken),
             flowImpl: address(0),
             manager: manager,

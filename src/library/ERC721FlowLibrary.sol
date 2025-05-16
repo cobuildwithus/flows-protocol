@@ -16,7 +16,7 @@ library ERC721FlowLibrary {
      * @param managerRewardPool The address of the manager reward pool for the new contract
      * @param initialOwner The address of the owner for the new contract
      * @param parent The address of the parent flow contract (optional)
-     * @param erc721Votes The address of the ERC721Votes contract
+     * @param erc721Token The address of the ERC721 token used for voting
      * @param percentageScale The scale for the percentage of the manager reward pool
      * @return address The address of the newly created Flow contract
      */
@@ -27,7 +27,7 @@ library ERC721FlowLibrary {
         address managerRewardPool,
         address initialOwner,
         address parent,
-        address erc721Votes,
+        address erc721Token,
         uint32 percentageScale
     ) public returns (address) {
         address recipient = address(new ERC1967Proxy(fs.flowImpl, ""));
@@ -42,7 +42,7 @@ library ERC721FlowLibrary {
 
         IERC721Flow(recipient).initialize({
             initialOwner: initialOwner,
-            nounsToken: erc721Votes,
+            erc721Token: erc721Token,
             superToken: address(fs.superToken),
             flowImpl: fs.flowImpl,
             manager: flowManager,

@@ -38,7 +38,7 @@ library FlowVotes {
      * @param recipientIds The recipientIds of the grant recipients.
      * @param percentAllocations The basis points of the vote to be split with the recipients.
      */
-    function validateVotes(
+    function validateAllocations(
         FlowTypes.Storage storage fs,
         bytes32[] memory recipientIds,
         uint32[] memory percentAllocations,

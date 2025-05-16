@@ -11,5 +11,5 @@ TCRFactory
 RewardPool
 NounsFlow
 FlowStorageV1
-VrbsFlow
+RevolutionFlow
 SelfManagedFlow

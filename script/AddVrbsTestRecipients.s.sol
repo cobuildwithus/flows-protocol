@@ -5,12 +5,12 @@ import { DeployScript } from "./DeployScript.s.sol";
 import { IFlow } from "../src/interfaces/IFlow.sol";
 import { FlowTypes } from "../src/storage/FlowStorage.sol";
 
-contract AddVrbsTestRecipients is DeployScript {
-    // address of the existing VrbsFlow contract
+contract AddRevolutionTestRecipients is DeployScript {
+    // address of the existing RevolutionFlow contract
     address public constant FLOW_ADDRESS = 0xe596992b71b57D5A5bF730006a019Df363F43976;
 
     function deploy() internal override {
-        IFlow vrbsFlow = IFlow(FLOW_ADDRESS);
+        IFlow revolutionFlow = IFlow(FLOW_ADDRESS);
 
         // prepare metadata for Vrbs Soccer [TEST]
         FlowTypes.RecipientMetadata memory soccerMeta = FlowTypes.RecipientMetadata({
@@ -31,13 +31,13 @@ contract AddVrbsTestRecipients is DeployScript {
         });
 
         // add Vrbs Soccer recipient
-        vrbsFlow.addRecipient(
+        revolutionFlow.addRecipient(
             0x6b646cc82f536bb69dfbea1ed930066e2150da81a11f9178bf2eb770100ca3a6,
             0x2830e21792019CE670fBc548AacB004b08c7f71f,
             soccerMeta
         );
         // add Vrbs Coffee recipient
-        vrbsFlow.addRecipient(
+        revolutionFlow.addRecipient(
             0x999bfac23af3c9817504d270c65c1e07fc4865de52500c16e6b3226317cba480,
             0x289715fFBB2f4b482e2917D2f183FeAb564ec84F,
             coffeeMeta
@@ -50,6 +50,6 @@ contract AddVrbsTestRecipients is DeployScript {
     }
 
     function getContractName() internal pure override returns (string memory) {
-        return "VrbsFlow";
+        return "RevolutionFlow";
     }
 }

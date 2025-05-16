@@ -2,20 +2,28 @@
 pragma solidity ^0.8.28;
 
 import { Flow } from "../Flow.sol";
-import { IVrbsFlow } from "../interfaces/IFlow.sol";
+import { IRevolutionFlow } from "../interfaces/IFlow.sol";
 import { IERC721Checkpointable } from "../interfaces/IERC721Checkpointable.sol";
 import { FlowVotes } from "../library/FlowVotes.sol";
 import { FlowRates } from "../library/FlowRates.sol";
 import { ERC721FlowLibrary } from "../library/ERC721FlowLibrary.sol";
 import { IChainalysisSanctionsList } from "../interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
-contract VrbsFlow is IVrbsFlow, Flow {
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+contract RevolutionFlow is IRevolutionFlow, Flow {
     using FlowVotes for Storage;
     using FlowRates for Storage;
     using ERC721FlowLibrary for Storage;
 
     // The ERC721 voting token contract used to get the voting power of an account
     IERC721Checkpointable public erc721Votes;
+
+    // The ERC20 voting token contract used to get the voting power of an account
+    IERC20 public erc20Votes;
+
+    // The weight of each single erc20 token
+    uint256 public erc20TokenVoteWeight;
 
     // Whether voting is enabled or not
     bool public votingEnabled;
@@ -24,7 +32,9 @@ contract VrbsFlow is IVrbsFlow, Flow {
 
     function initialize(
         address _initialOwner,
-        address _vrbsToken,
+        address _erc721Token,
+        address _erc20Token,
+        uint256 _erc20TokenVoteWeight,
         address _superToken,
         address _flowImpl,
         address _manager,
@@ -34,9 +44,12 @@ contract VrbsFlow is IVrbsFlow, Flow {
         RecipientMetadata calldata _metadata,
         IChainalysisSanctionsList _sanctionsOracle
     ) public initializer {
-        if (_vrbsToken == address(0)) revert ADDRESS_ZERO();
+        if (_erc721Token == address(0)) revert ADDRESS_ZERO();
+        if (_erc20Token == address(0)) revert ADDRESS_ZERO();
 
-        erc721Votes = IERC721Checkpointable(_vrbsToken);
+        erc721Votes = IERC721Checkpointable(_erc721Token);
+        erc20Votes = IERC20(_erc20Token);
+        erc20TokenVoteWeight = _erc20TokenVoteWeight;
 
         __Flow_init(
             _initialOwner,
@@ -50,7 +63,9 @@ contract VrbsFlow is IVrbsFlow, Flow {
             _sanctionsOracle
         );
 
-        emit ERC721VotingTokenChanged(_vrbsToken);
+        emit ERC721VotingTokenChanged(_erc721Token);
+        emit ERC20VotingTokenChanged(_erc20Token);
+        emit ERC20VotingWeightChanged(0, _erc20TokenVoteWeight);
     }
 
     /**

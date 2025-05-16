@@ -89,6 +89,23 @@ interface IFlowEvents {
 }
 
 /**
+ * @title IFlowERC721Events
+ * @dev This interface defines the events for ERC721-related functionality in the Flow contract.
+ */
+interface IERC721FlowEvents {
+    /// @dev Emitted when the ERC721 voting token is changed
+    event ERC721VotingTokenChanged(address indexed erc721Token);
+}
+
+interface IRevolutionFlowEvents is IERC721FlowEvents {
+    /// @dev Emitted when the ERC20 voting token is changed
+    event ERC20VotingTokenChanged(address indexed erc20Token);
+
+    /// @dev Emitted when the ERC20 voting weight is changed
+    event ERC20VotingWeightChanged(uint256 oldWeight, uint256 newWeight);
+}
+
+/**
  * @title IFlow
  * @dev This interface defines the methods for the Flow contract.
  */
@@ -249,10 +266,7 @@ interface IFlow is IFlowEvents, IManagedFlow {
     function setManagerRewardPool(address _managerRewardPool) external;
 }
 
-interface IERC721Flow is IFlow {
-    /// @notice Emitted when the voting token is changed
-    event ERC721VotingTokenChanged(address indexed erc721Token);
-
+interface IERC721Flow is IFlow, IERC721FlowEvents {
     /**
      * @notice Initializes an ERC721Flow contract
      * @param initialOwner The address of the initial owner
@@ -348,7 +362,7 @@ interface ISelfManagedFlow is IFlow {
     ) external;
 }
 
-interface IVrbsFlow is IERC721Flow {
+interface IRevolutionFlow is IFlow, IRevolutionFlowEvents {
     // Errors
     error VOTING_DISABLED();
 
@@ -356,6 +370,8 @@ interface IVrbsFlow is IERC721Flow {
      * @notice Initializes an ERC721Flow contract
      * @param initialOwner The address of the initial owner
      * @param erc721Token The address of the ERC721 token used for voting
+     * @param erc20Token The address of the ERC20 token used for voting
+     * @param erc20TokenVoteWeight The weight of each individual erc20 token
      * @param superToken The address of the SuperToken to be used for the pool
      * @param flowImpl The address of the flow implementation contract
      * @param manager The address of the flow manager
@@ -368,6 +384,8 @@ interface IVrbsFlow is IERC721Flow {
     function initialize(
         address initialOwner,
         address erc721Token,
+        address erc20Token,
+        uint256 erc20TokenVoteWeight,
         address superToken,
         address flowImpl,
         address manager,

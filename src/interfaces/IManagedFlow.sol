@@ -25,6 +25,7 @@ interface IManagedFlow {
      * @param metadata The metadata of the recipient
      * @param flowManager The address of the flow manager for the new contract
      * @param managerRewardPool The address of the manager reward pool for the new contract
+     * @param initializationData The initialization data for the new contract
      * @return recipientId The ID of the recipient
      * @return recipientAddress The address of the newly created flow contract
      */
@@ -32,7 +33,8 @@ interface IManagedFlow {
         bytes32 newRecipientId,
         FlowTypes.RecipientMetadata memory metadata,
         address flowManager,
-        address managerRewardPool
+        address managerRewardPool,
+        bytes calldata initializationData
     ) external returns (bytes32 recipientId, address recipientAddress);
 
     /**

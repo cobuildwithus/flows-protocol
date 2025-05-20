@@ -2,7 +2,6 @@
 pragma solidity ^0.8.27;
 
 import { IFlowEvents, IFlow } from "../../src/interfaces/IFlow.sol";
-import { Flow } from "../../src/Flow.sol";
 import { FlowTypes } from "../../src/storage/FlowStorage.sol";
 import { ERC721FlowTest } from "./ERC721Flow.t.sol";
 
@@ -164,7 +163,8 @@ contract AddRecipientsTest is ERC721FlowTest {
                 "https://flow.com"
             ),
             address(0x456), // flowManager address
-            address(0)
+            address(0),
+            abi.encode(flow.flowImpl(), flow.erc721Votes())
         );
 
         // Check baseline member units for external recipient

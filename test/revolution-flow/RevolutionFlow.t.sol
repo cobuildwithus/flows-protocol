@@ -3,11 +3,12 @@ pragma solidity ^0.8.28;
 
 import { Test } from "forge-std/Test.sol";
 
-import { IFlow, IERC721Flow } from "../../src/interfaces/IFlow.sol";
-import { ERC721Flow } from "../../src/flows/ERC721Flow.sol";
+import { IFlow, IRevolutionFlow } from "../../src/interfaces/IFlow.sol";
+import { RevolutionFlow } from "../../src/flows/RevolutionFlow.sol";
 import { MockERC721 } from "../mocks/MockERC721.sol";
 
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import { ISuperfluid, ISuperToken, ISuperfluidPool } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
 
@@ -21,30 +22,31 @@ import { IRewardPool } from "../../src/interfaces/IRewardPool.sol";
 import { BulkPoolWithdraw } from "../../src/macros/BulkPoolWithdraw.sol";
 import { IChainalysisSanctionsList } from "../../src/interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
-contract ERC721FlowTest is Test {
+contract RevolutionFlowTest is Test {
     SuperfluidFrameworkDeployer.Framework internal sf;
     SuperfluidFrameworkDeployer internal deployer;
     SuperToken internal superToken;
     RewardPool internal dummyRewardPool;
 
-    ERC721Flow flow;
+    RevolutionFlow flow;
     address flowImpl;
     address testUSDC;
     IFlow.FlowParams flowParams;
 
     MockERC721 nounsToken;
+    ERC20 erc20Token;
 
     address manager = address(0x1998);
 
     FlowTypes.RecipientMetadata flowMetadata;
     FlowTypes.RecipientMetadata recipientMetadata;
 
-    function deployFlow(address erc721, address superTokenAddress) internal returns (ERC721Flow) {
+    function deployFlow(address erc721, address superTokenAddress) internal returns (RevolutionFlow) {
         address flowProxy = address(new ERC1967Proxy(flowImpl, ""));
         dummyRewardPool = deployRewardPool(superTokenAddress, manager, address(flowProxy), address(manager));
 
         vm.prank(address(manager));
-        IERC721Flow(flowProxy).initialize({
+        IRevolutionFlow(flowProxy).initialize({
             initialOwner: address(manager),
             superToken: superTokenAddress,
             flowImpl: flowImpl,
@@ -54,7 +56,7 @@ contract ERC721FlowTest is Test {
             flowParams: flowParams,
             metadata: flowMetadata,
             sanctionsOracle: IChainalysisSanctionsList(address(0)),
-            data: abi.encode(flowImpl, address(erc721))
+            data: abi.encode(flowImpl, erc721, address(erc20Token), 1e18)
         });
 
         _transferTestTokenToFlow(flowProxy, 10_000 * 10 ** 18); //10k usdc a month to start
@@ -63,7 +65,7 @@ contract ERC721FlowTest is Test {
         vm.prank(manager);
         IFlow(flowProxy).setFlowRate(385 * 10 ** 13); // 0.00385 tokens per second
 
-        return ERC721Flow(flowProxy);
+        return RevolutionFlow(flowProxy);
     }
 
     function _transferTestTokenToFlow(address flowAddress, uint256 amount) internal {
@@ -124,7 +126,8 @@ contract ERC721FlowTest is Test {
         });
 
         nounsToken = deployMock721("Nouns", "NOUN");
-        flowImpl = address(new ERC721Flow());
+        flowImpl = address(new RevolutionFlow());
+        erc20Token = new ERC20("Test Token", "TEST");
 
         flowParams = IFlow.FlowParams({
             tokenVoteWeight: 1e18 * 1000, // Example token vote weight

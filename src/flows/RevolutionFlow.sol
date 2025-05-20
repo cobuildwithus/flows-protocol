@@ -6,7 +6,7 @@ import { IRevolutionFlow } from "../interfaces/IFlow.sol";
 import { IERC721Checkpointable } from "../interfaces/IERC721Checkpointable.sol";
 import { FlowVotes } from "../library/FlowVotes.sol";
 import { FlowRates } from "../library/FlowRates.sol";
-import { ERC721FlowLibrary } from "../library/ERC721FlowLibrary.sol";
+import { RevolutionFlowLibrary } from "../library/RevolutionFlowLibrary.sol";
 import { IChainalysisSanctionsList } from "../interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -14,7 +14,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract RevolutionFlow is IRevolutionFlow, Flow {
     using FlowVotes for Storage;
     using FlowRates for Storage;
-    using ERC721FlowLibrary for Storage;
+    using RevolutionFlowLibrary for Storage;
 
     // The ERC721 voting token contract used to get the voting power of an account
     IERC721Checkpointable public erc721Votes;
@@ -32,9 +32,6 @@ contract RevolutionFlow is IRevolutionFlow, Flow {
 
     function initialize(
         address _initialOwner,
-        address _erc721Token,
-        address _erc20Token,
-        uint256 _erc20TokenVoteWeight,
         address _superToken,
         address _flowImpl,
         address _manager,
@@ -42,8 +39,11 @@ contract RevolutionFlow is IRevolutionFlow, Flow {
         address _parent,
         FlowParams calldata _flowParams,
         RecipientMetadata calldata _metadata,
-        IChainalysisSanctionsList _sanctionsOracle
+        IChainalysisSanctionsList _sanctionsOracle,
+        bytes calldata _data
     ) public initializer {
+        (, address _erc721Token, address _erc20Token, uint256 _erc20TokenVoteWeight) = decodeInitializationData(_data);
+
         if (_erc721Token == address(0)) revert ADDRESS_ZERO();
         if (_erc20Token == address(0)) revert ADDRESS_ZERO();
 
@@ -156,16 +156,35 @@ contract RevolutionFlow is IRevolutionFlow, Flow {
     function _deployFlowRecipient(
         RecipientMetadata calldata metadata,
         address flowManager,
-        address managerRewardPool
+        address managerRewardPool,
+        bytes calldata initializationData
     ) internal override returns (address recipient) {
+        bytes memory data = initializationData.length > 0
+            ? initializationData
+            : abi.encode(fs.flowImpl, address(erc721Votes), address(erc20Votes), erc20TokenVoteWeight);
+
         recipient = fs.deployFlowRecipient(
             metadata,
             flowManager,
             managerRewardPool,
             owner(),
             address(this),
-            address(erc721Votes),
-            PERCENTAGE_SCALE
+            PERCENTAGE_SCALE,
+            data
         );
+    }
+
+    /**
+     * @dev Decodes the item data.
+     * @param _data The data describing the item.
+     * @return flowImpl The address of the flow implementation for the deployed child contract.
+     * @return erc721 The address of the erc721 token.
+     * @return erc20 The address of the erc20 token.
+     * @return erc20Weight The vote weight of the erc20 token.
+     */
+    function decodeInitializationData(
+        bytes memory _data
+    ) public pure returns (address flowImpl, address erc721, address erc20, uint256 erc20Weight) {
+        return abi.decode(_data, (address, address, address, uint256));
     }
 }

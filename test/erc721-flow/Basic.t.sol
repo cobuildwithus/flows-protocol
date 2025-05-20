@@ -63,7 +63,6 @@ contract BasicERC721FlowTest is ERC721FlowTest {
         vm.prank(address(manager));
         IERC721Flow(flowProxy).initialize({
             initialOwner: address(manager),
-            erc721Token: address(nounsToken),
             superToken: address(superToken),
             flowImpl: flowImpl,
             manager: manager,
@@ -71,7 +70,8 @@ contract BasicERC721FlowTest is ERC721FlowTest {
             parent: address(0),
             flowParams: flowParams,
             metadata: flowMetadata,
-            sanctionsOracle: IChainalysisSanctionsList(address(0))
+            sanctionsOracle: IChainalysisSanctionsList(address(0)),
+            data: abi.encode(flowImpl, address(nounsToken))
         });
     }
 
@@ -82,7 +82,7 @@ contract BasicERC721FlowTest is ERC721FlowTest {
         vm.expectRevert(IFlow.ADDRESS_ZERO.selector);
         IERC721Flow(flowProxy).initialize({
             initialOwner: address(manager),
-            erc721Token: address(0),
+            data: abi.encode(flowImpl, address(0)),
             superToken: address(superToken),
             flowImpl: flowImpl,
             manager: manager,
@@ -106,7 +106,7 @@ contract BasicERC721FlowTest is ERC721FlowTest {
         vm.expectRevert(IFlow.ADDRESS_ZERO.selector);
         IERC721Flow(flowProxy).initialize({
             initialOwner: address(manager),
-            erc721Token: address(0x1),
+            data: abi.encode(flowImpl, address(0x1)),
             superToken: address(superToken),
             flowImpl: address(0),
             manager: manager,
@@ -127,7 +127,6 @@ contract BasicERC721FlowTest is ERC721FlowTest {
         // Test double initialization (should revert)
         IERC721Flow(payable(flowProxy)).initialize(
             address(manager),
-            address(0x1),
             address(superToken),
             address(flowImpl),
             manager,
@@ -141,14 +140,14 @@ contract BasicERC721FlowTest is ERC721FlowTest {
                 "Test Tagline",
                 "https://example.com"
             ),
-            IChainalysisSanctionsList(address(0))
+            IChainalysisSanctionsList(address(0)),
+            abi.encode(address(flowImpl), address(0x1))
         );
 
         // Test double initialization (should revert)
         vm.expectRevert("Initializable: contract is already initialized");
         IERC721Flow(payable(flowProxy)).initialize(
             address(manager),
-            address(0x1),
             address(superToken),
             address(flowImpl),
             manager,
@@ -162,7 +161,8 @@ contract BasicERC721FlowTest is ERC721FlowTest {
                 "Test Tagline",
                 "https://example.com"
             ),
-            IChainalysisSanctionsList(address(0))
+            IChainalysisSanctionsList(address(0)),
+            abi.encode(address(flowImpl), address(nounsToken))
         );
     }
 
@@ -178,7 +178,7 @@ contract BasicERC721FlowTest is ERC721FlowTest {
 
         vm.prank(manager);
         bytes32 recipientId = keccak256(abi.encodePacked(flowManager));
-        (, address newFlowRecipient) = flow.addFlowRecipient(recipientId, metadata, flowManager, address(0));
+        (, address newFlowRecipient) = flow.addFlowRecipient(recipientId, metadata, flowManager, address(0), bytes(""));
 
         assertNotEq(newFlowRecipient, address(0));
 
@@ -207,12 +207,18 @@ contract BasicERC721FlowTest is ERC721FlowTest {
         // Test adding with zero address flowManager (should revert)
         vm.expectRevert(IFlow.ADDRESS_ZERO.selector);
         vm.prank(manager);
-        flow.addFlowRecipient(keccak256(abi.encodePacked(address(0))), metadata, address(0), address(dummyRewardPool));
+        flow.addFlowRecipient(
+            keccak256(abi.encodePacked(address(0))),
+            metadata,
+            address(0),
+            address(dummyRewardPool),
+            bytes("")
+        );
 
         // Test adding with non-manager address (should revert)
         vm.prank(address(0xdead));
         vm.expectRevert(IFlow.SENDER_NOT_MANAGER.selector);
-        flow.addFlowRecipient(keccak256(abi.encodePacked(flowManager)), metadata, flowManager, address(0));
+        flow.addFlowRecipient(keccak256(abi.encodePacked(flowManager)), metadata, flowManager, address(0), bytes(""));
     }
 
     function testSetFlowRateAccessControl() public {
@@ -281,7 +287,7 @@ contract BasicERC721FlowTest is ERC721FlowTest {
         address flowManager = address(0x789);
         vm.prank(manager);
         bytes32 flowRecipientId = keccak256(abi.encodePacked(flowManager));
-        flow.addFlowRecipient(flowRecipientId, metadata, flowManager, address(0));
+        flow.addFlowRecipient(flowRecipientId, metadata, flowManager, address(0), bytes(""));
         assertEq(flow.activeRecipientCount(), 1, "Active recipient count should be 1 after adding flow recipient");
 
         // Verify total recipient count

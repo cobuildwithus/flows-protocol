@@ -154,7 +154,8 @@ contract FlowTCR is GeneralizedTCR, IFlowTCR {
                 recipientId,
                 metadata,
                 address(this),
-                address(0) // set to 0 so Flow doesn't try to set the reward pool flow rate on a TCR contract
+                address(0), // set to 0 so Flow doesn't try to set the reward pool flow rate on a TCR contract
+                bytes("") // todo allow arbitrary initialization data in future
             );
 
             ITCRFactory.DeployedContracts memory deployedContracts = tcrFactory.deployFlowTCR(

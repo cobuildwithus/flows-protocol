@@ -70,7 +70,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         _transferOwnership(_initialOwner);
 
         emit FlowInitialized(
-            msg.sender,
+            _initialOwner,
             _superToken,
             _flowImpl,
             _manager,
@@ -266,6 +266,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param _metadata The metadata of the recipient
      * @param _flowManager The address of the flow manager for the new contract
      * @param _managerRewardPool The address of the manager reward pool for the new contract
+     * @param _initializationData The initialization data for the new contract
      * @return bytes32 The recipientId of the newly created Flow contract
      * @return address The address of the newly created Flow contract
      * @dev Only callable by the manager of the contract
@@ -275,11 +276,12 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         bytes32 _recipientId,
         RecipientMetadata calldata _metadata,
         address _flowManager,
-        address _managerRewardPool
+        address _managerRewardPool,
+        bytes calldata _initializationData
     ) external onlyManager nonReentrant returns (bytes32, address) {
         FlowRecipients.validateFlowRecipient(_metadata, _flowManager);
 
-        address recipient = _deployFlowRecipient(_metadata, _flowManager, _managerRewardPool);
+        address recipient = _deployFlowRecipient(_metadata, _flowManager, _managerRewardPool, _initializationData);
 
         fs.addFlowRecipient(_recipientId, recipient, _metadata);
         _childFlows.add(recipient);
@@ -403,12 +405,14 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param _metadata The metadata of the recipient
      * @param _flowManager The address of the flow manager for the new contract
      * @param _managerRewardPool The address of the manager reward pool for the new contract
+     * @param _initializationData The initialization data for the new contract
      * @return address The address of the newly created Flow contract
      */
     function _deployFlowRecipient(
         RecipientMetadata calldata _metadata,
         address _flowManager,
-        address _managerRewardPool
+        address _managerRewardPool,
+        bytes calldata _initializationData
     ) internal virtual returns (address);
 
     /**

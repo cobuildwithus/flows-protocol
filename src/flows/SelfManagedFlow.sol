@@ -31,7 +31,6 @@ contract SelfManagedFlow is ISelfManagedFlow, Flow {
 
     function initialize(
         address _initialOwner,
-        address _allocator,
         address _superToken,
         address _flowImpl,
         address _manager,
@@ -39,9 +38,12 @@ contract SelfManagedFlow is ISelfManagedFlow, Flow {
         address _parent,
         FlowParams calldata _flowParams,
         RecipientMetadata calldata _metadata,
-        IChainalysisSanctionsList _sanctionsOracle
+        IChainalysisSanctionsList _sanctionsOracle,
+        bytes calldata data
     ) public initializer {
+        (, address _allocator) = decodeInitializationData(data);
         if (_allocator == address(0)) revert ADDRESS_ZERO();
+
         allocator = _allocator;
 
         __Flow_init(
@@ -118,8 +120,19 @@ contract SelfManagedFlow is ISelfManagedFlow, Flow {
     function _deployFlowRecipient(
         RecipientMetadata calldata,
         address,
-        address
+        address,
+        bytes calldata
     ) internal override returns (address recipient) {
         revert("SelfManagedFlow: cannot currently deploy a new flow recipient");
+    }
+
+    /**
+     * @dev Decodes the initialization data.
+     * @param data The data describing the item.
+     * @return flowImpl_ The address of the flow implementation for the deployed child contract.
+     * @return allocator_ The address of the allocator for the deployed child contract.
+     */
+    function decodeInitializationData(bytes calldata data) public pure returns (address flowImpl_, address allocator_) {
+        return abi.decode(data, (address, address));
     }
 }

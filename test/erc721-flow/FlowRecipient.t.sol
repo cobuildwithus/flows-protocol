@@ -22,7 +22,7 @@ contract FlowRecipientTest is ERC721FlowTest {
         bytes32 recipientId = keccak256(abi.encodePacked(flowManager));
 
         vm.prank(manager);
-        (, address newFlowAddress) = flow.addFlowRecipient(recipientId, metadata, flowManager, address(0));
+        (, address newFlowAddress) = flow.addFlowRecipient(recipientId, metadata, flowManager, address(0), bytes(""));
 
         ERC721Flow newFlow = ERC721Flow(newFlowAddress);
 
@@ -70,7 +70,8 @@ contract FlowRecipientTest is ERC721FlowTest {
             recipientId,
             metadata,
             flowManager,
-            address(0)
+            address(0),
+            bytes("")
         );
 
         assertEq(returnedRecipientId, recipientId);
@@ -126,7 +127,7 @@ contract FlowRecipientTest is ERC721FlowTest {
         vm.startPrank(flow.owner());
 
         vm.expectRevert(IFlow.ADDRESS_ZERO.selector);
-        flow.addFlowRecipient(recipientId, metadata, emptyManager, address(0));
+        flow.addFlowRecipient(recipientId, metadata, emptyManager, address(0), bytes(""));
 
         vm.stopPrank();
     }
@@ -138,7 +139,7 @@ contract FlowRecipientTest is ERC721FlowTest {
 
         vm.prank(flow.owner());
         vm.expectRevert(IFlow.INVALID_METADATA.selector);
-        flow.addFlowRecipient(recipientId, emptyMetadata, flowManager, address(0));
+        flow.addFlowRecipient(recipientId, emptyMetadata, flowManager, address(0), bytes(""));
     }
 
     function testAddFlowRecipientNonManager() public {
@@ -154,7 +155,7 @@ contract FlowRecipientTest is ERC721FlowTest {
 
         vm.prank(address(0xABC));
         vm.expectRevert(IFlow.SENDER_NOT_MANAGER.selector);
-        flow.addFlowRecipient(recipientId, metadata, flowManager, address(0));
+        flow.addFlowRecipient(recipientId, metadata, flowManager, address(0), bytes(""));
     }
 
     function testAddMultipleFlowRecipients() public {
@@ -179,8 +180,20 @@ contract FlowRecipientTest is ERC721FlowTest {
 
         vm.startPrank(flow.owner());
 
-        (, address newFlowAddress1) = flow.addFlowRecipient(recipientId1, metadata1, flowManager1, address(0));
-        (, address newFlowAddress2) = flow.addFlowRecipient(recipientId2, metadata2, flowManager2, address(0));
+        (, address newFlowAddress1) = flow.addFlowRecipient(
+            recipientId1,
+            metadata1,
+            flowManager1,
+            address(0),
+            bytes("")
+        );
+        (, address newFlowAddress2) = flow.addFlowRecipient(
+            recipientId2,
+            metadata2,
+            flowManager2,
+            address(0),
+            bytes("")
+        );
 
         assertNotEq(newFlowAddress1, newFlowAddress2);
         assertEq(flow.activeRecipientCount(), 2);

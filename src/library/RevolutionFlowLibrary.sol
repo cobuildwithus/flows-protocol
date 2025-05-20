@@ -1,23 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { IStateProof } from "../interfaces/IStateProof.sol";
 import { FlowTypes } from "../storage/FlowStorage.sol";
-import { IFlow, ICustomFlow } from "../interfaces/IFlow.sol";
+import { ICustomFlow, IFlow } from "../interfaces/IFlow.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
-library ERC721FlowLibrary {
+library RevolutionFlowLibrary {
     /**
      * @notice Deploys a new Flow contract as a recipient
-     * @dev This function overrides the base _deployFlowRecipient to use ERC721Flow-specific initialization
-     * @param fs The storage of the ERC721Flow contract
+     * @dev This function overrides the base _deployFlowRecipient to use RevolutionFlow-specific initialization
+     * @param fs The storage of the RevolutionFlow contract
      * @param metadata The recipient's metadata like title, description, etc.
      * @param flowManager The address of the flow manager for the new contract
      * @param managerRewardPool The address of the manager reward pool for the new contract
      * @param initialOwner The address of the owner for the new contract
      * @param parent The address of the parent flow contract (optional)
      * @param percentageScale The scale for the percentage of the manager reward pool
-     * @param initializationData The initialization data for the new contract
      * @return address The address of the newly created Flow contract
      */
     function deployFlowRecipient(
@@ -28,9 +26,11 @@ library ERC721FlowLibrary {
         address initialOwner,
         address parent,
         uint32 percentageScale,
-        bytes calldata initializationData
+        bytes calldata data
     ) public returns (address) {
-        address flowImpl = abi.decode(initializationData, (address));
+        // pull out the first address from the data
+        address flowImpl = abi.decode(data, (address));
+
         address recipient = address(new ERC1967Proxy(flowImpl, ""));
         if (recipient == address(0)) revert IFlow.ADDRESS_ZERO();
 
@@ -56,7 +56,7 @@ library ERC721FlowLibrary {
             }),
             metadata: metadata,
             sanctionsOracle: fs.sanctionsOracle,
-            data: initializationData
+            data: data
         });
 
         return recipient;

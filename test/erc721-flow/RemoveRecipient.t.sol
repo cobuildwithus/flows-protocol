@@ -374,8 +374,20 @@ contract RemoveRecipientsTest is ERC721FlowTest {
         vm.startPrank(flow.owner());
         bytes32 recipientId1 = keccak256(abi.encodePacked(flowManager1));
         bytes32 recipientId2 = keccak256(abi.encodePacked(flowManager2));
-        (, address flowRecipient1) = flow.addFlowRecipient(recipientId1, metadata1, flowManager1, address(0));
-        (, address flowRecipient2) = flow.addFlowRecipient(recipientId2, metadata2, flowManager2, address(0));
+        (, address flowRecipient1) = flow.addFlowRecipient(
+            recipientId1,
+            metadata1,
+            flowManager1,
+            address(0),
+            bytes("")
+        );
+        (, address flowRecipient2) = flow.addFlowRecipient(
+            recipientId2,
+            metadata2,
+            flowManager2,
+            address(0),
+            bytes("")
+        );
         vm.stopPrank();
 
         // Check initial state
@@ -435,7 +447,13 @@ contract RemoveRecipientsTest is ERC721FlowTest {
         );
         vm.prank(flow.owner());
         bytes32 recipientId3 = keccak256(abi.encodePacked(flowManager3));
-        (, address flowRecipient3) = flow.addFlowRecipient(recipientId3, metadata3, flowManager3, address(0));
+        (, address flowRecipient3) = flow.addFlowRecipient(
+            recipientId3,
+            metadata3,
+            flowManager3,
+            address(0),
+            bytes("")
+        );
 
         assertEq(
             flow.baselinePool().getTotalUnits(),
@@ -476,7 +494,13 @@ contract RemoveRecipientsTest is ERC721FlowTest {
             );
             vm.prank(flow.owner());
             recipientIds[i] = keccak256(abi.encodePacked(flowManager));
-            (, flowRecipients[i]) = flow.addFlowRecipient(recipientIds[i], metadata, flowManager, address(0));
+            (, flowRecipients[i]) = flow.addFlowRecipient(
+                recipientIds[i],
+                metadata,
+                flowManager,
+                address(0),
+                bytes("")
+            );
         }
 
         // Verify all recipients were added correctly

@@ -241,7 +241,13 @@ contract VotingFlowTest is ERC721FlowTest {
         bytes32 recipientId = keccak256(abi.encodePacked(recipient1));
         flow.addRecipient(recipientId, recipient1, recipientMetadata);
         bytes32 flowRecipientId = keccak256(abi.encodePacked(voter));
-        (, address flowRecipient) = flow.addFlowRecipient(flowRecipientId, recipientMetadata, manager, address(0));
+        (, address flowRecipient) = flow.addFlowRecipient(
+            flowRecipientId,
+            recipientMetadata,
+            manager,
+            address(0),
+            bytes("")
+        );
         vm.stopPrank();
 
         bytes32[] memory recipientIds = new bytes32[](1);
@@ -285,7 +291,13 @@ contract VotingFlowTest is ERC721FlowTest {
         bytes32 recipientId1 = keccak256(abi.encodePacked(recipient1));
         flow.addRecipient(recipientId1, recipient1, recipientMetadata);
         bytes32 flowRecipientId = keccak256(abi.encodePacked(voter));
-        (, address flowRecipient) = flow.addFlowRecipient(flowRecipientId, recipientMetadata, manager, address(0));
+        (, address flowRecipient) = flow.addFlowRecipient(
+            flowRecipientId,
+            recipientMetadata,
+            manager,
+            address(0),
+            bytes("")
+        );
         vm.stopPrank();
 
         int96 incoming = flow.getMemberTotalFlowRate(flowRecipient);
@@ -320,8 +332,8 @@ contract VotingFlowTest is ERC721FlowTest {
         vm.startPrank(manager);
         bytes32 recipientId1 = keccak256(abi.encodePacked(address(3)));
         bytes32 recipientId2 = keccak256(abi.encodePacked(address(4)));
-        (, address recipient1) = flow.addFlowRecipient(recipientId1, recipientMetadata, manager, address(0));
-        (, address recipient2) = flow.addFlowRecipient(recipientId2, recipientMetadata, manager, address(0));
+        (, address recipient1) = flow.addFlowRecipient(recipientId1, recipientMetadata, manager, address(0), bytes(""));
+        (, address recipient2) = flow.addFlowRecipient(recipientId2, recipientMetadata, manager, address(0), bytes(""));
         vm.stopPrank();
 
         bytes32[] memory recipientIds = new bytes32[](2);

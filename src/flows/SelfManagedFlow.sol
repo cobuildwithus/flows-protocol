@@ -41,8 +41,9 @@ contract SelfManagedFlow is ISelfManagedFlow, Flow {
         IChainalysisSanctionsList _sanctionsOracle,
         bytes calldata data
     ) public initializer {
-        (, address _allocator) = decodeInitializationData(data);
+        (address initFlowImpl, address _allocator) = decodeInitializationData(data);
         if (_allocator == address(0)) revert ADDRESS_ZERO();
+        if (initFlowImpl != _flowImpl) revert INVALID_FLOW_IMPL();
 
         allocator = _allocator;
 

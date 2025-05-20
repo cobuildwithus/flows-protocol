@@ -42,10 +42,16 @@ contract RevolutionFlow is IRevolutionFlow, Flow {
         IChainalysisSanctionsList _sanctionsOracle,
         bytes calldata _data
     ) public initializer {
-        (, address _erc721Token, address _erc20Token, uint256 _erc20TokenVoteWeight) = decodeInitializationData(_data);
+        (
+            address initFlowImpl,
+            address _erc721Token,
+            address _erc20Token,
+            uint256 _erc20TokenVoteWeight
+        ) = decodeInitializationData(_data);
 
         if (_erc721Token == address(0)) revert ADDRESS_ZERO();
         if (_erc20Token == address(0)) revert ADDRESS_ZERO();
+        if (initFlowImpl != _flowImpl) revert INVALID_FLOW_IMPL();
 
         erc721Votes = IERC721Checkpointable(_erc721Token);
         erc20Votes = IERC20(_erc20Token);

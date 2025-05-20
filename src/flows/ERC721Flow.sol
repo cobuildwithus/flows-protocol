@@ -32,7 +32,8 @@ contract ERC721Flow is IERC721Flow, Flow {
         IChainalysisSanctionsList _sanctionsOracle,
         bytes calldata _data
     ) public initializer {
-        (, address erc721Token) = decodeInitializationData(_data);
+        (address initFlowImpl, address erc721Token) = decodeInitializationData(_data);
+        if (initFlowImpl != _flowImpl) revert INVALID_FLOW_IMPL();
         if (erc721Token == address(0)) revert ADDRESS_ZERO();
 
         erc721Votes = IERC721Checkpointable(erc721Token);

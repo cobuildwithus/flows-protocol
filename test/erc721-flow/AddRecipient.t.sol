@@ -152,7 +152,7 @@ contract AddRecipientsTest is ERC721FlowTest {
         bytes32 flowRecipientId = keccak256(abi.encodePacked(flow.owner()));
 
         // Add flow recipient
-        vm.prank(flow.owner());
+        vm.startPrank(flow.owner());
         (, address flowRecipient) = flow.addFlowRecipient(
             flowRecipientId,
             FlowTypes.RecipientMetadata(
@@ -166,6 +166,7 @@ contract AddRecipientsTest is ERC721FlowTest {
             address(0),
             abi.encode(flow.flowImpl(), flow.erc721Votes())
         );
+        vm.stopPrank();
 
         // Check baseline member units for external recipient
         uint128 externalRecipientUnits = flow.baselinePool().getUnits(externalRecipient);

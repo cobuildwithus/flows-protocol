@@ -298,6 +298,9 @@ interface INounsFlow is IFlow {
 }
 
 interface ICustomFlow is IFlow {
+    /// @dev Reverts if the flow implementation is invalid
+    error INVALID_FLOW_IMPL();
+
     /**
      * @notice Initializes an ERC721Flow contract
      * @param initialOwner The address of the initial owner

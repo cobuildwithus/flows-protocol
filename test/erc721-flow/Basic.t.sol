@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import { ERC721FlowTest } from "./ERC721Flow.t.sol";
-import { IFlowEvents, IFlow, IERC721Flow } from "../../src/interfaces/IFlow.sol";
+import { IFlowEvents, IFlow, IERC721Flow, ICustomFlow } from "../../src/interfaces/IFlow.sol";
 import { ERC721Flow } from "../../src/flows/ERC721Flow.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { FlowTypes } from "../../src/storage/FlowStorage.sol";
@@ -103,7 +103,7 @@ contract BasicERC721FlowTest is ERC721FlowTest {
         address originalFlowImpl = flowImpl;
         flowProxy = address(new ERC1967Proxy(flowImpl, ""));
         vm.prank(address(manager));
-        vm.expectRevert(IFlow.ADDRESS_ZERO.selector);
+        vm.expectRevert(ICustomFlow.INVALID_FLOW_IMPL.selector);
         IERC721Flow(flowProxy).initialize({
             initialOwner: address(manager),
             data: abi.encode(flowImpl, address(0x1)),

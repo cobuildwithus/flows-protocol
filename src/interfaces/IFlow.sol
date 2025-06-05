@@ -89,6 +89,15 @@ interface IFlowEvents {
 }
 
 /**
+ * @title IERC20FlowEvents
+ * @dev This interface defines the events for ERC20-related functionality in the Flow contract.
+ */
+interface IERC20FlowEvents {
+    /// @dev Emitted when the ERC20 voting token is changed
+    event ERC20VotingTokenChanged(address indexed erc20Token);
+}
+
+/**
  * @title IFlowERC721Events
  * @dev This interface defines the events for ERC721-related functionality in the Flow contract.
  */
@@ -345,3 +354,5 @@ interface IRevolutionFlow is ICustomFlow, IRevolutionFlowEvents {
 }
 
 interface IERC721Flow is ICustomFlow, IERC721FlowEvents {}
+
+interface IERC20Flow is ICustomFlow, IERC20FlowEvents {}

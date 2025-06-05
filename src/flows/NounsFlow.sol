@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.28;
 
-import { Flow } from "./Flow.sol";
-import { INounsFlow } from "./interfaces/IFlow.sol";
-import { ITokenVerifier } from "./interfaces/ITokenVerifier.sol";
-import { IStateProof } from "./interfaces/IStateProof.sol";
-import { IRewardPool } from "./interfaces/IRewardPool.sol";
-import { FlowVotes } from "./library/FlowVotes.sol";
-import { FlowRates } from "./library/FlowRates.sol";
-import { NounsFlowLibrary } from "./library/NounsFlowLibrary.sol";
-import { IChainalysisSanctionsList } from "./interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
+import { Flow } from "../Flow.sol";
+import { INounsFlow } from "../interfaces/IFlow.sol";
+import { ITokenVerifier } from "../interfaces/ITokenVerifier.sol";
+import { IStateProof } from "../interfaces/IStateProof.sol";
+import { IRewardPool } from "../interfaces/IRewardPool.sol";
+import { FlowVotes } from "../library/FlowVotes.sol";
+import { FlowRates } from "../library/FlowRates.sol";
+import { NounsFlowLibrary } from "../library/NounsFlowLibrary.sol";
+import { IChainalysisSanctionsList } from "../interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
 contract NounsFlow is INounsFlow, Flow {
     using FlowVotes for Storage;
@@ -66,7 +66,7 @@ contract NounsFlow is INounsFlow, Flow {
         bytes[][][] calldata ownershipStorageProofs,
         bytes[][] calldata delegateStorageProofs
     ) external nonReentrant {
-        fs.validateVotes(recipientIds, percentAllocations, PERCENTAGE_SCALE);
+        fs.validateAllocations(recipientIds, percentAllocations, PERCENTAGE_SCALE);
 
         uint256 totalFlowsToUpdate = 0;
         bool shouldUpdateFlowRate = false;
@@ -127,12 +127,14 @@ contract NounsFlow is INounsFlow, Flow {
      * @dev This function overrides the base _deployFlowRecipient to use NounsFlow-specific initialization
      * @param metadata The recipient's metadata like title, description, etc.
      * @param flowManager The address of the flow manager for the new contract
+     * @param managerRewardPool The address of the manager reward pool for the new contract
      * @return recipient address The address of the newly created Flow contract
      */
     function _deployFlowRecipient(
         RecipientMetadata calldata metadata,
         address flowManager,
-        address managerRewardPool
+        address managerRewardPool,
+        bytes calldata
     ) internal override returns (address recipient) {
         recipient = fs.deployFlowRecipient(
             metadata,

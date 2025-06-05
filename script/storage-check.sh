@@ -130,6 +130,8 @@ if [[ $func == "check" ]]; then
     echo "Temporary layout saved to $TEMP_FILENAME for inspection."
     exit 1
   else
+    # diff is clean → remove the temp snapshot (unless CI already trapped it)
+    rm -f "$TEMP_FILENAME"
     echo "----------------------------------------"
     echo "storage-layout test (JSON): passes ✅"
     exit 0

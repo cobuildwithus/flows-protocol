@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 
 import { Test } from "forge-std/Test.sol";
 import { FlowTCR } from "../../src/tcr/FlowTCR.sol";
-import { ERC20VotesMintable } from "../../src/ERC20VotesMintable.sol";
+import { ERC20VotesMintable } from "../../src/base/erc20/ERC20VotesMintable.sol";
 import { ERC20VotesArbitrator } from "../../src/tcr/ERC20VotesArbitrator.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IGeneralizedTCR } from "../../src/tcr/interfaces/IGeneralizedTCR.sol";
@@ -17,9 +17,9 @@ import { IManagedFlow } from "../../src/interfaces/IManagedFlow.sol";
 import { IFlowTCR } from "../../src/tcr/interfaces/IGeneralizedTCR.sol";
 import { ERC721FlowTest } from "../erc721-flow/ERC721Flow.t.sol";
 import { TCRFactory } from "../../src/tcr/TCRFactory.sol";
-import { TokenEmitter } from "../../src/TokenEmitter.sol";
+import { TokenEmitter } from "../../src/token-issuance/TokenEmitter.sol";
 import { ITCRFactory } from "../../src/tcr/interfaces/ITCRFactory.sol";
-import { RewardPool } from "../../src/RewardPool.sol";
+import { RewardPool } from "../../src/token-issuance/RewardPool.sol";
 import { ProtocolRewards } from "../../src/protocol-rewards/ProtocolRewards.sol";
 import { GeneralizedTCRStorageV1 } from "../../src/tcr/storage/GeneralizedTCRStorageV1.sol";
 

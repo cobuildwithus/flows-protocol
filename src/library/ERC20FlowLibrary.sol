@@ -6,11 +6,11 @@ import { FlowTypes } from "../storage/FlowStorage.sol";
 import { IFlow, ICustomFlow } from "../interfaces/IFlow.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
-library ERC721FlowLibrary {
+library ERC20FlowLibrary {
     /**
      * @notice Deploys a new Flow contract as a recipient
-     * @dev This function overrides the base _deployFlowRecipient to use ERC721Flow-specific initialization
-     * @param fs The storage of the ERC721Flow contract
+     * @dev This function overrides the base _deployFlowRecipient to use ERC20Flow-specific initialization
+     * @param fs The storage of the ERC20Flow contract
      * @param metadata The recipient's metadata like title, description, etc.
      * @param flowManager The address of the flow manager for the new contract
      * @param managerRewardPool The address of the manager reward pool for the new contract

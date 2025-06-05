@@ -89,6 +89,32 @@ interface IFlowEvents {
 }
 
 /**
+ * @title IERC20FlowEvents
+ * @dev This interface defines the events for ERC20-related functionality in the Flow contract.
+ */
+interface IERC20FlowEvents {
+    /// @dev Emitted when the ERC20 voting token is changed
+    event ERC20VotingTokenChanged(address indexed erc20Token);
+}
+
+/**
+ * @title IFlowERC721Events
+ * @dev This interface defines the events for ERC721-related functionality in the Flow contract.
+ */
+interface IERC721FlowEvents {
+    /// @dev Emitted when the ERC721 voting token is changed
+    event ERC721VotingTokenChanged(address indexed erc721Token);
+}
+
+interface IRevolutionFlowEvents is IERC721FlowEvents {
+    /// @dev Emitted when the ERC20 voting token is changed
+    event ERC20VotingTokenChanged(address indexed erc20Token);
+
+    /// @dev Emitted when the ERC20 voting weight is changed
+    event ERC20VotingWeightChanged(uint256 oldWeight, uint256 newWeight);
+}
+
+/**
  * @title IFlow
  * @dev This interface defines the methods for the Flow contract.
  */
@@ -249,34 +275,6 @@ interface IFlow is IFlowEvents, IManagedFlow {
     function setManagerRewardPool(address _managerRewardPool) external;
 }
 
-interface IERC721Flow is IFlow {
-    /**
-     * @notice Initializes an ERC721Flow contract
-     * @param initialOwner The address of the initial owner
-     * @param nounsToken The address of the ERC721 token used for voting
-     * @param superToken The address of the SuperToken to be used for the pool
-     * @param flowImpl The address of the flow implementation contract
-     * @param manager The address of the flow manager
-     * @param managerRewardPool The address of the manager reward pool
-     * @param parent The address of the parent flow contract (optional)
-     * @param flowParams The parameters for the flow contract
-     * @param metadata The metadata for the flow contract
-     * @param sanctionsOracle The address of the sanctions oracle
-     */
-    function initialize(
-        address initialOwner,
-        address nounsToken,
-        address superToken,
-        address flowImpl,
-        address manager,
-        address managerRewardPool,
-        address parent,
-        FlowParams memory flowParams,
-        FlowTypes.RecipientMetadata memory metadata,
-        IChainalysisSanctionsList sanctionsOracle
-    ) external;
-}
-
 interface INounsFlow is IFlow {
     /// @dev Reverts if the proof timestamp is too old
     error PAST_PROOF();
@@ -307,3 +305,54 @@ interface INounsFlow is IFlow {
         IChainalysisSanctionsList sanctionsOracle
     ) external;
 }
+
+interface ICustomFlow is IFlow {
+    /// @dev Reverts if the flow implementation is invalid
+    error INVALID_FLOW_IMPL();
+
+    /**
+     * @notice Initializes an ERC721Flow contract
+     * @param initialOwner The address of the initial owner
+     * @param superToken The address of the SuperToken to be used for the pool
+     * @param flowImpl The address of the flow implementation contract
+     * @param manager The address of the flow manager
+     * @param managerRewardPool The address of the manager reward pool
+     * @param parent The address of the parent flow contract (optional)
+     * @param flowParams The parameters for the flow contract
+     * @param metadata The metadata for the flow contract
+     * @param sanctionsOracle The address of the sanctions oracle
+     * @param data The initialization data for the flow contract [abi.encode(erc721, erc20, erc20Weight)]
+     */
+    function initialize(
+        address initialOwner,
+        address superToken,
+        address flowImpl,
+        address manager,
+        address managerRewardPool,
+        address parent,
+        FlowParams memory flowParams,
+        FlowTypes.RecipientMetadata memory metadata,
+        IChainalysisSanctionsList sanctionsOracle,
+        bytes calldata data
+    ) external;
+}
+
+interface ISelfManagedFlow is ICustomFlow {
+    // Errors
+    error NOT_ALLOCATOR();
+
+    /**
+     * @dev Emitted when the allocator is changed
+     * @param newAllocator The address of the new allocator
+     */
+    event AllocatorChanged(address indexed newAllocator);
+}
+
+interface IRevolutionFlow is ICustomFlow, IRevolutionFlowEvents {
+    // Errors
+    error VOTING_DISABLED();
+}
+
+interface IERC721Flow is ICustomFlow, IERC721FlowEvents {}
+
+interface IERC20Flow is ICustomFlow, IERC20FlowEvents {}

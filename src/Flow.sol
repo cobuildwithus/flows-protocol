@@ -70,7 +70,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         _transferOwnership(_initialOwner);
 
         emit FlowInitialized(
-            msg.sender,
+            _initialOwner,
             _superToken,
             _flowImpl,
             _manager,
@@ -266,6 +266,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param _metadata The metadata of the recipient
      * @param _flowManager The address of the flow manager for the new contract
      * @param _managerRewardPool The address of the manager reward pool for the new contract
+     * @param _initializationData The initialization data for the new contract
      * @return bytes32 The recipientId of the newly created Flow contract
      * @return address The address of the newly created Flow contract
      * @dev Only callable by the manager of the contract
@@ -275,11 +276,12 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         bytes32 _recipientId,
         RecipientMetadata calldata _metadata,
         address _flowManager,
-        address _managerRewardPool
+        address _managerRewardPool,
+        bytes calldata _initializationData
     ) external onlyManager nonReentrant returns (bytes32, address) {
         FlowRecipients.validateFlowRecipient(_metadata, _flowManager);
 
-        address recipient = _deployFlowRecipient(_metadata, _flowManager, _managerRewardPool);
+        address recipient = _deployFlowRecipient(_metadata, _flowManager, _managerRewardPool, _initializationData);
 
         fs.addFlowRecipient(_recipientId, recipient, _metadata);
         _childFlows.add(recipient);
@@ -403,12 +405,14 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param _metadata The metadata of the recipient
      * @param _flowManager The address of the flow manager for the new contract
      * @param _managerRewardPool The address of the manager reward pool for the new contract
+     * @param _initializationData The initialization data for the new contract
      * @return address The address of the newly created Flow contract
      */
     function _deployFlowRecipient(
         RecipientMetadata calldata _metadata,
         address _flowManager,
-        address _managerRewardPool
+        address _managerRewardPool,
+        bytes calldata _initializationData
     ) internal virtual returns (address);
 
     /**
@@ -583,7 +587,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @dev Only callable by the owner or manager of the contract
      * @dev Emits a BaselineFlowRatePercentUpdated event with the old and new percentages
      */
-    function setBaselineFlowRatePercent(uint32 _baselineFlowRatePercent) external onlyOwnerOrManager nonReentrant {
+    function _setBaselineFlowRatePercent(uint32 _baselineFlowRatePercent) internal {
         if (_baselineFlowRatePercent > PERCENTAGE_SCALE) revert INVALID_PERCENTAGE();
 
         emit BaselineFlowRatePercentUpdated(fs.baselinePoolFlowRatePercent, _baselineFlowRatePercent);
@@ -595,13 +599,20 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
+     * @dev Only callable by the owner or manager of the contract
+     */
+    function setBaselineFlowRatePercent(uint32 _baselineFlowRatePercent) external onlyOwnerOrManager nonReentrant {
+        _setBaselineFlowRatePercent(_baselineFlowRatePercent);
+    }
+
+    /**
      * @notice Sets the bonus pool quorum parameters
      * @param _quorumBps The new quorum percentage (in basis points, scaled by PERCENTAGE_SCALE).
      * Once reached, the bonus pool will be scaled up to the maximum available flow rate. (total - baseline - manager reward)
      * Leftover flow rate when quorum is not reached will be added to the baseline pool.
      * @dev Only callable by the owner or manager of the contract
      */
-    function setBonusPoolQuorum(uint32 _quorumBps) external onlyOwnerOrManager {
+    function _setBonusPoolQuorum(uint32 _quorumBps) internal {
         if (_quorumBps > PERCENTAGE_SCALE) revert INVALID_PERCENTAGE();
 
         emit BonusPoolQuorumUpdated(fs.bonusPoolQuorumBps, _quorumBps);
@@ -609,6 +620,13 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         fs.bonusPoolQuorumBps = _quorumBps;
 
         _setFlowRate(getTotalFlowRate());
+    }
+
+    /**
+     * @dev Only callable by the owner or manager of the contract
+     */
+    function setBonusPoolQuorum(uint32 _quorumBps) external onlyOwnerOrManager {
+        _setBonusPoolQuorum(_quorumBps);
     }
 
     /**
@@ -885,19 +903,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
         for (uint256 i = 0; i < flowsToUpdate.length; i++) {
             Flow(flowsToUpdate[i]).upgradeTo(fs.flowImpl);
-        }
-    }
-
-    /**
-     * @notice Sets the sanctions oracle address for all child flows
-     * @param newSanctionsOracle The new sanctions oracle address to be set for all child flows
-     * @dev Only callable by the owner
-     */
-    function setAllChildFlowSanctionsOracle(address newSanctionsOracle) external onlyOwner {
-        address[] memory childFlows = _childFlows.values();
-
-        for (uint256 i = 0; i < childFlows.length; i++) {
-            Flow(childFlows[i]).setSanctionsOracle(newSanctionsOracle);
         }
     }
 

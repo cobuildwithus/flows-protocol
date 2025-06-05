@@ -3,7 +3,7 @@ pragma solidity ^0.8.28;
 
 import { ERC721FlowTest } from "./ERC721Flow.t.sol";
 import { IFlow, IERC721Flow } from "../../src/interfaces/IFlow.sol";
-import { ERC721Flow } from "../../src/ERC721Flow.sol";
+import { ERC721Flow } from "../../src/flows/ERC721Flow.sol";
 import { Flow } from "../../src/Flow.sol";
 import { console } from "forge-std/console.sol";
 

@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import { IArbitrator } from "../interfaces/IArbitrator.sol";
 import { IArbitrable } from "../interfaces/IArbitrable.sol";
-import { ERC20VotesMintable } from "../../ERC20VotesMintable.sol";
+import { ERC20VotesMintable } from "../../base/erc20/ERC20VotesMintable.sol";
 
 /**
  * @title ArbitratorStorageV1

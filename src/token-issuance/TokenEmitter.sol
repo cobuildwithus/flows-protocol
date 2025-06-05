@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.28;
 
-import { BondingSCurve } from "./token-issuance/BondingSCurve.sol";
-import { VRGDACap } from "./token-issuance/VRGDACap.sol";
-import { ERC20VotesMintable } from "./ERC20VotesMintable.sol";
-import { ITokenEmitter } from "./interfaces/ITokenEmitter.sol";
-import { IWETH } from "./interfaces/IWETH.sol";
-import { FlowProtocolRewards } from "./protocol-rewards/abstract/FlowProtocolRewards.sol";
-import { toDaysWadUnsafe, wadDiv } from "./libs/SignedWadMath.sol";
+import { BondingSCurve } from "./BondingSCurve.sol";
+import { VRGDACap } from "./VRGDACap.sol";
+import { ERC20VotesMintable } from "../base/erc20/ERC20VotesMintable.sol";
+import { ITokenEmitter } from "../interfaces/ITokenEmitter.sol";
+import { IWETH } from "../interfaces/IWETH.sol";
+import { FlowProtocolRewards } from "../protocol-rewards/abstract/FlowProtocolRewards.sol";
+import { toDaysWadUnsafe, wadDiv } from "../libs/SignedWadMath.sol";
 
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";

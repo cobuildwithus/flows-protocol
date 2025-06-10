@@ -51,6 +51,13 @@ library FlowInitialization {
         if (_strategies.length == 0) revert IFlow.INVALID_STRATEGIES();
         for (uint256 i = 0; i < _strategies.length; i++) {
             if (address(_strategies[i]) == address(0)) revert IFlow.ADDRESS_ZERO();
+
+            // Check for duplicate strategies
+            for (uint256 j = i + 1; j < _strategies.length; j++) {
+                if (address(_strategies[i]) == address(_strategies[j])) {
+                    revert IFlow.INVALID_STRATEGIES();
+                }
+            }
         }
 
         // Set the voting power info

@@ -68,6 +68,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
         __Ownable2Step_init();
         __ReentrancyGuard_init();
+        __UUPSUpgradeable_init();
 
         _transferOwnership(_initialOwner);
 

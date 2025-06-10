@@ -23,7 +23,8 @@ library FlowVotes {
         // and scale back by 1e15
         // per https://docs.superfluid.finance/docs/protocol/distributions/guides/pools#about-member-units
         // gives someone with 1 vote at least 1e3 units to work with
-        uint256 scaledUnits = _scaleAmountByPercentage(totalWeight, bps, percentageScale) / 1e15;
+        uint256 weightForRecipient = _scaleAmountByPercentage(totalWeight, bps, percentageScale);
+        uint256 scaledUnits = weightForRecipient / 1e15;
         if (scaledUnits > type(uint128).max) revert IFlow.OVERFLOW();
         uint128 newUnits = uint128(scaledUnits);
 
@@ -31,7 +32,12 @@ library FlowVotes {
 
         // update votes, track recipient, bps, and total member units assigned
         fs.allocations[strategy][allocationKey].push(
-            FlowTypes.Allocation({ recipientId: recipientId, bps: bps, memberUnits: newUnits })
+            FlowTypes.Allocation({
+                recipientId: recipientId,
+                bps: bps,
+                memberUnits: newUnits,
+                allocationWeight: weightForRecipient
+            })
         );
         fs.allocators[strategy][allocationKey] = allocator;
     }

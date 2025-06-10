@@ -155,6 +155,9 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
             address recipientAddress = fs.recipients[recipientId].recipient;
 
+            // When clearing out allocations, we need to decrement the total active allocation weight
+            fs.totalActiveAllocationWeight -= allocations[i].allocationWeight;
+
             // Calculate the new units by subtracting the delta from the current units
             uint128 newUnits = fs.bonusPool.getUnits(recipientAddress) - allocations[i].memberUnits;
 
@@ -202,9 +205,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             childFlowsToUpdate = 10;
             _setChildrenAsNeedingUpdates(address(0));
 
-            // update total active vote weight
-            fs.totalActiveAllocationWeight += allocationWeight;
-
             if (fs.bonusPoolQuorumBps > 0) {
                 // since new allocations affects quorum based bonus pool, we need to update the flow rate
                 shouldUpdateFlowRate = true;
@@ -213,6 +213,9 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
         // update member units for previous votes
         childFlowsToUpdate += _clearPreviousAllocations(strategy, allocationKey);
+
+        // update total active vote weight
+        fs.totalActiveAllocationWeight += allocationWeight;
 
         // set new allocations
         for (uint256 i = 0; i < recipientIds.length; i++) {

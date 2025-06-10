@@ -14,6 +14,7 @@ interface FlowTypes {
         bytes32 recipientId;
         uint32 bps;
         uint128 memberUnits;
+        uint256 allocationWeight;
     }
 
     // Enum to handle type of grant recipient, either address or flow contract

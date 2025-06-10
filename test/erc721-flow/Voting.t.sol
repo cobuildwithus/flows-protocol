@@ -402,7 +402,7 @@ contract VotingFlowTest is ERC721FlowTest {
         assertLt(Flow(recipient2).getTotalFlowRate(), recipient2FlowRate);
     }
 
-    function testtotalActiveAllocationWeightUpdatesCorrectly() public {
+    function test__TotalActiveAllocationWeightUpdatesCorrectly() public {
         // Initial setup
         uint256 tokenId1 = 1;
         uint256 tokenId2 = 2;
@@ -433,22 +433,25 @@ contract VotingFlowTest is ERC721FlowTest {
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = tokenId1;
 
-        vm.prank(voter1);
+        vm.startPrank(voter1);
         flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        vm.stopPrank();
 
         // After first vote, total active vote weight should increase by tokenVoteWeight
         assertEq(flow.totalActiveAllocationWeight(), tokenVoteWeight());
 
         // Same voter casts votes again, total active vote weight should not change
-        vm.prank(voter1);
+        vm.startPrank(voter1);
         flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        vm.stopPrank();
 
         assertEq(flow.totalActiveAllocationWeight(), tokenVoteWeight());
 
         // Second voter casts votes
         tokenIds[0] = tokenId2;
-        vm.prank(voter2);
+        vm.startPrank(voter2);
         flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        vm.stopPrank();
 
         // After second voter votes, total active vote weight should increase again
         assertEq(flow.totalActiveAllocationWeight(), tokenVoteWeight() * 2);
@@ -457,8 +460,9 @@ contract VotingFlowTest is ERC721FlowTest {
         recipientIds[0] = recipientId2;
         tokenIds[0] = tokenId1;
 
-        vm.prank(voter1);
+        vm.startPrank(voter1);
         flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        vm.stopPrank();
 
         // Ensure total active vote weight remains unchanged after changing votes
         assertEq(flow.totalActiveAllocationWeight(), tokenVoteWeight() * 2);
@@ -467,8 +471,9 @@ contract VotingFlowTest is ERC721FlowTest {
         recipientIds[0] = recipientId;
         tokenIds[0] = tokenId1;
 
-        vm.prank(voter1);
+        vm.startPrank(voter1);
         flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        vm.stopPrank();
 
         // Ensure total active vote weight remains unchanged after switching votes again
         assertEq(flow.totalActiveAllocationWeight(), tokenVoteWeight() * 2);
@@ -476,8 +481,9 @@ contract VotingFlowTest is ERC721FlowTest {
         // Voter1 casts votes again, switching back to recipient2
         recipientIds[0] = recipientId2;
 
-        vm.prank(voter1);
+        vm.startPrank(voter1);
         flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        vm.stopPrank();
 
         // Ensure total active vote weight remains unchanged after another vote switch
         assertEq(flow.totalActiveAllocationWeight(), tokenVoteWeight() * 2);

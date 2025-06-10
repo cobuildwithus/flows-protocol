@@ -479,9 +479,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      */
     function _setChildFlowRate(address childAddress) internal {
         if (!_childFlows.contains(childAddress)) revert NOT_A_VALID_CHILD_FLOW();
-        if (fs.childFlowUpdateInProgress[childAddress]) revert REENTRANT_CHILD_CALL();
-
-        fs.childFlowUpdateInProgress[childAddress] = true;
 
         (bool shouldTransfer, uint256 transferAmount, uint256 balanceRequiredToStartFlow) = fs
             .calculateBufferAmountForChild(
@@ -491,6 +488,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
                 PERCENTAGE_SCALE
             );
 
+        _childFlowsToUpdateFlowRate.remove(childAddress);
+
         if (shouldTransfer) {
             fs.superToken.transfer(childAddress, transferAmount);
         }
@@ -499,10 +498,11 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         // only set if balance of contract is greater than buffer required
         if (balanceRequiredToStartFlow <= fs.superToken.balanceOf(childAddress)) {
             IFlow(childAddress).setFlowRate(getMemberTotalFlowRate(childAddress));
-            _childFlowsToUpdateFlowRate.remove(childAddress);
+        } else {
+            // if after the transfer we don't have enough balance
+            // we still need to update the flow rate
+            _childFlowsToUpdateFlowRate.add(childAddress);
         }
-
-        fs.childFlowUpdateInProgress[childAddress] = false;
     }
 
     /**

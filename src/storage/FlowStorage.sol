@@ -90,9 +90,6 @@ interface FlowTypes {
         IChainalysisSanctionsList sanctionsOracle;
         // The allocation strategies
         IAllocationStrategy[] strategies;
-        // The mapping of a child flow to whether it is being updated
-        // This is used to prevent reentrancy when updating the flow rate of a child flow
-        mapping(address => bool) childFlowUpdateInProgress;
     }
 }
 

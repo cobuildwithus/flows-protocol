@@ -56,13 +56,15 @@ contract CustomFlow is ICustomFlow, Flow {
     ) external nonReentrant {
         fs.validateAllocations(recipientIds, percentAllocations, PERCENTAGE_SCALE);
 
+        if (allocationData.length != fs.strategies.length) revert ALLOCATION_DATA_LENGTH_MISMATCH();
+
         uint256 totalFlowsToUpdate = 0;
         bool shouldUpdateFlowRate = false;
 
         for (uint256 i = 0; i < fs.strategies.length; i++) {
             IAllocationStrategy strategy = fs.strategies[i];
             for (uint256 j = 0; j < allocationData[i].length; j++) {
-                uint256 localKey = fs.strategies[i].allocationKey(msg.sender, allocationData[i][j]);
+                uint256 localKey = strategy.allocationKey(msg.sender, allocationData[i][j]);
 
                 if (!strategy.canAllocate(localKey, msg.sender)) revert NOT_ABLE_TO_ALLOCATE();
 

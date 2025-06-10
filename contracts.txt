@@ -9,6 +9,7 @@ ERC20VotesMintable
 TokenEmitter
 TCRFactory
 RewardPool
-NounsFlow
 FlowStorageV1
-SelfManagedFlow
+CustomFlow
+ERC721VotingStrategy
+SingleAllocatorStrategy

@@ -96,8 +96,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param bps The basis points of the vote to be split with the recipient.
      * @param strategy The strategy that is allocating.
      * @param allocationKey The allocation key.
-     * @param totalWeight The allocation weight.
      * @param allocator The address of the allocator.
+     * @param totalWeight The allocation weight.
      * @dev Requires that the recipient is valid, and the weight is greater than the minimum vote weight.
      * Emits a VoteCast event upon successful execution.
      */
@@ -106,8 +106,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         uint32 bps,
         address strategy,
         uint256 allocationKey,
-        uint256 totalWeight,
-        address allocator
+        address allocator,
+        uint256 totalWeight
     ) internal {
         // calculate new member units for recipient and create vote
         (uint128 memberUnits, address recipientAddress, ) = fs.setAllocation(
@@ -215,7 +215,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
         // set new allocations
         for (uint256 i = 0; i < recipientIds.length; i++) {
-            _allocate(recipientIds[i], percentAllocations[i], strategy, allocationKey, allocationWeight, allocator);
+            _allocate(recipientIds[i], percentAllocations[i], strategy, allocationKey, allocator, allocationWeight);
         }
     }
 

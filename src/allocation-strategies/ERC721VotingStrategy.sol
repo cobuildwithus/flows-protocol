@@ -23,6 +23,9 @@ contract ERC721VotingStrategy is IAllocationStrategy, UUPSUpgradeable, Ownable2S
         token = _token;
         tokenVoteWeight = _tokenVoteWeight;
 
+        __Ownable2Step_init();
+        __UUPSUpgradeable_init();
+
         _transferOwnership(_initialOwner);
     }
 
@@ -50,7 +53,6 @@ contract ERC721VotingStrategy is IAllocationStrategy, UUPSUpgradeable, Ownable2S
 
     /**
      * @notice Ensures the caller is authorized to upgrade the contract
-     * @param _newImpl The new implementation address
      */
-    function _authorizeUpgrade(address _newImpl) internal view override onlyOwner {}
+    function _authorizeUpgrade(address) internal view override onlyOwner {}
 }

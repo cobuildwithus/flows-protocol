@@ -304,6 +304,9 @@ interface INounsFlow is IFlow {
 }
 
 interface ICustomFlow is IFlow {
+    /// @dev Reverts if the allocator is not the owner
+    error ALLOCATION_DATA_LENGTH_MISMATCH();
+
     /**
      * @notice Initializes an CustomFlow contract
      * @param initialOwner The address of the initial owner

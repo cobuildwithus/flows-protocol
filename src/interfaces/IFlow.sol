@@ -173,6 +173,9 @@ interface IFlow is IFlowEvents, IManagedFlow {
     /// @dev Reverts if the strategies are invalid
     error INVALID_STRATEGIES();
 
+    /// @dev Reverts if the child flow is being updated
+    error REENTRANT_CHILD_CALL();
+
     /// @dev Reverts if the allocator is not the owner
     error ALLOCATION_LENGTH_MISMATCH();
 

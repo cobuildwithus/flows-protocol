@@ -83,8 +83,6 @@ interface FlowTypes {
          * Flow Rate Quorum
          */
         // The total active allocation weight cast across all allocations
-        // If in the future we let people clear their allocations, or we support erc20 allocations,
-        // ensure that the total active allocation weight is decremented correctly
         uint256 totalActiveAllocationWeight;
         // The quorum parameters to scale up the bonus pool based on allocation weight
         uint32 bonusPoolQuorumBps;
@@ -92,6 +90,9 @@ interface FlowTypes {
         IChainalysisSanctionsList sanctionsOracle;
         // The allocation strategies
         IAllocationStrategy[] strategies;
+        // The mapping of a child flow to whether it is being updated
+        // This is used to prevent reentrancy when updating the flow rate of a child flow
+        mapping(address => bool) childFlowUpdateInProgress;
     }
 }
 

@@ -56,7 +56,7 @@ contract CustomFlow is ICustomFlow, Flow {
     ) external nonReentrant {
         fs.validateAllocations(recipientIds, percentAllocations, PERCENTAGE_SCALE);
 
-        if (allocationData.length != fs.strategies.length) revert ALLOCATION_DATA_LENGTH_MISMATCH();
+        if (allocationData.length != fs.strategies.length) revert ALLOCATION_LENGTH_MISMATCH();
 
         uint256 totalFlowsToUpdate = 0;
         bool shouldUpdateFlowRate = false;

@@ -173,6 +173,9 @@ interface IFlow is IFlowEvents, IManagedFlow {
     /// @dev Reverts if the strategies are invalid
     error INVALID_STRATEGIES();
 
+    /// @dev Reverts if the allocator is not the owner
+    error ALLOCATION_LENGTH_MISMATCH();
+
     /// @dev Reverts if the ERC721 voting token weight is invalid (i.e., 0).
     error INVALID_ERC721_VOTING_WEIGHT();
 
@@ -304,9 +307,6 @@ interface INounsFlow is IFlow {
 }
 
 interface ICustomFlow is IFlow {
-    /// @dev Reverts if the allocator is not the owner
-    error ALLOCATION_DATA_LENGTH_MISMATCH();
-
     /**
      * @notice Initializes an CustomFlow contract
      * @param initialOwner The address of the initial owner

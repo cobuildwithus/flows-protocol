@@ -35,12 +35,12 @@ contract VotingValidationTest is ERC721FlowTest {
         bytes4 selector = bytes4(keccak256("RECIPIENTS_ALLOCATIONS_MISMATCH(uint256,uint256)"));
 
         vm.expectRevert(abi.encodeWithSelector(selector, 1, 0));
-        flow.castVotes(tokenIds, recipientIds, percentAllocations);
+        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
 
         uint32[] memory percentAllocationsTwo = new uint32[](2);
         vm.prank(voter1);
         vm.expectRevert(abi.encodeWithSelector(selector, 1, 2));
-        flow.castVotes(tokenIds, recipientIds, percentAllocationsTwo);
+        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocationsTwo);
 
         // add new recipient
         address recipient2 = address(23);
@@ -54,13 +54,13 @@ contract VotingValidationTest is ERC721FlowTest {
 
         vm.expectRevert(IFlow.ALLOCATION_MUST_BE_POSITIVE.selector);
         vm.prank(voter1);
-        flow.castVotes(tokenIds, recipientIdsTwo, percentAllocationsTwo);
+        flow.allocate(_prepTokens(tokenIds), recipientIdsTwo, percentAllocationsTwo);
 
         percentAllocationsTwo[0] = 1e6;
         percentAllocationsTwo[1] = 1e6;
         vm.prank(voter1);
         vm.expectRevert(IFlow.INVALID_BPS_SUM.selector);
-        flow.castVotes(tokenIds, recipientIdsTwo, percentAllocationsTwo);
+        flow.allocate(_prepTokens(tokenIds), recipientIdsTwo, percentAllocationsTwo);
     }
 
     function test__InvalidRecipients() public {
@@ -83,7 +83,7 @@ contract VotingValidationTest is ERC721FlowTest {
 
         vm.prank(voter1);
         vm.expectRevert(IFlow.TOO_FEW_RECIPIENTS.selector);
-        flow.castVotes(tokenIds, recipientIds, percentAllocations);
+        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
 
         address recipient2 = address(4);
         bytes32 recipientId2 = keccak256(abi.encodePacked(recipient2));
@@ -98,7 +98,7 @@ contract VotingValidationTest is ERC721FlowTest {
 
         vm.prank(voter1);
         vm.expectRevert(IFlow.NOT_APPROVED_RECIPIENT.selector);
-        flow.castVotes(tokenIds, recipientIds2, percentAllocations);
+        flow.allocate(_prepTokens(tokenIds), recipientIds2, percentAllocations);
     }
 
     function test__RecipientInvalidId() public {
@@ -122,6 +122,6 @@ contract VotingValidationTest is ERC721FlowTest {
 
         vm.prank(voter1);
         vm.expectRevert(IFlow.INVALID_RECIPIENT_ID.selector);
-        flow.castVotes(tokenIds, recipientIds, percentAllocations);
+        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
     }
 }

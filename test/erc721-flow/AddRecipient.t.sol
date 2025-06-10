@@ -164,7 +164,7 @@ contract AddRecipientsTest is ERC721FlowTest {
             ),
             address(0x456), // flowManager address
             address(0),
-            abi.encode(flow.flowImpl(), flow.erc721Votes())
+            strategies
         );
         vm.stopPrank();
 

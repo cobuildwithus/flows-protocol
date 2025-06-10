@@ -2,21 +2,18 @@
 pragma solidity ^0.8.28;
 
 import { Flow } from "../Flow.sol";
-import { IERC721Flow } from "../interfaces/IFlow.sol";
-import { IERC721Checkpointable } from "../interfaces/IERC721Checkpointable.sol";
+import { ICustomFlow } from "../interfaces/IFlow.sol";
 import { IRewardPool } from "../interfaces/IRewardPool.sol";
 import { FlowVotes } from "../library/FlowVotes.sol";
 import { FlowRates } from "../library/FlowRates.sol";
-import { ERC721FlowLibrary } from "../library/ERC721FlowLibrary.sol";
+import { CustomFlowLibrary } from "../library/CustomFlowLibrary.sol";
 import { IChainalysisSanctionsList } from "../interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
+import { IAllocationStrategy } from "../interfaces/IAllocationStrategy.sol";
 
-contract ERC721Flow is IERC721Flow, Flow {
+contract CustomFlow is ICustomFlow, Flow {
     using FlowVotes for Storage;
     using FlowRates for Storage;
-    using ERC721FlowLibrary for Storage;
-
-    // The ERC721 voting token contract used to get the voting power of an account
-    IERC721Checkpointable public erc721Votes;
+    using CustomFlowLibrary for Storage;
 
     constructor() payable initializer {}
 
@@ -30,14 +27,8 @@ contract ERC721Flow is IERC721Flow, Flow {
         FlowParams calldata _flowParams,
         RecipientMetadata calldata _metadata,
         IChainalysisSanctionsList _sanctionsOracle,
-        bytes calldata _data
+        IAllocationStrategy[] calldata _strategies
     ) public initializer {
-        (address initFlowImpl, address erc721Token) = decodeInitializationData(_data);
-        if (initFlowImpl != _flowImpl) revert INVALID_FLOW_IMPL();
-        if (erc721Token == address(0)) revert ADDRESS_ZERO();
-
-        erc721Votes = IERC721Checkpointable(erc721Token);
-
         __Flow_init(
             _initialOwner,
             _superToken,
@@ -47,20 +38,19 @@ contract ERC721Flow is IERC721Flow, Flow {
             _parent,
             _flowParams,
             _metadata,
-            _sanctionsOracle
+            _sanctionsOracle,
+            _strategies
         );
-
-        emit ERC721VotingTokenChanged(erc721Token);
     }
 
     /**
      * @notice Cast a vote for a set of grant addresses.
-     * @param tokenIds The tokenIds that the voter is using to vote.
+     * @param allocationData The allocation data to use. 2D array of bytes, where each inner array is the set of allocation data to be parsed for a given strategy.
      * @param recipientIds The recpientIds of the grant recipients.
-     * @param percentAllocations The basis points of the vote to be split with the recipients.
+     * @param percentAllocations The basis points of the allocation to be split with the recipients.
      */
-    function castVotes(
-        uint256[] calldata tokenIds,
+    function allocate(
+        bytes[][] calldata allocationData,
         bytes32[] calldata recipientIds,
         uint32[] calldata percentAllocations
     ) external nonReentrant {
@@ -69,34 +59,27 @@ contract ERC721Flow is IERC721Flow, Flow {
         uint256 totalFlowsToUpdate = 0;
         bool shouldUpdateFlowRate = false;
 
-        for (uint256 i = 0; i < tokenIds.length; i++) {
-            if (!canVoteWithToken(tokenIds[i], msg.sender)) revert NOT_ABLE_TO_VOTE_WITH_TOKEN();
-            (uint256 flowsToUpdate, bool updateFlowRate) = _setVotesAllocationForTokenId(
-                tokenIds[i],
-                recipientIds,
-                percentAllocations,
-                msg.sender
-            );
-            totalFlowsToUpdate += flowsToUpdate;
-            shouldUpdateFlowRate = shouldUpdateFlowRate || updateFlowRate;
+        for (uint256 i = 0; i < fs.strategies.length; i++) {
+            IAllocationStrategy strategy = fs.strategies[i];
+            for (uint256 j = 0; j < allocationData[i].length; j++) {
+                uint256 localKey = fs.strategies[i].allocationKey(msg.sender, allocationData[i][j]);
+
+                if (!strategy.canAllocate(localKey, msg.sender)) revert NOT_ABLE_TO_ALLOCATE();
+
+                (uint256 flowsToUpdate, bool updateFlowRate) = _setAllocationForKey(
+                    address(strategy),
+                    localKey,
+                    recipientIds,
+                    percentAllocations,
+                    msg.sender,
+                    strategy.currentWeight(localKey)
+                );
+                totalFlowsToUpdate += flowsToUpdate;
+                shouldUpdateFlowRate = shouldUpdateFlowRate || updateFlowRate;
+            }
         }
 
         _afterVotesCast(recipientIds, totalFlowsToUpdate, shouldUpdateFlowRate);
-    }
-
-    /**
-     * @notice Checks if a given address can vote with a specific token
-     * @param tokenId The ID of the token to check voting rights for
-     * @param voter The address of the potential voter
-     * @return bool True if the voter can vote with the token, false otherwise
-     */
-    function canVoteWithToken(uint256 tokenId, address voter) public view returns (bool) {
-        address tokenOwner = erc721Votes.ownerOf(tokenId);
-        // check if the token owner has delegated their voting power to the voter
-        // erc721checkpointable falls back to the owner
-        // if the owner hasn't delegated so this will work for the owner as well
-        address delegate = erc721Votes.delegates(tokenOwner);
-        return voter == delegate;
     }
 
     /**
@@ -105,19 +88,15 @@ contract ERC721Flow is IERC721Flow, Flow {
      * @param metadata The recipient's metadata like title, description, etc.
      * @param flowManager The address of the flow manager for the new contract
      * @param managerRewardPool The address of the manager reward pool for the new contract
-     * @param initializationData The initialization data for the new contract
+     * @param strategies The allocation strategies to use.
      * @return recipient address The address of the newly created Flow contract
      */
     function _deployFlowRecipient(
         RecipientMetadata calldata metadata,
         address flowManager,
         address managerRewardPool,
-        bytes calldata initializationData
+        IAllocationStrategy[] calldata strategies
     ) internal override returns (address recipient) {
-        bytes memory data = initializationData.length > 0
-            ? initializationData
-            : abi.encode(fs.flowImpl, address(erc721Votes));
-
         recipient = fs.deployFlowRecipient(
             metadata,
             flowManager,
@@ -125,7 +104,7 @@ contract ERC721Flow is IERC721Flow, Flow {
             owner(),
             address(this),
             PERCENTAGE_SCALE,
-            data
+            strategies
         );
     }
 
@@ -156,17 +135,11 @@ contract ERC721Flow is IERC721Flow, Flow {
      * @dev This function can be overridden in derived contracts to implement custom logic
      * @return uint256 The total vote weight of all tokens used for voting
      */
-    function totalTokenSupplyVoteWeight() public view override returns (uint256) {
-        return erc721Votes.totalSupply() * fs.tokenVoteWeight;
-    }
-
-    /**
-     * @notice Decodes the initialization data
-     * @param data The initialization data
-     * @return flowImpl The address of the flow implementation for the deployed child contract
-     * @return erc721Token The address of the ERC721 token used for voting
-     */
-    function decodeInitializationData(bytes calldata data) public pure returns (address flowImpl, address erc721Token) {
-        (flowImpl, erc721Token) = abi.decode(data, (address, address));
+    function totalAllocationWeight() public view override returns (uint256) {
+        uint256 totalAllocationWeight = 0;
+        for (uint256 i = 0; i < fs.strategies.length; i++) {
+            totalAllocationWeight += fs.strategies[i].totalAllocationWeight();
+        }
+        return totalAllocationWeight;
     }
 }

@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import { FlowStorageV1 } from "./storage/FlowStorage.sol";
 import { IFlow } from "./interfaces/IFlow.sol";
+import { IAllocationStrategy } from "./interfaces/IAllocationStrategy.sol";
 import { FlowRecipients } from "./library/FlowRecipients.sol";
 import { FlowVotes } from "./library/FlowVotes.sol";
 import { FlowPools } from "./library/FlowPools.sol";
@@ -13,9 +14,7 @@ import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/acc
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-
 import { ISuperToken, ISuperfluidPool } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
-
 import { SuperTokenV1Library } from "@superfluid-finance/ethereum-contracts/contracts/apps/SuperTokenV1Library.sol";
 
 import { IChainalysisSanctionsList } from "./interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
@@ -39,6 +38,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param _flowParams The parameters for the flow contract
      * @param _metadata The metadata for the flow contract
      * @param _sanctionsOracle The address of the sanctions oracle
+     * @param _strategies The allocation strategies to use.
      */
     function __Flow_init(
         address _initialOwner,
@@ -49,7 +49,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         address _parent,
         FlowParams memory _flowParams,
         RecipientMetadata memory _metadata,
-        IChainalysisSanctionsList _sanctionsOracle
+        IChainalysisSanctionsList _sanctionsOracle,
+        IAllocationStrategy[] calldata _strategies
     ) public {
         fs.checkAndSetInitializationParams(
             _initialOwner,
@@ -61,7 +62,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             address(this),
             _flowParams,
             _metadata,
-            PERCENTAGE_SCALE
+            PERCENTAGE_SCALE,
+            _strategies
         );
 
         __Ownable2Step_init();
@@ -79,7 +81,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             address(fs.baselinePool),
             address(fs.bonusPool),
             fs.baselinePoolFlowRatePercent,
-            fs.managerRewardPoolFlowRatePercent
+            fs.managerRewardPoolFlowRatePercent,
+            _strategies
         );
 
         fs.sanctionsOracle = _sanctionsOracle;
@@ -91,21 +94,30 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @notice Cast a vote for a specific grant address.
      * @param recipientId The id of the grant recipient.
      * @param bps The basis points of the vote to be split with the recipient.
-     * @param tokenId The tokenId owned by the voter.
-     * @param totalWeight The voting power of the voter.
-     * @param voter The address of the voter.
+     * @param strategy The strategy that is allocating.
+     * @param allocationKey The allocation key.
+     * @param totalWeight The allocation weight.
+     * @param allocator The address of the allocator.
      * @dev Requires that the recipient is valid, and the weight is greater than the minimum vote weight.
      * Emits a VoteCast event upon successful execution.
      */
-    function _vote(bytes32 recipientId, uint32 bps, uint256 tokenId, uint256 totalWeight, address voter) internal {
+    function _allocate(
+        bytes32 recipientId,
+        uint32 bps,
+        address strategy,
+        uint256 allocationKey,
+        uint256 totalWeight,
+        address allocator
+    ) internal {
         // calculate new member units for recipient and create vote
-        (uint128 memberUnits, address recipientAddress, ) = fs.createVote(
+        (uint128 memberUnits, address recipientAddress, ) = fs.setAllocation(
             recipientId,
             bps,
-            tokenId,
+            strategy,
+            allocationKey,
             totalWeight,
             PERCENTAGE_SCALE,
-            voter
+            allocator
         );
 
         // update member units
@@ -115,19 +127,23 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         // note - we now do this post-voting to avoid redundant setFlowRate calls on children
         // in _afterVotesCast
 
-        emit VoteCast(recipientId, tokenId, memberUnits, bps, totalWeight);
+        emit AllocationSet(recipientId, strategy, allocationKey, memberUnits, bps, totalWeight);
     }
 
     /**
-     * @notice Clears out units from previous votes allocation for a specific tokenId.
-     * @param tokenId The tokenId whose previous votes are to be cleared.
-     * @dev This function resets the member units for all recipients that the tokenId has previously voted for.
-     * It should be called before setting new votes to ensure accurate vote allocations.
-     * Note - Important - only ever delete votes for a tokenId right before adding them back, otherwise you will have to
-     * manually update the total active vote weight
+     * @notice Clears out units from previous allocations for a specific allocation key.
+     * @param strategy The strategy that is allocating.
+     * @param allocationKey The allocation key.
+     * @dev This function resets the member units for all recipients that the allocation key has previously allocated for.
+     * It should be called before setting new allocations to ensure accurate allocation allocations.
+     * Note - Important - only ever delete allocations for a key right before adding them back, otherwise you will have to
+     * manually update the total active allocation weight
      */
-    function _clearPreviousVotes(uint256 tokenId) internal returns (uint256 childFlowsToUpdate) {
-        VoteAllocation[] memory allocations = fs.votes[tokenId];
+    function _clearPreviousAllocations(
+        address strategy,
+        uint256 allocationKey
+    ) internal returns (uint256 childFlowsToUpdate) {
+        Allocation[] memory allocations = fs.allocations[strategy][allocationKey];
 
         for (uint256 i = 0; i < allocations.length; i++) {
             bytes32 recipientId = allocations[i].recipientId;
@@ -158,43 +174,48 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             }
         }
 
-        // Clear out the votes for the tokenId
-        delete fs.votes[tokenId];
+        // Clear out the allocations for the key
+        delete fs.allocations[strategy][allocationKey];
     }
 
     /**
      * @notice Cast a vote for a set of grant addresses.
-     * @param tokenId The tokenId owned by the voter.
+     * @param strategy The strategy that is allocating.
+     * @param allocationKey The allocation key.
      * @param recipientIds The recipientIds of the grant recipients to vote for.
      * @param percentAllocations The basis points of the vote to be split with the recipients.
+     * @param allocator The address of the allocator.
+     * @param allocationWeight The weight of the allocation.
      */
-    function _setVotesAllocationForTokenId(
-        uint256 tokenId,
+    function _setAllocationForKey(
+        address strategy,
+        uint256 allocationKey,
         bytes32[] memory recipientIds,
         uint32[] memory percentAllocations,
-        address voter
+        address allocator,
+        uint256 allocationWeight
     ) internal returns (uint256 childFlowsToUpdate, bool shouldUpdateFlowRate) {
-        if (fs.votes[tokenId].length == 0) {
+        if (fs.allocations[strategy][allocationKey].length == 0) {
             // this is a new vote, which means we're adding new member units
             // so we need to reset child flow rates
             childFlowsToUpdate = 10;
             _setChildrenAsNeedingUpdates(address(0));
 
             // update total active vote weight
-            fs.totalActiveVoteWeight += fs.tokenVoteWeight;
+            fs.totalActiveAllocationWeight += allocationWeight;
 
             if (fs.bonusPoolQuorumBps > 0) {
-                // since new votes affects quorum based bonus pool, we need to update the flow rate
+                // since new allocations affects quorum based bonus pool, we need to update the flow rate
                 shouldUpdateFlowRate = true;
             }
         }
 
         // update member units for previous votes
-        childFlowsToUpdate += _clearPreviousVotes(tokenId);
+        childFlowsToUpdate += _clearPreviousAllocations(strategy, allocationKey);
 
-        // set new votes
+        // set new allocations
         for (uint256 i = 0; i < recipientIds.length; i++) {
-            _vote(recipientIds[i], percentAllocations[i], tokenId, fs.tokenVoteWeight, voter);
+            _allocate(recipientIds[i], percentAllocations[i], strategy, allocationKey, allocationWeight, allocator);
         }
     }
 
@@ -266,7 +287,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param _metadata The metadata of the recipient
      * @param _flowManager The address of the flow manager for the new contract
      * @param _managerRewardPool The address of the manager reward pool for the new contract
-     * @param _initializationData The initialization data for the new contract
+     * @param _strategies The allocation strategies to use.
      * @return bytes32 The recipientId of the newly created Flow contract
      * @return address The address of the newly created Flow contract
      * @dev Only callable by the manager of the contract
@@ -277,11 +298,11 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         RecipientMetadata calldata _metadata,
         address _flowManager,
         address _managerRewardPool,
-        bytes calldata _initializationData
+        IAllocationStrategy[] calldata _strategies
     ) external onlyManager nonReentrant returns (bytes32, address) {
         FlowRecipients.validateFlowRecipient(_metadata, _flowManager);
 
-        address recipient = _deployFlowRecipient(_metadata, _flowManager, _managerRewardPool, _initializationData);
+        address recipient = _deployFlowRecipient(_metadata, _flowManager, _managerRewardPool, _strategies);
 
         fs.addFlowRecipient(_recipientId, recipient, _metadata);
         _childFlows.add(recipient);
@@ -397,7 +418,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @dev This function can be overridden in derived contracts to implement custom logic
      * @return uint256 The total vote weight of all tokens used for voting
      */
-    function totalTokenSupplyVoteWeight() public view virtual returns (uint256) {}
+    function totalAllocationWeight() public view virtual returns (uint256) {}
 
     /**
      * @notice Deploys a new Flow contract as a recipient
@@ -405,14 +426,14 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param _metadata The metadata of the recipient
      * @param _flowManager The address of the flow manager for the new contract
      * @param _managerRewardPool The address of the manager reward pool for the new contract
-     * @param _initializationData The initialization data for the new contract
+     * @param _strategies The allocation strategies to use.
      * @return address The address of the newly created Flow contract
      */
     function _deployFlowRecipient(
         RecipientMetadata calldata _metadata,
         address _flowManager,
         address _managerRewardPool,
-        bytes calldata _initializationData
+        IAllocationStrategy[] calldata _strategies
     ) internal virtual returns (address);
 
     /**
@@ -569,7 +590,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         (int96 baselineFlowRate, int96 bonusFlowRate, int96 managerRewardFlowRate) = fs.calculateFlowRates(
             _flowRate,
             PERCENTAGE_SCALE,
-            totalTokenSupplyVoteWeight()
+            totalAllocationWeight()
         );
 
         _setFlowToManagerRewardPool(managerRewardFlowRate);
@@ -737,24 +758,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
-     * @notice Retrieves all vote allocations for a given ERC721 tokenId
-     * @param tokenId The tokenId of the account to retrieve votes for
-     * @return allocations An array of VoteAllocation structs representing each vote made by the token
-     */
-    function getVotesForTokenId(uint256 tokenId) external view returns (VoteAllocation[] memory allocations) {
-        return fs.votes[tokenId];
-    }
-
-    /**
-     * @notice Retrieves all vote allocations for multiple ERC721 tokenIds
-     * @param tokenIds An array of tokenIds to retrieve votes for
-     * @return allocations An array of arrays, where each inner array contains VoteAllocation structs for a tokenId
-     */
-    function getVotesForTokenIds(uint256[] calldata tokenIds) public view returns (VoteAllocation[][] memory) {
-        return fs.getVotesForTokenIds(tokenIds);
-    }
-
-    /**
      * @notice Retrieves a recipient by their ID
      * @param recipientId The ID of the recipient to retrieve
      * @return recipient The FlowRecipient struct containing the recipient's information
@@ -815,14 +818,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
-     * @notice Retrieves the token vote weight
-     * @return uint256 The token vote weight
-     */
-    function tokenVoteWeight() external view returns (uint256) {
-        return fs.tokenVoteWeight;
-    }
-
-    /**
      * @notice Retrieves the SuperToken used for the flow
      * @return ISuperToken The SuperToken instance
      */
@@ -866,8 +861,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @notice Retrieves the total active vote weight for quorum purposes
      * @return uint256 The total active vote weight
      */
-    function totalActiveVoteWeight() external view returns (uint256) {
-        return fs.totalActiveVoteWeight;
+    function totalActiveAllocationWeight() external view returns (uint256) {
+        return fs.totalActiveAllocationWeight;
     }
 
     /**
@@ -893,6 +888,24 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      */
     function getClaimableBalance(address member) external view returns (uint256) {
         return fs.getClaimableBalance(member);
+    }
+
+    /**
+     * @notice Retrieves the allocation strategies
+     * @return IAllocationStrategy[] The allocation strategies
+     */
+    function strategies() external view returns (IAllocationStrategy[] memory) {
+        return fs.strategies;
+    }
+
+    /**
+     * @notice Retrieves the allocations for a given allocation key
+     * @param strategy The address of the allocation strategy
+     * @param allocationKey The allocation key
+     * @return Allocation[] The allocations for the given allocation key
+     */
+    function getAllocationsForKey(address strategy, uint256 allocationKey) external view returns (Allocation[] memory) {
+        return fs.allocations[strategy][allocationKey];
     }
 
     /**

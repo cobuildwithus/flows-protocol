@@ -2,9 +2,10 @@
 pragma solidity ^0.8.28;
 
 import { IFlowEvents, IFlow } from "../../src/interfaces/IFlow.sol";
-import { ERC721Flow } from "../../src/flows/ERC721Flow.sol";
+import { CustomFlow } from "../../src/flows/CustomFlow.sol";
 import { FlowTypes } from "../../src/storage/FlowStorage.sol";
 import { ERC721FlowTest } from "./ERC721Flow.t.sol";
+import { ERC721VotingStrategy } from "../../src/allocation-strategies/ERC721VotingStrategy.sol";
 
 contract FlowRecipientTest is ERC721FlowTest {
     function setUp() public override {
@@ -22,9 +23,9 @@ contract FlowRecipientTest is ERC721FlowTest {
         bytes32 recipientId = keccak256(abi.encodePacked(flowManager));
 
         vm.prank(manager);
-        (, address newFlowAddress) = flow.addFlowRecipient(recipientId, metadata, flowManager, address(0), bytes(""));
+        (, address newFlowAddress) = flow.addFlowRecipient(recipientId, metadata, flowManager, address(0), strategies);
 
-        ERC721Flow newFlow = ERC721Flow(newFlowAddress);
+        CustomFlow newFlow = CustomFlow(newFlowAddress);
 
         // Transfer test tokens to the new Flow contract
         _transferTestTokenToFlow(newFlowAddress, 1e6 * 10 ** 18);
@@ -71,7 +72,7 @@ contract FlowRecipientTest is ERC721FlowTest {
             metadata,
             flowManager,
             address(0),
-            bytes("")
+            strategies
         );
 
         assertEq(returnedRecipientId, recipientId);
@@ -93,12 +94,13 @@ contract FlowRecipientTest is ERC721FlowTest {
         assertEq(flow.activeRecipientCount(), 1);
 
         // Check the newly created Flow contract fields
-        ERC721Flow newFlow = ERC721Flow(newFlowAddress);
-        assertEq(address(newFlow.erc721Votes()), address(nounsToken));
+        CustomFlow newFlow = CustomFlow(newFlowAddress);
+        ERC721VotingStrategy strategy = ERC721VotingStrategy(address(newFlow.strategies()[0]));
+        assertEq(address(strategy.token()), address(nounsToken));
         assertEq(address(newFlow.superToken()), address(superToken));
         assertEq(newFlow.flowImpl(), flow.flowImpl());
         assertEq(newFlow.manager(), flowManager); // Check that the manager is set to the new flowManager
-        assertEq(newFlow.tokenVoteWeight(), flow.tokenVoteWeight());
+        assertEq(strategy.tokenVoteWeight(), tokenVoteWeight());
         FlowTypes.RecipientMetadata memory newFlowMetadata = newFlow.flowMetadata();
         assertEq(newFlowMetadata.title, metadata.title);
         assertEq(newFlowMetadata.description, metadata.description);
@@ -127,7 +129,7 @@ contract FlowRecipientTest is ERC721FlowTest {
         vm.startPrank(flow.owner());
 
         vm.expectRevert(IFlow.ADDRESS_ZERO.selector);
-        flow.addFlowRecipient(recipientId, metadata, emptyManager, address(0), bytes(""));
+        flow.addFlowRecipient(recipientId, metadata, emptyManager, address(0), strategies);
 
         vm.stopPrank();
     }
@@ -139,7 +141,7 @@ contract FlowRecipientTest is ERC721FlowTest {
 
         vm.prank(flow.owner());
         vm.expectRevert(IFlow.INVALID_METADATA.selector);
-        flow.addFlowRecipient(recipientId, emptyMetadata, flowManager, address(0), bytes(""));
+        flow.addFlowRecipient(recipientId, emptyMetadata, flowManager, address(0), strategies);
     }
 
     function testAddFlowRecipientNonManager() public {
@@ -155,7 +157,7 @@ contract FlowRecipientTest is ERC721FlowTest {
 
         vm.prank(address(0xABC));
         vm.expectRevert(IFlow.SENDER_NOT_MANAGER.selector);
-        flow.addFlowRecipient(recipientId, metadata, flowManager, address(0), bytes(""));
+        flow.addFlowRecipient(recipientId, metadata, flowManager, address(0), strategies);
     }
 
     function testAddMultipleFlowRecipients() public {
@@ -185,14 +187,14 @@ contract FlowRecipientTest is ERC721FlowTest {
             metadata1,
             flowManager1,
             address(0),
-            bytes("")
+            strategies
         );
         (, address newFlowAddress2) = flow.addFlowRecipient(
             recipientId2,
             metadata2,
             flowManager2,
             address(0),
-            bytes("")
+            strategies
         );
 
         assertNotEq(newFlowAddress1, newFlowAddress2);

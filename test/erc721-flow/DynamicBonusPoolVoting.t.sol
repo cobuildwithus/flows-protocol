@@ -2,8 +2,8 @@
 pragma solidity ^0.8.28;
 
 import { ERC721FlowTest } from "./ERC721Flow.t.sol";
-import { IFlow, IERC721Flow } from "../../src/interfaces/IFlow.sol";
-import { ERC721Flow } from "../../src/flows/ERC721Flow.sol";
+import { IFlow, ICustomFlow } from "../../src/interfaces/IFlow.sol";
+import { CustomFlow } from "../../src/flows/CustomFlow.sol";
 import { Flow } from "../../src/Flow.sol";
 import { console } from "forge-std/console.sol";
 
@@ -76,8 +76,9 @@ contract DynamicBonusPoolVotingTest is ERC721FlowTest {
         uint256[] memory tokens = new uint256[](1);
         tokens[0] = tokenId;
 
-        vm.prank(voter);
-        flow.castVotes(tokens, ids, allocs);
+        vm.startPrank(voter);
+        flow.allocate(_prepTokens(tokens), ids, allocs);
+        vm.stopPrank();
     }
 
     /**
@@ -136,8 +137,8 @@ contract DynamicBonusPoolVotingTest is ERC721FlowTest {
 
         _voteAllToSingleRecipient(voter1, tokenId1, address(0xABC));
 
-        uint256 activeVoteWeight = flow.totalActiveVoteWeight();
-        uint256 tokenVoteWeight = flow.tokenVoteWeight();
+        uint256 activeVoteWeight = flow.totalActiveAllocationWeight();
+        uint256 tokenVoteWeight = tokenVoteWeight();
 
         // Only 1 token votes => ratio=1 active /2 needed =>0.5 => half leftover
         assertEq(activeVoteWeight, tokenVoteWeight, "minted should be 1");

@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import { FlowTypes } from "../storage/FlowStorage.sol";
 import { IManagedFlow } from "./IManagedFlow.sol";
+import { IAllocationStrategy } from "./IAllocationStrategy.sol";
 import { IChainalysisSanctionsList } from "./external/chainalysis/IChainalysisSanctionsList.sol";
 
 /**
@@ -13,14 +14,16 @@ interface IFlowEvents {
     /**
      * @dev Emitted when a vote is cast for a grant application.
      * @param recipientId Id of the recipient of the grant.
-     * @param tokenId TokenId owned by the voter.
-     * @param memberUnits New member units as a result of the vote.
-     * @param bps Basis points of the vote. Proportion of the voters weight that is allocated to the recipient.
-     * @param totalWeight Total weight of the vote
+     * @param strategy The strategy that is allocating.
+     * @param allocationKey The allocation key.
+     * @param memberUnits New member units as a result of the allocation.
+     * @param bps Basis points of the allocation. Proportion of the allocation weight that is allocated to the recipient.
+     * @param totalWeight Total weight of the allocation
      */
-    event VoteCast(
+    event AllocationSet(
         bytes32 indexed recipientId,
-        uint256 indexed tokenId,
+        address indexed strategy,
+        uint256 indexed allocationKey,
         uint256 memberUnits,
         uint256 bps,
         uint256 totalWeight
@@ -60,7 +63,8 @@ interface IFlowEvents {
         address baselinePool,
         address bonusPool,
         uint32 baselinePoolFlowRatePercent,
-        uint32 managerRewardPoolFlowRatePercent
+        uint32 managerRewardPoolFlowRatePercent,
+        IAllocationStrategy[] strategies
     );
 
     /// @notice Emitted when the manager reward pool is updated
@@ -101,17 +105,9 @@ interface IERC20FlowEvents {
  * @title IFlowERC721Events
  * @dev This interface defines the events for ERC721-related functionality in the Flow contract.
  */
-interface IERC721FlowEvents {
+interface ICustomFlowEvents {
     /// @dev Emitted when the ERC721 voting token is changed
     event ERC721VotingTokenChanged(address indexed erc721Token);
-}
-
-interface IRevolutionFlowEvents is IERC721FlowEvents {
-    /// @dev Emitted when the ERC20 voting token is changed
-    event ERC20VotingTokenChanged(address indexed erc20Token);
-
-    /// @dev Emitted when the ERC20 voting weight is changed
-    event ERC20VotingWeightChanged(uint256 oldWeight, uint256 newWeight);
 }
 
 /**
@@ -174,6 +170,9 @@ interface IFlow is IFlowEvents, IManagedFlow {
     /// @dev Reverts if voting allocation casts will overflow
     error OVERFLOW();
 
+    /// @dev Reverts if the strategies are invalid
+    error INVALID_STRATEGIES();
+
     /// @dev Reverts if the ERC721 voting token weight is invalid (i.e., 0).
     error INVALID_ERC721_VOTING_WEIGHT();
 
@@ -204,8 +203,8 @@ interface IFlow is IFlowEvents, IManagedFlow {
     /// @dev Reverts if recipient is already approved
     error RECIPIENT_ALREADY_REMOVED();
 
-    /// @dev Reverts if msg.sender is not able to vote with the token
-    error NOT_ABLE_TO_VOTE_WITH_TOKEN();
+    /// @dev Reverts if msg.sender is not able to allocate with the strategy
+    error NOT_ABLE_TO_ALLOCATE();
 
     /// @dev Array lengths of recipients & percentAllocations don't match (`recipientsLength` != `allocationsLength`)
     /// @param recipientsLength Length of recipients array
@@ -236,13 +235,11 @@ interface IFlow is IFlowEvents, IManagedFlow {
 
     /**
      * @notice Structure to hold the parameters for initializing a Flow contract.
-     * @param tokenVoteWeight The voting weight of the individual ERC721 tokens.
      * @param baselinePoolFlowRatePercent The proportion of the total flow rate that is allocated to the baseline salary pool in BPS
      * @param managerRewardPoolFlowRatePercent The proportion of the total flow rate that is allocated to the rewards pool in BPS
      * @param bonusPoolQuorumBps The quorum for the bonus pool in BPS
      */
     struct FlowParams {
-        uint256 tokenVoteWeight; // scaled by 1e18
         uint32 baselinePoolFlowRatePercent;
         uint32 managerRewardPoolFlowRatePercent;
         uint32 bonusPoolQuorumBps;
@@ -307,11 +304,8 @@ interface INounsFlow is IFlow {
 }
 
 interface ICustomFlow is IFlow {
-    /// @dev Reverts if the flow implementation is invalid
-    error INVALID_FLOW_IMPL();
-
     /**
-     * @notice Initializes an ERC721Flow contract
+     * @notice Initializes an CustomFlow contract
      * @param initialOwner The address of the initial owner
      * @param superToken The address of the SuperToken to be used for the pool
      * @param flowImpl The address of the flow implementation contract
@@ -321,7 +315,7 @@ interface ICustomFlow is IFlow {
      * @param flowParams The parameters for the flow contract
      * @param metadata The metadata for the flow contract
      * @param sanctionsOracle The address of the sanctions oracle
-     * @param data The initialization data for the flow contract [abi.encode(erc721, erc20, erc20Weight)]
+     * @param strategies The allocation strategies to use.
      */
     function initialize(
         address initialOwner,
@@ -333,26 +327,6 @@ interface ICustomFlow is IFlow {
         FlowParams memory flowParams,
         FlowTypes.RecipientMetadata memory metadata,
         IChainalysisSanctionsList sanctionsOracle,
-        bytes calldata data
+        IAllocationStrategy[] calldata strategies
     ) external;
 }
-
-interface ISelfManagedFlow is ICustomFlow {
-    // Errors
-    error NOT_ALLOCATOR();
-
-    /**
-     * @dev Emitted when the allocator is changed
-     * @param newAllocator The address of the new allocator
-     */
-    event AllocatorChanged(address indexed newAllocator);
-}
-
-interface IRevolutionFlow is ICustomFlow, IRevolutionFlowEvents {
-    // Errors
-    error VOTING_DISABLED();
-}
-
-interface IERC721Flow is ICustomFlow, IERC721FlowEvents {}
-
-interface IERC20Flow is ICustomFlow, IERC20FlowEvents {}

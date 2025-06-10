@@ -3,23 +3,23 @@ pragma solidity ^0.8.28;
 
 import { Test } from "forge-std/Test.sol";
 
-import { IFlow, IERC721Flow } from "../../src/interfaces/IFlow.sol";
-import { ERC721Flow } from "../../src/flows/ERC721Flow.sol";
+import { IFlow, ICustomFlow } from "../../src/interfaces/IFlow.sol";
+import { CustomFlow } from "../../src/flows/CustomFlow.sol";
+import { ERC721VotingStrategy } from "../../src/allocation-strategies/ERC721VotingStrategy.sol";
 import { MockERC721 } from "../mocks/MockERC721.sol";
+import { FlowTypes } from "../../src/storage/FlowStorage.sol";
+import { RewardPool } from "../../src/token-issuance/RewardPool.sol";
+import { IRewardPool } from "../../src/interfaces/IRewardPool.sol";
+import { IAllocationStrategy } from "../../src/interfaces/IAllocationStrategy.sol";
+import { IERC721Checkpointable } from "../../src/interfaces/IERC721Checkpointable.sol";
+import { IChainalysisSanctionsList } from "../../src/interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-
 import { ISuperfluid, ISuperToken, ISuperfluidPool } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
-
 import { ERC1820RegistryCompiled } from "@superfluid-finance/ethereum-contracts/contracts/libs/ERC1820RegistryCompiled.sol";
 import { SuperfluidFrameworkDeployer } from "@superfluid-finance/ethereum-contracts/contracts/utils/SuperfluidFrameworkDeployer.sol";
 import { TestToken } from "@superfluid-finance/ethereum-contracts/contracts/utils/TestToken.sol";
 import { SuperToken } from "@superfluid-finance/ethereum-contracts/contracts/superfluid/SuperToken.sol";
-import { FlowTypes } from "../../src/storage/FlowStorage.sol";
-import { RewardPool } from "../../src/token-issuance/RewardPool.sol";
-import { IRewardPool } from "../../src/interfaces/IRewardPool.sol";
-import { BulkPoolWithdraw } from "../../src/macros/BulkPoolWithdraw.sol";
-import { IChainalysisSanctionsList } from "../../src/interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
 contract ERC721FlowTest is Test {
     SuperfluidFrameworkDeployer.Framework internal sf;
@@ -27,10 +27,14 @@ contract ERC721FlowTest is Test {
     SuperToken internal superToken;
     RewardPool internal dummyRewardPool;
 
-    ERC721Flow flow;
+    CustomFlow flow;
     address flowImpl;
     address testUSDC;
     IFlow.FlowParams flowParams;
+
+    address votingStrategyImpl;
+    address votingStrategyProxy;
+    IAllocationStrategy[] strategies;
 
     MockERC721 nounsToken;
 
@@ -39,12 +43,12 @@ contract ERC721FlowTest is Test {
     FlowTypes.RecipientMetadata flowMetadata;
     FlowTypes.RecipientMetadata recipientMetadata;
 
-    function deployFlow(address erc721, address superTokenAddress) internal returns (ERC721Flow) {
+    function deployFlow(address erc721, address superTokenAddress) internal returns (CustomFlow) {
         address flowProxy = address(new ERC1967Proxy(flowImpl, ""));
         dummyRewardPool = deployRewardPool(superTokenAddress, manager, address(flowProxy), address(manager));
 
         vm.prank(address(manager));
-        IERC721Flow(flowProxy).initialize({
+        ICustomFlow(flowProxy).initialize({
             initialOwner: address(manager),
             superToken: superTokenAddress,
             flowImpl: flowImpl,
@@ -54,7 +58,7 @@ contract ERC721FlowTest is Test {
             flowParams: flowParams,
             metadata: flowMetadata,
             sanctionsOracle: IChainalysisSanctionsList(address(0)),
-            data: abi.encode(flowImpl, address(erc721))
+            strategies: strategies
         });
 
         _transferTestTokenToFlow(flowProxy, 10_000 * 10 ** 18); //10k usdc a month to start
@@ -63,7 +67,7 @@ contract ERC721FlowTest is Test {
         vm.prank(manager);
         IFlow(flowProxy).setFlowRate(385 * 10 ** 13); // 0.00385 tokens per second
 
-        return ERC721Flow(flowProxy);
+        return CustomFlow(flowProxy);
     }
 
     function _transferTestTokenToFlow(address flowAddress, uint256 amount) internal {
@@ -82,6 +86,25 @@ contract ERC721FlowTest is Test {
         ISuperToken(address(superToken)).transfer(flowAddress, amount);
 
         vm.stopPrank();
+    }
+
+    function _prepTokens(uint256[] memory tokenIds) internal pure returns (bytes[][] memory) {
+        bytes[][] memory allocationData = new bytes[][](1);
+        allocationData[0] = new bytes[](tokenIds.length);
+
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            allocationData[0][i] = abi.encode(tokenIds[i]);
+        }
+
+        return allocationData;
+    }
+
+    function getAllocationForTokenId(uint256 tokenId) internal view returns (FlowTypes.Allocation[] memory) {
+        return flow.getAllocationsForKey(address(votingStrategyProxy), tokenId);
+    }
+
+    function tokenVoteWeight() internal view returns (uint256) {
+        return ERC721VotingStrategy(votingStrategyProxy).tokenVoteWeight();
     }
 
     function deployRewardPool(
@@ -124,10 +147,9 @@ contract ERC721FlowTest is Test {
         });
 
         nounsToken = deployMock721("Nouns", "NOUN");
-        flowImpl = address(new ERC721Flow());
+        flowImpl = address(new CustomFlow());
 
         flowParams = IFlow.FlowParams({
-            tokenVoteWeight: 1e18 * 1000, // Example token vote weight
             baselinePoolFlowRatePercent: 5000, // 1000 BPS
             managerRewardPoolFlowRatePercent: 1e6 / 10, // 10%
             bonusPoolQuorumBps: 1e6 / 20 // 5%
@@ -148,6 +170,16 @@ contract ERC721FlowTest is Test {
 
         superToken = token;
         testUSDC = address(underlyingToken);
+
+        votingStrategyImpl = address(new ERC721VotingStrategy());
+        votingStrategyProxy = address(new ERC1967Proxy(votingStrategyImpl, ""));
+        ERC721VotingStrategy(votingStrategyProxy).initialize(
+            manager,
+            IERC721Checkpointable(address(nounsToken)),
+            1e18 * 1000
+        );
+        strategies = new IAllocationStrategy[](1);
+        strategies[0] = IAllocationStrategy(votingStrategyProxy);
 
         flow = deployFlow(address(nounsToken), address(superToken));
     }

@@ -5,14 +5,15 @@ import { FlowTypes } from "../storage/FlowStorage.sol";
 import { IFlow } from "../interfaces/IFlow.sol";
 
 library FlowVotes {
-    function createVote(
+    function setAllocation(
         FlowTypes.Storage storage fs,
         bytes32 recipientId,
         uint32 bps,
-        uint256 tokenId,
+        address strategy,
+        uint256 allocationKey,
         uint256 totalWeight,
         uint256 percentageScale,
-        address voter
+        address allocator
     ) public returns (uint128 memberUnits, address recipientAddress, FlowTypes.RecipientType recipientType) {
         recipientAddress = fs.recipients[recipientId].recipient;
         recipientType = fs.recipients[recipientId].recipientType;
@@ -29,8 +30,10 @@ library FlowVotes {
         memberUnits = currentUnits + newUnits;
 
         // update votes, track recipient, bps, and total member units assigned
-        fs.votes[tokenId].push(FlowTypes.VoteAllocation({ recipientId: recipientId, bps: bps, memberUnits: newUnits }));
-        fs.voters[tokenId] = voter;
+        fs.allocations[strategy][allocationKey].push(
+            FlowTypes.Allocation({ recipientId: recipientId, bps: bps, memberUnits: newUnits })
+        );
+        fs.allocators[strategy][allocationKey] = allocator;
     }
 
     /**
@@ -86,22 +89,5 @@ library FlowVotes {
             /* eg (100 * 2*1e4) / (1e6) */
             scaledAmount := div(mul(amount, scaledPercent), percentageScale)
         }
-    }
-
-    /**
-     * @notice Retrieves all vote allocations for multiple ERC721 tokenIds
-     * @param fs The storage of the Flow contract
-     * @param tokenIds An array of tokenIds to retrieve votes for
-     * @return allocations An array of arrays, where each inner array contains VoteAllocation structs for a tokenId
-     */
-    function getVotesForTokenIds(
-        FlowTypes.Storage storage fs,
-        uint256[] calldata tokenIds
-    ) public view returns (FlowTypes.VoteAllocation[][] memory allocations) {
-        allocations = new FlowTypes.VoteAllocation[][](tokenIds.length);
-        for (uint256 i = 0; i < tokenIds.length; i++) {
-            allocations[i] = fs.votes[tokenIds[i]];
-        }
-        return allocations;
     }
 }

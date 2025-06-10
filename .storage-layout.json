@@ -1,115 +1,115 @@
 {
   "StateVerifier": { "storage": [] },
   "TokenVerifier": { "storage": [] },
-  "ERC721Flow": {
+  "CustomFlow": {
     "storage": [
       {
-        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/CustomFlow.sol:CustomFlow",
         "label": "_initialized",
         "offset": 0,
         "slot": "0",
         "type": "t_uint8"
       },
       {
-        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/CustomFlow.sol:CustomFlow",
         "label": "_initializing",
         "offset": 1,
         "slot": "0",
         "type": "t_bool"
       },
       {
-        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/CustomFlow.sol:CustomFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "1",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/CustomFlow.sol:CustomFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "51",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/CustomFlow.sol:CustomFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "101",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/CustomFlow.sol:CustomFlow",
         "label": "_owner",
         "offset": 0,
         "slot": "151",
         "type": "t_address"
       },
       {
-        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/CustomFlow.sol:CustomFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "152",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/CustomFlow.sol:CustomFlow",
         "label": "_pendingOwner",
         "offset": 0,
         "slot": "201",
         "type": "t_address"
       },
       {
-        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/CustomFlow.sol:CustomFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "202",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/CustomFlow.sol:CustomFlow",
         "label": "_status",
         "offset": 0,
         "slot": "251",
         "type": "t_uint256"
       },
       {
-        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/CustomFlow.sol:CustomFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "252",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/CustomFlow.sol:CustomFlow",
         "label": "fs",
         "offset": 0,
         "slot": "301",
         "type": "t_struct(Storage)_storage"
       },
       {
-        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/CustomFlow.sol:CustomFlow",
         "label": "__gap",
         "offset": 0,
         "slot": "323",
         "type": "t_array(t_uint256)_storage"
       },
       {
-        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/CustomFlow.sol:CustomFlow",
         "label": "_childFlows",
         "offset": 0,
         "slot": "423",
         "type": "t_struct(AddressSet)_storage"
       },
       {
-        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/CustomFlow.sol:CustomFlow",
         "label": "_childFlowsToUpdateFlowRate",
         "offset": 0,
         "slot": "425",
         "type": "t_struct(AddressSet)_storage"
       },
       {
-        "contract": "src/flows/ERC721Flow.sol:ERC721Flow",
+        "contract": "src/flows/CustomFlow.sol:CustomFlow",
         "label": "erc721Votes",
         "offset": 0,
         "slot": "427",

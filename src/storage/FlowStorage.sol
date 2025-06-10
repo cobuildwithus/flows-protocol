@@ -6,10 +6,11 @@ import { ISuperfluidPool } from "@superfluid-finance/ethereum-contracts/contract
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import { IChainalysisSanctionsList } from "../interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
+import { IAllocationStrategy } from "../interfaces/IAllocationStrategy.sol";
 
 interface FlowTypes {
     // Struct to hold the recipientId and their corresponding BPS for a vote
-    struct VoteAllocation {
+    struct Allocation {
         bytes32 recipientId;
         uint32 bps;
         uint128 memberUnits;
@@ -71,27 +72,25 @@ interface FlowTypes {
         ISuperfluidPool bonusPool;
         // The Superfluid pool used to distribute the baseline salary in the SuperToken
         ISuperfluidPool baselinePool;
-        /// The mapping of a tokenId to the member units assigned to each recipient they voted for
-        mapping(uint256 => mapping(address => uint256)) tokenIdToRecipientMemberUnits;
-        // The weight of each individual 721 voting token
-        uint256 tokenVoteWeight;
-        // The mapping of a token to a list of votes allocations (recipient, BPS)
-        mapping(uint256 => VoteAllocation[]) votes;
-        // The mapping of a token to the address that voted with it
-        mapping(uint256 => address) voters;
+        // The mapping of a strategy to a allocation key to a list of allocations (recipient, BPS)
+        mapping(address => mapping(uint256 => Allocation[])) allocations;
+        // The mapping of a strategy to a allocation key to the address that allocated it
+        mapping(address => mapping(uint256 => address)) allocators;
         // The cached flow rate
         int96 cachedFlowRate;
         /*
          * Flow Rate Quorum
          */
-        // The total active voting weight cast across all tokens that have voting power
-        // If in the future we let people clear their votes, or we support erc20 voting,
-        // ensure that the total active vote weight is decremented correctly
-        uint256 totalActiveVoteWeight;
-        // The quorum parameters to scale up the bonus pool based on vote weight
+        // The total active allocation weight cast across all allocations
+        // If in the future we let people clear their allocations, or we support erc20 allocations,
+        // ensure that the total active allocation weight is decremented correctly
+        uint256 totalActiveAllocationWeight;
+        // The quorum parameters to scale up the bonus pool based on allocation weight
         uint32 bonusPoolQuorumBps;
         // The sanctions oracle
         IChainalysisSanctionsList sanctionsOracle;
+        // The allocation strategies
+        IAllocationStrategy[] strategies;
     }
 }
 

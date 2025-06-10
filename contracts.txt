@@ -1,6 +1,6 @@
 StateVerifier
 TokenVerifier
-ERC721Flow
+CustomFlow
 Flow
 GeneralizedTCR
 FlowTCR
@@ -11,5 +11,4 @@ TCRFactory
 RewardPool
 NounsFlow
 FlowStorageV1
-RevolutionFlow
 SelfManagedFlow

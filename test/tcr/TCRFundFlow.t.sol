@@ -8,7 +8,7 @@ import { IArbitrable } from "../../src/tcr/interfaces/IArbitrable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 import { IGeneralizedTCR } from "../../src/tcr/interfaces/IGeneralizedTCR.sol";
-import { IERC721Flow } from "../../src/interfaces/IFlow.sol";
+import { ICustomFlow } from "../../src/interfaces/IFlow.sol";
 import { RewardPool } from "../../src/token-issuance/RewardPool.sol";
 import { IFlow } from "../../src/interfaces/IFlow.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";

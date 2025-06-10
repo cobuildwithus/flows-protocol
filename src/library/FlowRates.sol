@@ -16,7 +16,7 @@ library FlowRates {
      * @param fs The storage of the Flow contract
      * @param _flowRate The desired total flow rate for the flow contract
      * @param _percentageScale The percentage scale used for calculations
-     * @param _totalTokenSupplyVoteWeight The total token supply vote weight
+     * @param _totalAllocationWeight The total token supply vote weight
      * @param _baselineFlowRate The baseline flow rate already calculated
      * @param _remainingFlowRate The remaining flow rate after manager reward deduction
      * @return bonusFlowRate The calculated bonus flow rate
@@ -26,7 +26,7 @@ library FlowRates {
         FlowTypes.Storage storage fs,
         int96 _flowRate,
         uint256 _percentageScale,
-        uint256 _totalTokenSupplyVoteWeight,
+        uint256 _totalAllocationWeight,
         int96 _baselineFlowRate,
         int96 _remainingFlowRate
     ) public returns (int96 bonusFlowRate, int96 leftoverFlowRate) {
@@ -37,22 +37,22 @@ library FlowRates {
 
         // if quorum is 0 or total token supply vote weight is 0, return the max bonus flow rate
         // this is fine because when there are no votes the bonus pool is split evenly between recipients
-        if (quorumBps == 0 || _totalTokenSupplyVoteWeight == 0) {
+        if (quorumBps == 0 || _totalAllocationWeight == 0) {
             return (maxBonusFlowRate, 0);
         }
 
         // how many votes have actually been cast
-        uint256 totalActiveVoteWeight = fs.totalActiveVoteWeight;
+        uint256 totalActiveAllocationWeight = fs.totalActiveAllocationWeight;
 
         // how many votes are needed to reach quorum
-        uint256 votesToReachQuorum = _scaleAmountByPercentage(_totalTokenSupplyVoteWeight, quorumBps, _percentageScale);
+        uint256 votesToReachQuorum = _scaleAmountByPercentage(_totalAllocationWeight, quorumBps, _percentageScale);
 
         if (votesToReachQuorum == 0) {
             return (maxBonusFlowRate, 0);
         }
 
         // actual bonus flow rate is linearly proportional to the total active vote weight / totalSupplyVoteWeight * quorumBps
-        uint256 percentageOfQuorum = (totalActiveVoteWeight * _percentageScale) / votesToReachQuorum;
+        uint256 percentageOfQuorum = (totalActiveAllocationWeight * _percentageScale) / votesToReachQuorum;
         if (percentageOfQuorum > _percentageScale) {
             percentageOfQuorum = _percentageScale;
         }
@@ -74,7 +74,7 @@ library FlowRates {
      * @param fs The storage of the Flow contract
      * @param _flowRate The desired flow rate for the flow contract
      * @param _percentageScale The percentage scale
-     * @param _totalTokenSupplyVoteWeight The total token supply vote weight
+     * @param _totalAllocationWeight The total token supply vote weight
      * @return baselineFlowRate The baseline flow rate
      * @return bonusFlowRate The bonus flow rate
      * @return managerRewardFlowRate The manager reward pool flow rate
@@ -83,7 +83,7 @@ library FlowRates {
         FlowTypes.Storage storage fs,
         int96 _flowRate,
         uint256 _percentageScale,
-        uint256 _totalTokenSupplyVoteWeight
+        uint256 _totalAllocationWeight
     ) external returns (int96 baselineFlowRate, int96 bonusFlowRate, int96 managerRewardFlowRate) {
         int256 managerRewardFlowRatePercent = int256(
             _scaleAmountByPercentage(uint96(_flowRate), fs.managerRewardPoolFlowRatePercent, _percentageScale)
@@ -108,7 +108,7 @@ library FlowRates {
             fs,
             _flowRate,
             _percentageScale,
-            _totalTokenSupplyVoteWeight,
+            _totalAllocationWeight,
             baselineFlowRate,
             remainingFlowRate
         );

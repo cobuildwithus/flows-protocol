@@ -11,11 +11,14 @@ contract SingleAllocatorStrategy is IAllocationStrategy, UUPSUpgradeable, Ownabl
     // The virtual weight used for sub-BPS resolution in allocation calculations
     uint256 public constant VIRTUAL_WEIGHT = 1e21;
 
+    event AllocatorChanged(address indexed oldAllocator, address indexed newAllocator);
+
     constructor() {}
 
     function initialize(address _initialOwner, address _allocator) external initializer {
         if (_allocator == address(0)) revert ADDRESS_ZERO();
         allocator = _allocator;
+        emit AllocatorChanged(address(0), _allocator);
 
         __Ownable2Step_init();
         __UUPSUpgradeable_init();
@@ -43,6 +46,7 @@ contract SingleAllocatorStrategy is IAllocationStrategy, UUPSUpgradeable, Ownabl
     function changeAllocator(address newAllocator) external onlyOwner {
         require(newAllocator != address(0), "new allocator: zero");
         allocator = newAllocator;
+        emit AllocatorChanged(allocator, newAllocator);
     }
 
     /**

@@ -12,6 +12,9 @@ contract ERC721VotingStrategy is IAllocationStrategy, UUPSUpgradeable, Ownable2S
 
     uint256 public tokenVoteWeight;
 
+    event ERC721VotingTokenChanged(address indexed oldToken, address indexed newToken);
+    event TokenVoteWeightChanged(uint256 oldWeight, uint256 newWeight);
+
     constructor() {}
 
     function initialize(
@@ -22,6 +25,8 @@ contract ERC721VotingStrategy is IAllocationStrategy, UUPSUpgradeable, Ownable2S
         if (address(_token) == address(0)) revert ADDRESS_ZERO();
         token = _token;
         tokenVoteWeight = _tokenVoteWeight;
+        emit ERC721VotingTokenChanged(address(0), address(_token));
+        emit TokenVoteWeightChanged(0, _tokenVoteWeight);
 
         __Ownable2Step_init();
         __UUPSUpgradeable_init();

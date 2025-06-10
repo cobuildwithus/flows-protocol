@@ -117,7 +117,7 @@ contract DeployVrbsAccelerator is DeployScript {
         (, address realMadrid) = Flow(vrbsAccelerator).addFlowRecipient(
             keccak256(abi.encode(realMadridMeta)),
             realMadridMeta,
-            RIDERWAY,
+            ROCKETMAN,
             address(0),
             _singleAllocator(RIDERWAY, initialOwner)
         );
@@ -165,6 +165,9 @@ contract DeployVrbsAccelerator is DeployScript {
             address(0),
             _singleAllocator(ROCKETMAN, initialOwner)
         );
+
+        // Set manager for real madrid to riderway
+        Flow(realMadrid).setManager(RIDERWAY);
     }
 
     function writeAdditionalDeploymentDetails(string memory filePath) internal override {

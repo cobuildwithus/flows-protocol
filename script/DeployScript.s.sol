@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.28;
 
-import { console2 } from "forge-std/console2.sol";
-import { Script } from "forge-std/Script.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
+import { Script } from "forge-std/Script.sol";
 
 abstract contract DeployScript is Script {
     using Strings for uint256;
@@ -11,6 +10,9 @@ abstract contract DeployScript is Script {
     uint256 public chainID;
     uint256 public deployerKey;
     address public deployerAddress;
+
+    // cache for implementation addresses read from deploys txt files
+    mapping(bytes32 => address) internal _cachedImpl;
 
     function setUp() public virtual {
         chainID = vm.envUint("CHAIN_ID");
@@ -57,5 +59,31 @@ abstract contract DeployScript is Script {
     function char(bytes1 b) internal pure returns (bytes1 c) {
         if (uint8(b) < 10) return bytes1(uint8(b) + 0x30);
         else return bytes1(uint8(b) + 0x57);
+    }
+
+    /// @dev Read implementation address from deploys/<label>.<chainID>.txt file where first 0x... address is parsed.
+    function _loadImplementation(string memory label) internal returns (address impl) {
+        bytes32 key = keccak256(abi.encodePacked(label));
+        impl = _cachedImpl[key];
+        if (impl == address(0)) {
+            string memory filePath = string(
+                abi.encodePacked("deploys/", label, ".", Strings.toString(chainID), ".txt")
+            );
+            string memory fileData = vm.readFile(filePath);
+            bytes memory b = bytes(fileData);
+            uint256 start;
+            for (uint256 i = 0; i + 1 < b.length; i++) {
+                if (b[i] == "0" && b[i + 1] == "x") {
+                    start = i;
+                    break;
+                }
+            }
+            bytes memory addrBytes = new bytes(42);
+            for (uint256 j = 0; j < 42 && start + j < b.length; j++) {
+                addrBytes[j] = b[start + j];
+            }
+            impl = vm.parseAddress(string(addrBytes));
+            _cachedImpl[key] = impl;
+        }
     }
 }

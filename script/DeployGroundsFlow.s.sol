@@ -8,7 +8,6 @@ import { IChainalysisSanctionsList } from "../src/interfaces/external/chainalysi
 import { CustomFlow } from "../src/flows/CustomFlow.sol";
 import { Flow } from "../src/Flow.sol";
 import { ERC721VotingStrategy } from "../src/allocation-strategies/ERC721VotingStrategy.sol";
-import { SingleAllocatorStrategy } from "../src/allocation-strategies/SingleAllocatorStrategy.sol";
 import { IAllocationStrategy } from "../src/interfaces/IAllocationStrategy.sol";
 import { IERC721Checkpointable } from "../src/interfaces/IERC721Checkpointable.sol";
 
@@ -42,19 +41,22 @@ contract DeployGroundsFlow is DeployScript {
         contractName = vm.envString("CONTRACT_NAME");
 
         // ------------------------------------------------------------------
-        // Strategy
+        // Strategy (implementation + proxy)
         // ------------------------------------------------------------------
-        ERC721VotingStrategy votingStrategy = new ERC721VotingStrategy();
-        votingStrategy.initialize(initialOwner, IERC721Checkpointable(erc721TokenAddress), tokenVoteWeight);
-        erc721VotingStrategy = address(votingStrategy);
+        address votingImpl = _loadImplementation("ERC721VotingStrategyImpl");
+        erc721VotingStrategy = address(new ERC1967Proxy(votingImpl, ""));
+        ERC721VotingStrategy(erc721VotingStrategy).initialize(
+            initialOwner,
+            IERC721Checkpointable(erc721TokenAddress),
+            tokenVoteWeight
+        );
         IAllocationStrategy[] memory topStrategies = new IAllocationStrategy[](1);
         topStrategies[0] = IAllocationStrategy(erc721VotingStrategy);
 
         // ------------------------------------------------------------------
-        // Flow implementation + proxy
+        // Flow proxy using shared CustomFlow implementation
         // ------------------------------------------------------------------
-        CustomFlow impl = new CustomFlow();
-        groundsFlowImpl = address(impl);
+        groundsFlowImpl = _loadImplementation("CustomFlowImpl");
         groundsFlow = address(new ERC1967Proxy(groundsFlowImpl, ""));
 
         // Initialize proxy
@@ -113,15 +115,5 @@ contract DeployGroundsFlow is DeployScript {
 
     function getContractName() internal view override returns (string memory) {
         return contractName;
-    }
-
-    // ------------------------------------------------------------------
-    // Helpers
-    // ------------------------------------------------------------------
-    function _singleAllocator(address allocator, address owner) internal returns (IAllocationStrategy[] memory arr) {
-        SingleAllocatorStrategy sas = new SingleAllocatorStrategy();
-        sas.initialize(owner, allocator);
-        arr = new IAllocationStrategy[](1);
-        arr[0] = IAllocationStrategy(address(sas));
     }
 }

@@ -5,7 +5,6 @@ import { DeployScript } from "./DeployScript.s.sol";
 import { FlowTypes } from "../src/storage/FlowStorage.sol";
 import { IFlow, ICustomFlow } from "../src/interfaces/IFlow.sol";
 import { IChainalysisSanctionsList } from "../src/interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
-import { CustomFlow } from "../src/flows/CustomFlow.sol";
 import { Flow } from "../src/Flow.sol";
 import { ERC721VotingStrategy } from "../src/allocation-strategies/ERC721VotingStrategy.sol";
 import { SingleAllocatorStrategy } from "../src/allocation-strategies/SingleAllocatorStrategy.sol";
@@ -13,6 +12,7 @@ import { IAllocationStrategy } from "../src/interfaces/IAllocationStrategy.sol";
 import { IERC721Checkpointable } from "../src/interfaces/IERC721Checkpointable.sol";
 
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 /// @title DeployVrbsAccelerator
 /// @notice Deploys the Vrbs Accelerator Top-level Flow (CustomFlow) with an ERC721 voting strategy
@@ -25,14 +25,15 @@ contract DeployVrbsAccelerator is DeployScript {
     // Strategy addresses
     address public erc721VotingStrategy;
 
+    // Track deployed SingleAllocatorStrategy addresses for logging
+    address[] public singleAllocatorStrategies;
+
     // Friendly name for deployment artefact
     string public contractName;
 
     // Example curator/manager addresses (keep from reference script)
     address internal constant RIDERWAY = 0x2830e21792019CE670fBc548AacB004b08c7f71f;
     address internal constant ROCKETMAN = 0x289715fFBB2f4b482e2917D2f183FeAb564ec84F;
-
-    // Helper declared at contract scope below is used for strategies
 
     function deploy() internal override {
         // ---------------------------------------------------------------------
@@ -49,20 +50,23 @@ contract DeployVrbsAccelerator is DeployScript {
         contractName = vm.envString("CONTRACT_NAME");
 
         // ---------------------------------------------------------------------
-        // Deploy voting strategy for the top-level flow
+        // Deploy voting strategy (implementation + proxy)
         // ---------------------------------------------------------------------
-        ERC721VotingStrategy votingStrategy = new ERC721VotingStrategy();
-        votingStrategy.initialize(initialOwner, IERC721Checkpointable(erc721TokenAddress), tokenVoteWeight);
-        erc721VotingStrategy = address(votingStrategy);
+        address votingImpl = _loadImplementation("ERC721VotingStrategyImpl");
+        erc721VotingStrategy = address(new ERC1967Proxy(votingImpl, ""));
+        ERC721VotingStrategy(erc721VotingStrategy).initialize(
+            initialOwner,
+            IERC721Checkpointable(erc721TokenAddress),
+            tokenVoteWeight
+        );
 
         IAllocationStrategy[] memory topStrategies = new IAllocationStrategy[](1);
         topStrategies[0] = IAllocationStrategy(erc721VotingStrategy);
 
         // ---------------------------------------------------------------------
-        // Deploy CustomFlow implementation and proxy
+        // Use shared CustomFlow implementation and deploy proxy
         // ---------------------------------------------------------------------
-        CustomFlow impl = new CustomFlow();
-        vrbsAcceleratorImpl = address(impl);
+        vrbsAcceleratorImpl = _loadImplementation("CustomFlowImpl");
         vrbsAccelerator = address(new ERC1967Proxy(vrbsAcceleratorImpl, ""));
 
         // ---------------------------------------------------------------------
@@ -187,9 +191,11 @@ contract DeployVrbsAccelerator is DeployScript {
 
     /// @dev Deploys a SingleAllocatorStrategy with the given allocator and returns it as a single-item array.
     function _singleAllocator(address allocator, address owner) internal returns (IAllocationStrategy[] memory arr) {
-        SingleAllocatorStrategy sas = new SingleAllocatorStrategy();
-        sas.initialize(owner, allocator);
+        address impl = _loadImplementation("SingleAllocatorStrategyImpl");
+        address proxy = address(new ERC1967Proxy(impl, ""));
+        SingleAllocatorStrategy(proxy).initialize(owner, allocator);
+        singleAllocatorStrategies.push(proxy);
         arr = new IAllocationStrategy[](1);
-        arr[0] = IAllocationStrategy(address(sas));
+        arr[0] = IAllocationStrategy(proxy);
     }
 }

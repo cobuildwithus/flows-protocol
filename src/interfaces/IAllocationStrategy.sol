@@ -20,12 +20,13 @@ interface IAllocationStrategy {
     /**
      * @notice Pure helper that turns arbitrary JSON into the
      *         bytes expected by Flow.allocate().
-     * @dev MUST be pure or view so dApps can call it off‑chain.
+     * @dev Useful for frontend to build the allocation data.
+     *      MUST be pure or view so dApps can call it off‑chain.
      *
      * Example JSON for an ERC‑721 voting strategy:
      *   { "tokenId": "42" }
      */
-    function buildAllocationData(address caller, bytes calldata json) external pure returns (bytes memory aux);
+    function buildAllocationData(address caller, string memory json) external pure returns (bytes[] memory aux);
 
     /// Errors
     error ADDRESS_ZERO();

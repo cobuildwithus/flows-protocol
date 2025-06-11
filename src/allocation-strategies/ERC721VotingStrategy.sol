@@ -6,6 +6,8 @@ import { IERC721Checkpointable } from "../interfaces/IERC721Checkpointable.sol";
 
 import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { JSONParserLib as JSON } from "solady/utils/JSONParserLib.sol";
+using JSON for JSON.Item;
 
 contract ERC721VotingStrategy is IAllocationStrategy, UUPSUpgradeable, Ownable2StepUpgradeable {
     IERC721Checkpointable public token;
@@ -14,6 +16,9 @@ contract ERC721VotingStrategy is IAllocationStrategy, UUPSUpgradeable, Ownable2S
 
     event ERC721VotingTokenChanged(address indexed oldToken, address indexed newToken);
     event TokenVoteWeightChanged(uint256 oldWeight, uint256 newWeight);
+
+    error EMPTY_TOKEN_IDS();
+    error NOT_ARRAY();
 
     constructor() {}
 
@@ -56,11 +61,31 @@ contract ERC721VotingStrategy is IAllocationStrategy, UUPSUpgradeable, Ownable2S
         return token.totalSupply() * tokenVoteWeight;
     }
 
-    function buildAllocationData(address, bytes calldata json) external pure override returns (bytes memory) {
-        // 1 decode minimal JSON – tiny lib, 300 gas
-        uint256 tokenId = Json.unwrapUint(json, "tokenId"); // pseudo‑code
-        // 2 pack exactly like your current JS does
-        return abi.encode(tokenId);
+    function buildAllocationData(address, string memory json) external pure override returns (bytes[] memory) {
+        // Parse the JSON & drill into the "tokenIds" field.
+        JSON.Item memory root = JSON.parse(json);
+        JSON.Item memory tokenIdsItem = root.at('"tokenIds"');
+
+        // Must be an array.
+        if (!JSON.isArray(tokenIdsItem)) revert NOT_ARRAY();
+
+        uint256 len = JSON.size(tokenIdsItem);
+        if (len == 0) revert EMPTY_TOKEN_IDS();
+
+        bytes[] memory aux = new bytes[](len);
+
+        for (uint256 i = 0; i < len; i++) {
+            JSON.Item memory idItem = tokenIdsItem.at(i);
+            string memory valueStr = JSON.value(idItem);
+            if (JSON.isString(idItem)) {
+                valueStr = JSON.decodeString(valueStr);
+            }
+            uint256 tokenId = JSON.parseUint(valueStr);
+            aux[i] = abi.encode(tokenId);
+        }
+
+        // Return the packed aux array (one element per tokenId).
+        return aux;
     }
 
     /**

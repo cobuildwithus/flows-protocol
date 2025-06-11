@@ -42,6 +42,12 @@ contract SingleAllocatorStrategy is IAllocationStrategy, UUPSUpgradeable, Ownabl
         return 0; // no quorum necessary for this strategy
     }
 
+    function buildAllocationData(address, string memory) external pure override returns (bytes[] memory) {
+        bytes[] memory arr = new bytes[](1);
+        arr[0] = new bytes(0);
+        return arr;
+    }
+
     /// Optional: owner can hand the baton to a new allocator.
     function changeAllocator(address newAllocator) external onlyOwner {
         require(newAllocator != address(0), "new allocator: zero");

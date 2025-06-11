@@ -56,6 +56,13 @@ contract ERC721VotingStrategy is IAllocationStrategy, UUPSUpgradeable, Ownable2S
         return token.totalSupply() * tokenVoteWeight;
     }
 
+    function buildAllocationData(address, bytes calldata json) external pure override returns (bytes memory) {
+        // 1 decode minimal JSON – tiny lib, 300 gas
+        uint256 tokenId = Json.unwrapUint(json, "tokenId"); // pseudo‑code
+        // 2 pack exactly like your current JS does
+        return abi.encode(tokenId);
+    }
+
     /**
      * @notice Ensures the caller is authorized to upgrade the contract
      */

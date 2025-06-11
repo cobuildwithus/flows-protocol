@@ -2,18 +2,18 @@
 pragma solidity ^0.8.28;
 
 import { DeployScript } from "./DeployScript.s.sol";
-import { ERC721VotingStrategy } from "../src/allocation-strategies/ERC721VotingStrategy.sol";
+import { ERC721VotesStrategy } from "../src/allocation-strategies/ERC721VotesStrategy.sol";
 
-/// @title DeployERC721VotingStrategyImpl
-/// @notice Deploys the ERC721VotingStrategy implementation contract (no proxy) and records its address.
-contract DeployERC721VotingStrategyImpl is DeployScript {
+/// @title DeployERC721VotesStrategyImpl
+/// @notice Deploys the ERC721VotesStrategy implementation contract (no proxy) and records its address.
+contract DeployERC721VotesStrategyImpl is DeployScript {
     address public implementation;
     string public contractName;
 
     function deploy() internal override {
-        ERC721VotingStrategy impl = new ERC721VotingStrategy();
+        ERC721VotesStrategy impl = new ERC721VotesStrategy();
         implementation = address(impl);
-        contractName = "ERC721VotingStrategyImpl";
+        contractName = "ERC721VotesStrategyImpl";
     }
 
     function writeAdditionalDeploymentDetails(string memory filePath) internal override {

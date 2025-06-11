@@ -14,23 +14,20 @@ interface IAllocationStrategy {
     /// optional safety hook – Flow may revert if false
     function canAllocate(uint256 key, address caller) external view returns (bool);
 
+    /// optional hook for frontends
+
+    /// @dev this is used to check if the account can allocate
+    function canAccountAllocate(address account) external view returns (bool);
+
+    /// @dev this is used to check the account's available allocation weight
+    function accountAllocationWeight(address account) external view returns (uint256);
+
     /// optional function that helps calculate quorum
     function totalAllocationWeight() external view returns (uint256);
 
     /// @notice Returns the expected top-level JSON field name for this strategy.
     ///         Frontends can read this to construct the JSON payload for `buildAllocationData`.
     function strategyKey() external pure returns (string memory);
-
-    /**
-     * @notice Pure helper that turns arbitrary JSON into the
-     *         bytes expected by Flow.allocate().
-     * @dev Useful for frontend to build the allocation data.
-     *      MUST be pure or view so dApps can call it off-chain.
-     *
-     * Example JSON for an ERC-721 voting strategy:
-     *   { "tokenId": "42" }
-     */
-    function buildAllocationData(address caller, string memory json) external pure returns (bytes[] memory aux);
 
     /// Errors
     error ADDRESS_ZERO();

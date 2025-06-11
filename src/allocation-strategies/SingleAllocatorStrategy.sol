@@ -41,18 +41,20 @@ contract SingleAllocatorStrategy is IAllocationStrategy, UUPSUpgradeable, Ownabl
         return caller == allocator;
     }
 
+    function canAccountAllocate(address account) external view returns (bool) {
+        return account == allocator;
+    }
+
+    function accountAllocationWeight(address account) external view returns (uint256) {
+        return account == allocator ? VIRTUAL_WEIGHT : 0;
+    }
+
     function totalAllocationWeight() external view returns (uint256) {
         return 0; // no quorum necessary for this strategy
     }
 
     function strategyKey() external pure override returns (string memory) {
         return STRATEGY_KEY;
-    }
-
-    function buildAllocationData(address, string memory) external pure override returns (bytes[] memory) {
-        bytes[] memory arr = new bytes[](1);
-        arr[0] = new bytes(0);
-        return arr;
     }
 
     /// Optional: owner can hand the baton to a new allocator.

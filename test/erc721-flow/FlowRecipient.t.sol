@@ -5,7 +5,7 @@ import { IFlowEvents, IFlow } from "../../src/interfaces/IFlow.sol";
 import { CustomFlow } from "../../src/flows/CustomFlow.sol";
 import { FlowTypes } from "../../src/storage/FlowStorage.sol";
 import { ERC721FlowTest } from "./ERC721Flow.t.sol";
-import { ERC721VotingStrategy } from "../../src/allocation-strategies/ERC721VotingStrategy.sol";
+import { ERC721VotesStrategy } from "../../src/allocation-strategies/ERC721VotesStrategy.sol";
 
 contract FlowRecipientTest is ERC721FlowTest {
     function setUp() public override {
@@ -95,7 +95,7 @@ contract FlowRecipientTest is ERC721FlowTest {
 
         // Check the newly created Flow contract fields
         CustomFlow newFlow = CustomFlow(newFlowAddress);
-        ERC721VotingStrategy strategy = ERC721VotingStrategy(address(newFlow.strategies()[0]));
+        ERC721VotesStrategy strategy = ERC721VotesStrategy(address(newFlow.strategies()[0]));
         assertEq(address(strategy.token()), address(nounsToken));
         assertEq(address(newFlow.superToken()), address(superToken));
         assertEq(newFlow.flowImpl(), flow.flowImpl());

@@ -5,13 +5,13 @@ import { Test } from "forge-std/Test.sol";
 
 import { IFlow, ICustomFlow } from "../../src/interfaces/IFlow.sol";
 import { CustomFlow } from "../../src/flows/CustomFlow.sol";
-import { ERC721VotingStrategy } from "../../src/allocation-strategies/ERC721VotingStrategy.sol";
+import { ERC721VotesStrategy } from "../../src/allocation-strategies/ERC721VotesStrategy.sol";
 import { MockERC721 } from "../mocks/MockERC721.sol";
 import { FlowTypes } from "../../src/storage/FlowStorage.sol";
 import { RewardPool } from "../../src/token-issuance/RewardPool.sol";
 import { IRewardPool } from "../../src/interfaces/IRewardPool.sol";
 import { IAllocationStrategy } from "../../src/interfaces/IAllocationStrategy.sol";
-import { IERC721Checkpointable } from "../../src/interfaces/IERC721Checkpointable.sol";
+import { IERC721Votes } from "../../src/interfaces/IERC721Votes.sol";
 import { IChainalysisSanctionsList } from "../../src/interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
@@ -104,7 +104,7 @@ contract ERC721FlowTest is Test {
     }
 
     function tokenVoteWeight() internal view returns (uint256) {
-        return ERC721VotingStrategy(votingStrategyProxy).tokenVoteWeight();
+        return ERC721VotesStrategy(votingStrategyProxy).tokenVoteWeight();
     }
 
     function deployRewardPool(
@@ -171,13 +171,9 @@ contract ERC721FlowTest is Test {
         superToken = token;
         testUSDC = address(underlyingToken);
 
-        votingStrategyImpl = address(new ERC721VotingStrategy());
+        votingStrategyImpl = address(new ERC721VotesStrategy());
         votingStrategyProxy = address(new ERC1967Proxy(votingStrategyImpl, ""));
-        ERC721VotingStrategy(votingStrategyProxy).initialize(
-            manager,
-            IERC721Checkpointable(address(nounsToken)),
-            1e18 * 1000
-        );
+        ERC721VotesStrategy(votingStrategyProxy).initialize(manager, IERC721Votes(address(nounsToken)), 1e18 * 1000);
         strategies = new IAllocationStrategy[](1);
         strategies[0] = IAllocationStrategy(votingStrategyProxy);
 

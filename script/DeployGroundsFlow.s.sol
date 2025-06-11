@@ -7,9 +7,9 @@ import { IFlow, ICustomFlow } from "../src/interfaces/IFlow.sol";
 import { IChainalysisSanctionsList } from "../src/interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 import { CustomFlow } from "../src/flows/CustomFlow.sol";
 import { Flow } from "../src/Flow.sol";
-import { ERC721VotingStrategy } from "../src/allocation-strategies/ERC721VotingStrategy.sol";
+import { ERC721VotesStrategy } from "../src/allocation-strategies/ERC721VotesStrategy.sol";
 import { IAllocationStrategy } from "../src/interfaces/IAllocationStrategy.sol";
-import { IERC721Checkpointable } from "../src/interfaces/IERC721Checkpointable.sol";
+import { IERC721Votes } from "../src/interfaces/IERC721Votes.sol";
 
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
@@ -43,11 +43,11 @@ contract DeployGroundsFlow is DeployScript {
         // ------------------------------------------------------------------
         // Strategy (implementation + proxy)
         // ------------------------------------------------------------------
-        address votingImpl = _loadImplementation("ERC721VotingStrategyImpl");
+        address votingImpl = _loadImplementation("ERC721VotesStrategyImpl");
         erc721VotingStrategy = address(new ERC1967Proxy(votingImpl, ""));
-        ERC721VotingStrategy(erc721VotingStrategy).initialize(
+        ERC721VotesStrategy(erc721VotingStrategy).initialize(
             initialOwner,
-            IERC721Checkpointable(erc721TokenAddress),
+            IERC721Votes(erc721TokenAddress),
             tokenVoteWeight
         );
         IAllocationStrategy[] memory topStrategies = new IAllocationStrategy[](1);

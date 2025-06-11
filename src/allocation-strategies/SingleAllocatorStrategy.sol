@@ -11,6 +11,9 @@ contract SingleAllocatorStrategy is IAllocationStrategy, UUPSUpgradeable, Ownabl
     // The virtual weight used for sub-BPS resolution in allocation calculations
     uint256 public constant VIRTUAL_WEIGHT = 1e21;
 
+    // Strategy JSON key exposed to front-end helpers (unquoted).
+    string public constant STRATEGY_KEY = "SingleAllocator";
+
     event AllocatorChanged(address indexed oldAllocator, address indexed newAllocator);
 
     constructor() {}
@@ -40,6 +43,11 @@ contract SingleAllocatorStrategy is IAllocationStrategy, UUPSUpgradeable, Ownabl
 
     function totalAllocationWeight() external view returns (uint256) {
         return 0; // no quorum necessary for this strategy
+    }
+
+    /// @inheritdoc IAllocationStrategy
+    function jsonKey() external pure override returns (string memory) {
+        return STRATEGY_KEY;
     }
 
     function buildAllocationData(address, string memory) external pure override returns (bytes[] memory) {

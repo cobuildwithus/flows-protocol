@@ -14,10 +14,14 @@ contract ERC721VotingStrategy is IAllocationStrategy, UUPSUpgradeable, Ownable2S
 
     uint256 public tokenVoteWeight;
 
+    // Key under which this strategy expects its config in the JSON blob (unquoted).
+    string public constant STRATEGY_KEY = "ERC721Voting";
+
     event ERC721VotingTokenChanged(address indexed oldToken, address indexed newToken);
     event TokenVoteWeightChanged(uint256 oldWeight, uint256 newWeight);
 
     error NOT_ARRAY();
+    error NOT_OBJECT();
 
     constructor() {}
 
@@ -60,10 +64,23 @@ contract ERC721VotingStrategy is IAllocationStrategy, UUPSUpgradeable, Ownable2S
         return token.totalSupply() * tokenVoteWeight;
     }
 
+    /// @inheritdoc IAllocationStrategy
+    function jsonKey() external pure override returns (string memory) {
+        return STRATEGY_KEY;
+    }
+
     function buildAllocationData(address, string memory json) external pure override returns (bytes[] memory) {
         // Parse the JSON & drill into the "tokenIds" field.
         JSON.Item memory root = JSON.parse(json);
-        JSON.Item memory tokenIdsItem = root.at('"tokenIds"');
+
+        // Compose the quoted key required by JSONParserLib ("<key>").
+        string memory quotedKey = string(abi.encodePacked('"', STRATEGY_KEY, '"'));
+
+        // Get the object for this strategy first.
+        JSON.Item memory strategyObj = root.at(quotedKey);
+        if (!JSON.isObject(strategyObj)) revert NOT_OBJECT();
+
+        JSON.Item memory tokenIdsItem = strategyObj.at('"tokenIds"');
 
         // Must be an array.
         if (!JSON.isArray(tokenIdsItem)) revert NOT_ARRAY();

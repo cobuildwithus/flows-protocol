@@ -17,13 +17,17 @@ interface IAllocationStrategy {
     /// optional function that helps calculate quorum
     function totalAllocationWeight() external view returns (uint256);
 
+    /// @notice Returns the expected top-level JSON field name for this strategy.
+    ///         Frontends can read this to construct the JSON payload for `buildAllocationData`.
+    function jsonKey() external pure returns (string memory);
+
     /**
      * @notice Pure helper that turns arbitrary JSON into the
      *         bytes expected by Flow.allocate().
      * @dev Useful for frontend to build the allocation data.
-     *      MUST be pure or view so dApps can call it off‑chain.
+     *      MUST be pure or view so dApps can call it off-chain.
      *
-     * Example JSON for an ERC‑721 voting strategy:
+     * Example JSON for an ERC-721 voting strategy:
      *   { "tokenId": "42" }
      */
     function buildAllocationData(address caller, string memory json) external pure returns (bytes[] memory aux);

@@ -17,7 +17,6 @@ contract ERC721VotingStrategy is IAllocationStrategy, UUPSUpgradeable, Ownable2S
     event ERC721VotingTokenChanged(address indexed oldToken, address indexed newToken);
     event TokenVoteWeightChanged(uint256 oldWeight, uint256 newWeight);
 
-    error EMPTY_TOKEN_IDS();
     error NOT_ARRAY();
 
     constructor() {}
@@ -70,7 +69,8 @@ contract ERC721VotingStrategy is IAllocationStrategy, UUPSUpgradeable, Ownable2S
         if (!JSON.isArray(tokenIdsItem)) revert NOT_ARRAY();
 
         uint256 len = JSON.size(tokenIdsItem);
-        if (len == 0) revert EMPTY_TOKEN_IDS();
+        // allow empty array because for multi strategy flows, some people may not have any tokens
+        // and we want to allow them to allocate per other strategies
 
         bytes[] memory aux = new bytes[](len);
 

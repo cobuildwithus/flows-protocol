@@ -67,6 +67,9 @@ interface IFlowEvents {
         IAllocationStrategy[] strategies
     );
 
+    /// @notice Emitted when an allocation strategy is registered
+    event AllocationStrategyRegistered(address indexed flow, address indexed strategy, string strategyKey);
+
     /// @notice Emitted when the manager reward pool is updated
     event ManagerRewardPoolUpdated(address indexed oldManagerRewardPool, address indexed newManagerRewardPool);
 

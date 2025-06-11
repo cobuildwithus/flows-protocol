@@ -45,8 +45,7 @@ contract SingleAllocatorStrategy is IAllocationStrategy, UUPSUpgradeable, Ownabl
         return 0; // no quorum necessary for this strategy
     }
 
-    /// @inheritdoc IAllocationStrategy
-    function jsonKey() external pure override returns (string memory) {
+    function strategyKey() external pure override returns (string memory) {
         return STRATEGY_KEY;
     }
 

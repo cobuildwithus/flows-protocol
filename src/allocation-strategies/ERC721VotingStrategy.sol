@@ -64,8 +64,7 @@ contract ERC721VotingStrategy is IAllocationStrategy, UUPSUpgradeable, Ownable2S
         return token.totalSupply() * tokenVoteWeight;
     }
 
-    /// @inheritdoc IAllocationStrategy
-    function jsonKey() external pure override returns (string memory) {
+    function strategyKey() external pure override returns (string memory) {
         return STRATEGY_KEY;
     }
 

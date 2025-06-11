@@ -19,7 +19,7 @@ interface IAllocationStrategy {
 
     /// @notice Returns the expected top-level JSON field name for this strategy.
     ///         Frontends can read this to construct the JSON payload for `buildAllocationData`.
-    function jsonKey() external pure returns (string memory);
+    function strategyKey() external pure returns (string memory);
 
     /**
      * @notice Pure helper that turns arbitrary JSON into the

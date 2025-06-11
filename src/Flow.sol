@@ -85,6 +85,9 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             fs.managerRewardPoolFlowRatePercent,
             _strategies
         );
+        for (uint256 i = 0; i < _strategies.length; i++) {
+            emit AllocationStrategyRegistered(address(this), address(_strategies[i]), _strategies[i].strategyKey());
+        }
 
         fs.sanctionsOracle = _sanctionsOracle;
 

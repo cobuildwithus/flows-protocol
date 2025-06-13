@@ -209,8 +209,8 @@ library FlowRates {
     function getActualFlowRate(FlowTypes.Storage storage fs, address flowAddress) external view returns (int96) {
         return
             fs.superToken.getFlowRate(flowAddress, fs.managerRewardPool) +
-            fs.superToken.getFlowRate(flowAddress, address(fs.baselinePool)) +
-            fs.superToken.getFlowRate(flowAddress, address(fs.bonusPool));
+            fs.superToken.getFlowDistributionFlowRate(flowAddress, fs.baselinePool) +
+            fs.superToken.getFlowDistributionFlowRate(flowAddress, fs.bonusPool);
     }
 
     /**

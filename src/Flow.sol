@@ -527,7 +527,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @dev Only callable by the owner or parent of the contract
      */
     function setFlowRate(int96 _flowRate) external onlyOwnerOrParent nonReentrant {
-        fs.cachedFlowRate = _flowRate;
         _setFlowRate(_flowRate);
     }
 
@@ -536,7 +535,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param desiredRate  New total outflow the caller wants to reach.
      */
     function increaseFlowRate(int96 desiredRate) external nonReentrant {
-        int96 oldRate = fs.cachedFlowRate;
+        int96 oldRate = getActualFlowRate();
         if (desiredRate <= oldRate || desiredRate <= 0) revert NOT_AN_INCREASE();
 
         int96 cap = _getMaxFlowRate();
@@ -553,7 +552,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             fs.superToken.transferFrom(msg.sender, address(this), toPull);
         }
 
-        fs.cachedFlowRate = desiredRate;
         _setFlowRate(desiredRate);
 
         emit FlowRateIncreased(msg.sender, oldRate, desiredRate, toPull);
@@ -581,9 +579,9 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
     function _getMaxFlowRate() internal view returns (int96) {
         // Net = incoming - outgoing
-        // Net + outgoing (cachedFlowRate) = incoming
-        int96 netFlow = fs.superToken.getNetFlowRate(address(this));
-        int96 outFlow = fs.cachedFlowRate;
+        // Net + outgoing (getActualFlowRate) = incoming
+        int96 netFlow = getNetFlowRate();
+        int96 outFlow = getActualFlowRate();
         int96 inFlow = netFlow + outFlow;
 
         // If there is no incoming flow, the safe rate is zero.
@@ -600,7 +598,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @return True if the flow rate is too high, false otherwise
      */
     function isFlowRateTooHigh() public view returns (bool) {
-        return fs.cachedFlowRate > _getMaxFlowRate();
+        return getActualFlowRate() > _getMaxFlowRate();
     }
 
     /**
@@ -609,16 +607,24 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @dev Emits a FlowRateDecreased event if the flow rate is successfully decreased
      */
     function decreaseFlowRate() external nonReentrant {
-        int96 oldRate = fs.cachedFlowRate;
+        int96 oldRate = getActualFlowRate();
         int96 newRate = _getMaxFlowRate();
 
         // if the flow rate is already below the maximum flow rate, do nothing
         if (newRate >= oldRate) return;
 
-        fs.cachedFlowRate = newRate;
         _setFlowRate(newRate);
 
         emit FlowRateDecreased(msg.sender, oldRate, newRate);
+    }
+
+    /**
+     * @notice Gets the net flow rate for the contract
+     * @dev This function is used to get the net flow rate for the contract
+     * @return The net flow rate
+     */
+    function getNetFlowRate() public view returns (int96) {
+        return fs.superToken.getNetFlowRate(address(this));
     }
 
     /**
@@ -689,6 +695,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
         if (_flowRate < 0) revert FLOW_RATE_NEGATIVE();
 
+        fs.cachedFlowRate = _flowRate;
+
         (int96 baselineFlowRate, int96 bonusFlowRate, int96 managerRewardFlowRate) = fs.calculateFlowRates(
             _flowRate,
             PERCENTAGE_SCALE,
@@ -745,7 +753,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     /**
      * @notice Sets the bonus pool quorum parameters
      * @param _quorumBps The new quorum percentage (in basis points, scaled by PERCENTAGE_SCALE).
-     * Once reached, the bonus pool will be scaled up to the maximum available flow rate. (total - baseline - manager reward)
+     * Once reached, the bonus pool will be scaled up to the maximum available flow rate.
+     * (total - baseline - manager reward)
      * Leftover flow rate when quorum is not reached will be added to the baseline pool.
      * @dev Only callable by the owner or manager of the contract
      */

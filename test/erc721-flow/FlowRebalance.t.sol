@@ -8,6 +8,7 @@ import { SuperTokenV1Library } from "@superfluid-finance/ethereum-contracts/cont
 import { TestToken } from "@superfluid-finance/ethereum-contracts/contracts/utils/TestToken.sol";
 import { IFlowEvents, IFlow } from "../../src/interfaces/IFlow.sol";
 import { Vm } from "forge-std/Vm.sol";
+import { console } from "forge-std/console.sol";
 
 /// @title FlowRebalanceTest
 /// @notice Tests for `increaseFlowRate` / `decreaseFlowRate` safety-brake helpers and `isFlowRateTooHigh`.
@@ -44,7 +45,7 @@ contract FlowRebalanceTest is ERC721FlowTest {
     }
 
     function _startIncomingFlow(int96 flowRate) internal {
-        // ensure Alice has enough balance for required deposit
+        // ensure Alice has enough balance for required deposit + stream
         uint256 deposit = ISuperToken(address(superToken)).getBufferAmountByFlowRate(flowRate);
         _mintAndUpgrade(ALICE, deposit * 2);
 
@@ -54,16 +55,8 @@ contract FlowRebalanceTest is ERC721FlowTest {
         vm.stopPrank();
     }
 
-    /// @dev Re-implements the `_getMaxFlowRate` calculation locally for assertions.
     function _computeMaxSafeRate() internal view returns (int96) {
-        int96 netFlow = int96(ISuperToken(address(superToken)).getNetFlowRate(address(flow)));
-        int96 outFlow = flow.getTotalFlowRate();
-        int96 inFlow = netFlow + outFlow; // incoming = net + outgoing
-
-        if (inFlow <= 0) return 0;
-
-        uint256 capped = (uint256(uint96(inFlow)) * OUT_CAP_BPS) / PERCENT_SCALE;
-        return int96(uint96(capped));
+        return flow.maxSafeFlowRate();
     }
 
     /* -------------------------------------------------------------------------- */
@@ -117,18 +110,33 @@ contract FlowRebalanceTest is ERC721FlowTest {
 
     /// @notice Helper still works when flow exceeds cap (manager can lower manually).
     function testIsFlowRateTooHigh_WhenExceedsCap() public {
+        // start a flow into the flow contract
+        int96 incoming = 1e16;
+        _startIncomingFlow(incoming);
+
+        // assert net flow is positive
+        assertGt(flow.getNetFlowRate(), 0, "net flow is not positive");
+
+        // transfer some tokens to the flow contract to cover the buffer
+        vm.prank(ALICE);
+        superToken.transfer(address(flow), 1e18);
+
         // Inflate cached flow beyond cap.
         int96 cap = _computeMaxSafeRate();
-        int96 inflated = cap + int96(uint96(cap / 5 + 1));
+
+        int96 inflated = cap + int96(uint96(cap / 5));
+
         vm.prank(manager);
         flow.setFlowRate(inflated);
+
+        assertEq(flow.getActualFlowRate(), inflated, "flow rate not inflated");
 
         assertTrue(flow.isFlowRateTooHigh(), "Flow should be flagged too high when exceeding cap");
     }
 
     /// @notice Increase path – with incoming stream supplying capacity.
     function testIncreaseFlowRate_RaisesToCap() public {
-        int96 beforeRate = flow.getTotalFlowRate();
+        int96 beforeRate = flow.getActualFlowRate();
         int96 incoming = beforeRate * 10; // larger to ensure cap higher and delta positive
         _startIncomingFlow(incoming);
 

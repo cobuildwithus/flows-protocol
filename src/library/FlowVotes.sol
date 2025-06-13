@@ -5,14 +5,15 @@ import { FlowTypes } from "../storage/FlowStorage.sol";
 import { IFlow } from "../interfaces/IFlow.sol";
 
 library FlowVotes {
-    function createVote(
+    function setAllocation(
         FlowTypes.Storage storage fs,
         bytes32 recipientId,
         uint32 bps,
-        uint256 tokenId,
+        address strategy,
+        uint256 allocationKey,
         uint256 totalWeight,
         uint256 percentageScale,
-        address voter
+        address allocator
     ) public returns (uint128 memberUnits, address recipientAddress, FlowTypes.RecipientType recipientType) {
         recipientAddress = fs.recipients[recipientId].recipient;
         recipientType = fs.recipients[recipientId].recipientType;
@@ -22,15 +23,23 @@ library FlowVotes {
         // and scale back by 1e15
         // per https://docs.superfluid.finance/docs/protocol/distributions/guides/pools#about-member-units
         // gives someone with 1 vote at least 1e3 units to work with
-        uint256 scaledUnits = _scaleAmountByPercentage(totalWeight, bps, percentageScale) / 1e15;
+        uint256 weightForRecipient = _scaleAmountByPercentage(totalWeight, bps, percentageScale);
+        uint256 scaledUnits = weightForRecipient / 1e15;
         if (scaledUnits > type(uint128).max) revert IFlow.OVERFLOW();
         uint128 newUnits = uint128(scaledUnits);
 
         memberUnits = currentUnits + newUnits;
 
         // update votes, track recipient, bps, and total member units assigned
-        fs.votes[tokenId].push(FlowTypes.VoteAllocation({ recipientId: recipientId, bps: bps, memberUnits: newUnits }));
-        fs.voters[tokenId] = voter;
+        fs.allocations[strategy][allocationKey].push(
+            FlowTypes.Allocation({
+                recipientId: recipientId,
+                bps: bps,
+                memberUnits: newUnits,
+                allocationWeight: weightForRecipient
+            })
+        );
+        fs.allocators[strategy][allocationKey] = allocator;
     }
 
     /**
@@ -38,7 +47,7 @@ library FlowVotes {
      * @param recipientIds The recipientIds of the grant recipients.
      * @param percentAllocations The basis points of the vote to be split with the recipients.
      */
-    function validateVotes(
+    function validateAllocations(
         FlowTypes.Storage storage fs,
         bytes32[] memory recipientIds,
         uint32[] memory percentAllocations,
@@ -86,22 +95,5 @@ library FlowVotes {
             /* eg (100 * 2*1e4) / (1e6) */
             scaledAmount := div(mul(amount, scaledPercent), percentageScale)
         }
-    }
-
-    /**
-     * @notice Retrieves all vote allocations for multiple ERC721 tokenIds
-     * @param fs The storage of the Flow contract
-     * @param tokenIds An array of tokenIds to retrieve votes for
-     * @return allocations An array of arrays, where each inner array contains VoteAllocation structs for a tokenId
-     */
-    function getVotesForTokenIds(
-        FlowTypes.Storage storage fs,
-        uint256[] calldata tokenIds
-    ) public view returns (FlowTypes.VoteAllocation[][] memory allocations) {
-        allocations = new FlowTypes.VoteAllocation[][](tokenIds.length);
-        for (uint256 i = 0; i < tokenIds.length; i++) {
-            allocations[i] = fs.votes[tokenIds[i]];
-        }
-        return allocations;
     }
 }

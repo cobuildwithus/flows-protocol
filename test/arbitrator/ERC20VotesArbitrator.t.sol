@@ -3,7 +3,7 @@ pragma solidity ^0.8.28;
 
 import { Test } from "forge-std/Test.sol";
 import { ERC20VotesArbitrator } from "../../src/tcr/ERC20VotesArbitrator.sol";
-import { ERC20VotesMintable } from "../../src/ERC20VotesMintable.sol";
+import { ERC20VotesMintable } from "../../src/base/erc20/ERC20VotesMintable.sol";
 import { FlowTCR } from "../../src/tcr/FlowTCR.sol";
 import { IArbitrable } from "../../src/tcr/interfaces/IArbitrable.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";

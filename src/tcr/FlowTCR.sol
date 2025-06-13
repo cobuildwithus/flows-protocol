@@ -7,6 +7,7 @@ import { IManagedFlow } from "../interfaces/IManagedFlow.sol";
 import { IFlowTCR } from "./interfaces/IGeneralizedTCR.sol";
 import { FlowTypes } from "../storage/FlowStorage.sol";
 import { ITCRFactory } from "./interfaces/ITCRFactory.sol";
+import { IAllocationStrategy } from "../interfaces/IAllocationStrategy.sol";
 import { FlowTCRItems } from "./library/FlowTCRItems.sol";
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperToken.sol";
 
@@ -154,7 +155,8 @@ contract FlowTCR is GeneralizedTCR, IFlowTCR {
                 recipientId,
                 metadata,
                 address(this),
-                address(0) // set to 0 so Flow doesn't try to set the reward pool flow rate on a TCR contract
+                address(0), // set to 0 so Flow doesn't try to set the reward pool flow rate on a TCR contract
+                flowContract.strategies() // use the same strategies as the parent Flow contract. TODO allow arbitrary strategies data in future
             );
 
             ITCRFactory.DeployedContracts memory deployedContracts = tcrFactory.deployFlowTCR(

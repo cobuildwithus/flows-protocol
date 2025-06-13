@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import { FlowStorageV1 } from "./storage/FlowStorage.sol";
 import { IFlow } from "./interfaces/IFlow.sol";
+import { IAllocationStrategy } from "./interfaces/IAllocationStrategy.sol";
 import { FlowRecipients } from "./library/FlowRecipients.sol";
 import { FlowVotes } from "./library/FlowVotes.sol";
 import { FlowPools } from "./library/FlowPools.sol";
@@ -13,9 +14,7 @@ import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/acc
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-
 import { ISuperToken, ISuperfluidPool } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
-
 import { SuperTokenV1Library } from "@superfluid-finance/ethereum-contracts/contracts/apps/SuperTokenV1Library.sol";
 
 import { IChainalysisSanctionsList } from "./interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
@@ -39,6 +38,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param _flowParams The parameters for the flow contract
      * @param _metadata The metadata for the flow contract
      * @param _sanctionsOracle The address of the sanctions oracle
+     * @param _strategies The allocation strategies to use.
      */
     function __Flow_init(
         address _initialOwner,
@@ -49,7 +49,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         address _parent,
         FlowParams memory _flowParams,
         RecipientMetadata memory _metadata,
-        IChainalysisSanctionsList _sanctionsOracle
+        IChainalysisSanctionsList _sanctionsOracle,
+        IAllocationStrategy[] calldata _strategies
     ) public {
         fs.checkAndSetInitializationParams(
             _initialOwner,
@@ -61,16 +62,18 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             address(this),
             _flowParams,
             _metadata,
-            PERCENTAGE_SCALE
+            PERCENTAGE_SCALE,
+            _strategies
         );
 
         __Ownable2Step_init();
         __ReentrancyGuard_init();
+        __UUPSUpgradeable_init();
 
         _transferOwnership(_initialOwner);
 
         emit FlowInitialized(
-            msg.sender,
+            _initialOwner,
             _superToken,
             _flowImpl,
             _manager,
@@ -79,8 +82,12 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             address(fs.baselinePool),
             address(fs.bonusPool),
             fs.baselinePoolFlowRatePercent,
-            fs.managerRewardPoolFlowRatePercent
+            fs.managerRewardPoolFlowRatePercent,
+            _strategies
         );
+        for (uint256 i = 0; i < _strategies.length; i++) {
+            emit AllocationStrategyRegistered(address(this), address(_strategies[i]), _strategies[i].strategyKey());
+        }
 
         fs.sanctionsOracle = _sanctionsOracle;
 
@@ -91,21 +98,30 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @notice Cast a vote for a specific grant address.
      * @param recipientId The id of the grant recipient.
      * @param bps The basis points of the vote to be split with the recipient.
-     * @param tokenId The tokenId owned by the voter.
-     * @param totalWeight The voting power of the voter.
-     * @param voter The address of the voter.
+     * @param strategy The strategy that is allocating.
+     * @param allocationKey The allocation key.
+     * @param allocator The address of the allocator.
+     * @param totalWeight The allocation weight.
      * @dev Requires that the recipient is valid, and the weight is greater than the minimum vote weight.
      * Emits a VoteCast event upon successful execution.
      */
-    function _vote(bytes32 recipientId, uint32 bps, uint256 tokenId, uint256 totalWeight, address voter) internal {
+    function _allocate(
+        bytes32 recipientId,
+        uint32 bps,
+        address strategy,
+        uint256 allocationKey,
+        address allocator,
+        uint256 totalWeight
+    ) internal {
         // calculate new member units for recipient and create vote
-        (uint128 memberUnits, address recipientAddress, ) = fs.createVote(
+        (uint128 memberUnits, address recipientAddress, ) = fs.setAllocation(
             recipientId,
             bps,
-            tokenId,
+            strategy,
+            allocationKey,
             totalWeight,
             PERCENTAGE_SCALE,
-            voter
+            allocator
         );
 
         // update member units
@@ -115,19 +131,23 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         // note - we now do this post-voting to avoid redundant setFlowRate calls on children
         // in _afterVotesCast
 
-        emit VoteCast(recipientId, tokenId, memberUnits, bps, totalWeight);
+        emit AllocationSet(recipientId, strategy, allocationKey, memberUnits, bps, totalWeight);
     }
 
     /**
-     * @notice Clears out units from previous votes allocation for a specific tokenId.
-     * @param tokenId The tokenId whose previous votes are to be cleared.
-     * @dev This function resets the member units for all recipients that the tokenId has previously voted for.
-     * It should be called before setting new votes to ensure accurate vote allocations.
-     * Note - Important - only ever delete votes for a tokenId right before adding them back, otherwise you will have to
-     * manually update the total active vote weight
+     * @notice Clears out units from previous allocations for a specific allocation key.
+     * @param strategy The strategy that is allocating.
+     * @param allocationKey The allocation key.
+     * @dev This function resets the member units for all recipients that the allocation key has previously allocated for.
+     * It should be called before setting new allocations to ensure accurate allocation allocations.
+     * Note - Important - only ever delete allocations for a key right before adding them back, otherwise you will have to
+     * manually update the total active allocation weight
      */
-    function _clearPreviousVotes(uint256 tokenId) internal returns (uint256 childFlowsToUpdate) {
-        VoteAllocation[] memory allocations = fs.votes[tokenId];
+    function _clearPreviousAllocations(
+        address strategy,
+        uint256 allocationKey
+    ) internal returns (uint256 childFlowsToUpdate) {
+        Allocation[] memory allocations = fs.allocations[strategy][allocationKey];
 
         for (uint256 i = 0; i < allocations.length; i++) {
             bytes32 recipientId = allocations[i].recipientId;
@@ -137,6 +157,9 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             if (fs.recipients[recipientId].removed) continue;
 
             address recipientAddress = fs.recipients[recipientId].recipient;
+
+            // When clearing out allocations, we need to decrement the total active allocation weight
+            fs.totalActiveAllocationWeight -= allocations[i].allocationWeight;
 
             // Calculate the new units by subtracting the delta from the current units
             uint128 newUnits = fs.bonusPool.getUnits(recipientAddress) - allocations[i].memberUnits;
@@ -158,43 +181,48 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             }
         }
 
-        // Clear out the votes for the tokenId
-        delete fs.votes[tokenId];
+        // Clear out the allocations for the key
+        delete fs.allocations[strategy][allocationKey];
     }
 
     /**
      * @notice Cast a vote for a set of grant addresses.
-     * @param tokenId The tokenId owned by the voter.
+     * @param strategy The strategy that is allocating.
+     * @param allocationKey The allocation key.
      * @param recipientIds The recipientIds of the grant recipients to vote for.
      * @param percentAllocations The basis points of the vote to be split with the recipients.
+     * @param allocator The address of the allocator.
+     * @param allocationWeight The weight of the allocation.
      */
-    function _setVotesAllocationForTokenId(
-        uint256 tokenId,
+    function _setAllocationForKey(
+        address strategy,
+        uint256 allocationKey,
         bytes32[] memory recipientIds,
         uint32[] memory percentAllocations,
-        address voter
+        address allocator,
+        uint256 allocationWeight
     ) internal returns (uint256 childFlowsToUpdate, bool shouldUpdateFlowRate) {
-        if (fs.votes[tokenId].length == 0) {
+        if (fs.allocations[strategy][allocationKey].length == 0) {
             // this is a new vote, which means we're adding new member units
             // so we need to reset child flow rates
             childFlowsToUpdate = 10;
             _setChildrenAsNeedingUpdates(address(0));
 
-            // update total active vote weight
-            fs.totalActiveVoteWeight += fs.tokenVoteWeight;
-
             if (fs.bonusPoolQuorumBps > 0) {
-                // since new votes affects quorum based bonus pool, we need to update the flow rate
+                // since new allocations affects quorum based bonus pool, we need to update the flow rate
                 shouldUpdateFlowRate = true;
             }
         }
 
         // update member units for previous votes
-        childFlowsToUpdate += _clearPreviousVotes(tokenId);
+        childFlowsToUpdate += _clearPreviousAllocations(strategy, allocationKey);
 
-        // set new votes
+        // update total active vote weight
+        fs.totalActiveAllocationWeight += allocationWeight;
+
+        // set new allocations
         for (uint256 i = 0; i < recipientIds.length; i++) {
-            _vote(recipientIds[i], percentAllocations[i], tokenId, fs.tokenVoteWeight, voter);
+            _allocate(recipientIds[i], percentAllocations[i], strategy, allocationKey, allocator, allocationWeight);
         }
     }
 
@@ -266,6 +294,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param _metadata The metadata of the recipient
      * @param _flowManager The address of the flow manager for the new contract
      * @param _managerRewardPool The address of the manager reward pool for the new contract
+     * @param _strategies The allocation strategies to use.
      * @return bytes32 The recipientId of the newly created Flow contract
      * @return address The address of the newly created Flow contract
      * @dev Only callable by the manager of the contract
@@ -275,11 +304,12 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         bytes32 _recipientId,
         RecipientMetadata calldata _metadata,
         address _flowManager,
-        address _managerRewardPool
+        address _managerRewardPool,
+        IAllocationStrategy[] calldata _strategies
     ) external onlyManager nonReentrant returns (bytes32, address) {
         FlowRecipients.validateFlowRecipient(_metadata, _flowManager);
 
-        address recipient = _deployFlowRecipient(_metadata, _flowManager, _managerRewardPool);
+        address recipient = _deployFlowRecipient(_metadata, _flowManager, _managerRewardPool, _strategies);
 
         fs.addFlowRecipient(_recipientId, recipient, _metadata);
         _childFlows.add(recipient);
@@ -395,7 +425,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @dev This function can be overridden in derived contracts to implement custom logic
      * @return uint256 The total vote weight of all tokens used for voting
      */
-    function totalTokenSupplyVoteWeight() public view virtual returns (uint256) {}
+    function totalAllocationWeight() public view virtual returns (uint256) {}
 
     /**
      * @notice Deploys a new Flow contract as a recipient
@@ -403,12 +433,14 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param _metadata The metadata of the recipient
      * @param _flowManager The address of the flow manager for the new contract
      * @param _managerRewardPool The address of the manager reward pool for the new contract
+     * @param _strategies The allocation strategies to use.
      * @return address The address of the newly created Flow contract
      */
     function _deployFlowRecipient(
         RecipientMetadata calldata _metadata,
         address _flowManager,
-        address _managerRewardPool
+        address _managerRewardPool,
+        IAllocationStrategy[] calldata _strategies
     ) internal virtual returns (address);
 
     /**
@@ -459,6 +491,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
                 PERCENTAGE_SCALE
             );
 
+        _childFlowsToUpdateFlowRate.remove(childAddress);
+
         if (shouldTransfer) {
             fs.superToken.transfer(childAddress, transferAmount);
         }
@@ -467,7 +501,10 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         // only set if balance of contract is greater than buffer required
         if (balanceRequiredToStartFlow <= fs.superToken.balanceOf(childAddress)) {
             IFlow(childAddress).setFlowRate(getMemberTotalFlowRate(childAddress));
-            _childFlowsToUpdateFlowRate.remove(childAddress);
+        } else {
+            // if after the transfer we don't have enough balance
+            // we still need to update the flow rate
+            _childFlowsToUpdateFlowRate.add(childAddress);
         }
     }
 
@@ -490,8 +527,104 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @dev Only callable by the owner or parent of the contract
      */
     function setFlowRate(int96 _flowRate) external onlyOwnerOrParent nonReentrant {
-        fs.cachedFlowRate = _flowRate;
         _setFlowRate(_flowRate);
+    }
+
+    /**
+     * @notice Raise the outflow to `desiredRate`, pulling only the incremental buffer.
+     * @param desiredRate  New total outflow the caller wants to reach.
+     */
+    function increaseFlowRate(int96 desiredRate) external nonReentrant {
+        int96 oldRate = getActualFlowRate();
+        if (desiredRate <= oldRate || desiredRate <= 0) revert NOT_AN_INCREASE();
+
+        int96 cap = _getMaxFlowRate();
+        if (desiredRate > cap) revert ABOVE_CAP();
+
+        uint256 oldBuf = fs.superToken.getBufferAmountByFlowRate(oldRate);
+        uint256 newBuf = fs.superToken.getBufferAmountByFlowRate(desiredRate);
+        uint256 delta = newBuf - oldBuf; // safe: desiredRate>oldRate
+
+        uint256 m = getBufferMultiplier();
+        uint256 toPull = delta * m;
+
+        if (toPull > 0) {
+            fs.superToken.transferFrom(msg.sender, address(this), toPull);
+        }
+
+        _setFlowRate(desiredRate);
+
+        emit FlowRateIncreased(msg.sender, oldRate, desiredRate, toPull);
+    }
+
+    /**
+     * @notice Gets the buffer multiplier
+     * @dev This function is used to get the buffer multiplier
+     * @return The buffer multiplier
+     */
+    function getBufferMultiplier() public view returns (uint256) {
+        // If no child flows yet, use default multiplier 2; otherwise use configurable value.
+        return _childFlows.length() == 0 ? 2 : fs.defaultBufferMultiplier;
+    }
+
+    /**
+     * @notice Returns the maximum safe outflow rate allowed by the contract.
+     * @dev Calculates the highest outflow rate permitted, capped as a percentage of the current incoming Superfluid stream.
+     *      This ensures the contract never streams out more than a set fraction of what it receives.
+     * @return The maximum safe flow rate (int96) that can be set without exceeding the cap.
+     */
+    function maxSafeFlowRate() external view returns (int96) {
+        return _getMaxFlowRate();
+    }
+
+    function _getMaxFlowRate() internal view returns (int96) {
+        // Net = incoming - outgoing
+        // Net + outgoing (getActualFlowRate) = incoming
+        int96 netFlow = getNetFlowRate();
+        int96 outFlow = getActualFlowRate();
+        int96 inFlow = netFlow + outFlow;
+
+        // If there is no incoming flow, the safe rate is zero.
+        if (inFlow <= 0) return 0;
+
+        // Cap the outflow to `OUTFLOW_CAP_PCT` of the incoming flow (scaled by `PERCENTAGE_SCALE`).
+        uint256 capped = (uint256(uint96(inFlow)) * OUTFLOW_CAP_PCT) / PERCENTAGE_SCALE;
+        return int96(uint96(capped));
+    }
+
+    /**
+     * @notice Checks if the flow rate is too high
+     * @dev This function is used to check if incoming flow rate is less than the outgoing flow rate
+     * @return True if the flow rate is too high, false otherwise
+     */
+    function isFlowRateTooHigh() public view returns (bool) {
+        return getActualFlowRate() > _getMaxFlowRate();
+    }
+
+    /**
+     * @notice Balances the flow rate if it is too high
+     * @dev This function is used to balance the flow rate to the maximum flow rate
+     * @dev Emits a FlowRateDecreased event if the flow rate is successfully decreased
+     */
+    function decreaseFlowRate() external nonReentrant {
+        int96 oldRate = getActualFlowRate();
+        int96 newRate = _getMaxFlowRate();
+
+        // if the flow rate is already below the maximum flow rate, do nothing
+        if (newRate >= oldRate) return;
+
+        _setFlowRate(newRate);
+
+        emit FlowRateDecreased(msg.sender, oldRate, newRate);
+    }
+
+    /**
+     * @notice Gets the net flow rate for the contract
+     * @dev This function is used to get the net flow rate for the contract
+     * @return The net flow rate
+     */
+    function getNetFlowRate() public view returns (int96) {
+        return fs.superToken.getNetFlowRate(address(this));
     }
 
     /**
@@ -562,10 +695,12 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
         if (_flowRate < 0) revert FLOW_RATE_NEGATIVE();
 
+        fs.cachedFlowRate = _flowRate;
+
         (int96 baselineFlowRate, int96 bonusFlowRate, int96 managerRewardFlowRate) = fs.calculateFlowRates(
             _flowRate,
             PERCENTAGE_SCALE,
-            totalTokenSupplyVoteWeight()
+            totalAllocationWeight()
         );
 
         _setFlowToManagerRewardPool(managerRewardFlowRate);
@@ -583,7 +718,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @dev Only callable by the owner or manager of the contract
      * @dev Emits a BaselineFlowRatePercentUpdated event with the old and new percentages
      */
-    function setBaselineFlowRatePercent(uint32 _baselineFlowRatePercent) external onlyOwnerOrManager nonReentrant {
+    function _setBaselineFlowRatePercent(uint32 _baselineFlowRatePercent) internal {
         if (_baselineFlowRatePercent > PERCENTAGE_SCALE) revert INVALID_PERCENTAGE();
 
         emit BaselineFlowRatePercentUpdated(fs.baselinePoolFlowRatePercent, _baselineFlowRatePercent);
@@ -595,13 +730,35 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
+     * @dev Only callable by the owner or manager of the contract
+     */
+    function setBaselineFlowRatePercent(uint32 _baselineFlowRatePercent) external onlyOwnerOrManager nonReentrant {
+        _setBaselineFlowRatePercent(_baselineFlowRatePercent);
+    }
+
+    /**
+     * @notice Sets the flow buffer multiplier
+     * @param _bufferMultiplier The new flow buffer multiplier
+     * @dev Only callable by the owner or manager of the contract
+     */
+    function setDefaultBufferMultiplier(uint256 _bufferMultiplier) external onlyOwnerOrManager nonReentrant {
+        uint256 saneUpperBound = 20;
+        if (_bufferMultiplier < 1 || _bufferMultiplier > saneUpperBound) revert INVALID_BUFFER_MULTIPLIER();
+
+        uint256 oldBufferMultiplier = fs.defaultBufferMultiplier;
+        fs.defaultBufferMultiplier = _bufferMultiplier;
+        emit BufferMultiplierUpdated(oldBufferMultiplier, _bufferMultiplier);
+    }
+
+    /**
      * @notice Sets the bonus pool quorum parameters
      * @param _quorumBps The new quorum percentage (in basis points, scaled by PERCENTAGE_SCALE).
-     * Once reached, the bonus pool will be scaled up to the maximum available flow rate. (total - baseline - manager reward)
+     * Once reached, the bonus pool will be scaled up to the maximum available flow rate.
+     * (total - baseline - manager reward)
      * Leftover flow rate when quorum is not reached will be added to the baseline pool.
      * @dev Only callable by the owner or manager of the contract
      */
-    function setBonusPoolQuorum(uint32 _quorumBps) external onlyOwnerOrManager {
+    function _setBonusPoolQuorum(uint32 _quorumBps) internal {
         if (_quorumBps > PERCENTAGE_SCALE) revert INVALID_PERCENTAGE();
 
         emit BonusPoolQuorumUpdated(fs.bonusPoolQuorumBps, _quorumBps);
@@ -609,6 +766,13 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         fs.bonusPoolQuorumBps = _quorumBps;
 
         _setFlowRate(getTotalFlowRate());
+    }
+
+    /**
+     * @dev Only callable by the owner or manager of the contract
+     */
+    function setBonusPoolQuorum(uint32 _quorumBps) external onlyOwnerOrManager {
+        _setBonusPoolQuorum(_quorumBps);
     }
 
     /**
@@ -719,24 +883,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
-     * @notice Retrieves all vote allocations for a given ERC721 tokenId
-     * @param tokenId The tokenId of the account to retrieve votes for
-     * @return allocations An array of VoteAllocation structs representing each vote made by the token
-     */
-    function getVotesForTokenId(uint256 tokenId) external view returns (VoteAllocation[] memory allocations) {
-        return fs.votes[tokenId];
-    }
-
-    /**
-     * @notice Retrieves all vote allocations for multiple ERC721 tokenIds
-     * @param tokenIds An array of tokenIds to retrieve votes for
-     * @return allocations An array of arrays, where each inner array contains VoteAllocation structs for a tokenId
-     */
-    function getVotesForTokenIds(uint256[] calldata tokenIds) public view returns (VoteAllocation[][] memory) {
-        return fs.getVotesForTokenIds(tokenIds);
-    }
-
-    /**
      * @notice Retrieves a recipient by their ID
      * @param recipientId The ID of the recipient to retrieve
      * @return recipient The FlowRecipient struct containing the recipient's information
@@ -797,14 +943,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
-     * @notice Retrieves the token vote weight
-     * @return uint256 The token vote weight
-     */
-    function tokenVoteWeight() external view returns (uint256) {
-        return fs.tokenVoteWeight;
-    }
-
-    /**
      * @notice Retrieves the SuperToken used for the flow
      * @return ISuperToken The SuperToken instance
      */
@@ -848,8 +986,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @notice Retrieves the total active vote weight for quorum purposes
      * @return uint256 The total active vote weight
      */
-    function totalActiveVoteWeight() external view returns (uint256) {
-        return fs.totalActiveVoteWeight;
+    function totalActiveAllocationWeight() external view returns (uint256) {
+        return fs.totalActiveAllocationWeight;
     }
 
     /**
@@ -878,6 +1016,24 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
+     * @notice Retrieves the allocation strategies
+     * @return IAllocationStrategy[] The allocation strategies
+     */
+    function strategies() external view returns (IAllocationStrategy[] memory) {
+        return fs.strategies;
+    }
+
+    /**
+     * @notice Retrieves the allocations for a given allocation key
+     * @param strategy The address of the allocation strategy
+     * @param allocationKey The allocation key
+     * @return Allocation[] The allocations for the given allocation key
+     */
+    function getAllocationsForKey(address strategy, uint256 allocationKey) external view returns (Allocation[] memory) {
+        return fs.allocations[strategy][allocationKey];
+    }
+
+    /**
      * @notice Upgrades all child flows to a new implementation
      */
     function upgradeAllChildFlows() external onlyOwner {
@@ -885,19 +1041,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
         for (uint256 i = 0; i < flowsToUpdate.length; i++) {
             Flow(flowsToUpdate[i]).upgradeTo(fs.flowImpl);
-        }
-    }
-
-    /**
-     * @notice Sets the sanctions oracle address for all child flows
-     * @param newSanctionsOracle The new sanctions oracle address to be set for all child flows
-     * @dev Only callable by the owner
-     */
-    function setAllChildFlowSanctionsOracle(address newSanctionsOracle) external onlyOwner {
-        address[] memory childFlows = _childFlows.values();
-
-        for (uint256 i = 0; i < childFlows.length; i++) {
-            Flow(childFlows[i]).setSanctionsOracle(newSanctionsOracle);
         }
     }
 

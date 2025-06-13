@@ -78,6 +78,8 @@ library FlowInitialization {
         fs.bonusPool = fs.superToken.createPool(_flowAddress, poolConfig);
         fs.baselinePool = fs.superToken.createPool(_flowAddress, poolConfig);
 
+        fs.defaultBufferMultiplier = 3;
+
         // Set the metadata
         fs.metadata = _metadata;
     }

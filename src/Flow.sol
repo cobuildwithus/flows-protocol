@@ -532,6 +532,96 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
+     * @notice Raise the outflow to `desiredRate`, pulling only the incremental buffer.
+     * @param desiredRate  New total outflow the caller wants to reach.
+     */
+    function increaseFlowRate(int96 desiredRate) external nonReentrant {
+        int96 oldRate = fs.cachedFlowRate;
+        if (desiredRate <= oldRate || desiredRate <= 0) revert NOT_AN_INCREASE();
+
+        int96 cap = _getMaxFlowRate();
+        if (desiredRate > cap) revert ABOVE_CAP();
+
+        uint256 oldBuf = fs.superToken.getBufferAmountByFlowRate(oldRate);
+        uint256 newBuf = fs.superToken.getBufferAmountByFlowRate(desiredRate);
+        uint256 delta = newBuf - oldBuf; // safe: desiredRate>oldRate
+
+        uint256 m = getBufferMultiplier();
+        uint256 toPull = delta * m;
+
+        if (toPull > 0) {
+            fs.superToken.transferFrom(msg.sender, address(this), toPull);
+        }
+
+        fs.cachedFlowRate = desiredRate;
+        _setFlowRate(desiredRate);
+
+        emit FlowRateIncreased(msg.sender, oldRate, desiredRate, toPull);
+    }
+
+    /**
+     * @notice Gets the buffer multiplier
+     * @dev This function is used to get the buffer multiplier
+     * @return The buffer multiplier
+     */
+    function getBufferMultiplier() public view returns (uint256) {
+        // If no child flows yet, use default multiplier 2; otherwise use configurable value.
+        return _childFlows.length() == 0 ? 2 : fs.defaultBufferMultiplier;
+    }
+
+    /**
+     * @notice Returns the maximum safe outflow rate allowed by the contract.
+     * @dev Calculates the highest outflow rate permitted, capped as a percentage of the current incoming Superfluid stream.
+     *      This ensures the contract never streams out more than a set fraction of what it receives.
+     * @return The maximum safe flow rate (int96) that can be set without exceeding the cap.
+     */
+    function maxSafeFlowRate() external view returns (int96) {
+        return _getMaxFlowRate();
+    }
+
+    function _getMaxFlowRate() internal view returns (int96) {
+        // Net = incoming - outgoing
+        // Net + outgoing (cachedFlowRate) = incoming
+        int96 netFlow = fs.superToken.getNetFlowRate(address(this));
+        int96 outFlow = fs.cachedFlowRate;
+        int96 inFlow = netFlow + outFlow;
+
+        // If there is no incoming flow, the safe rate is zero.
+        if (inFlow <= 0) return 0;
+
+        // Cap the outflow to `OUTFLOW_CAP_PCT` of the incoming flow (scaled by `PERCENTAGE_SCALE`).
+        uint256 capped = (uint256(uint96(inFlow)) * OUTFLOW_CAP_PCT) / PERCENTAGE_SCALE;
+        return int96(uint96(capped));
+    }
+
+    /**
+     * @notice Checks if the flow rate is too high
+     * @dev This function is used to check if incoming flow rate is less than the outgoing flow rate
+     * @return True if the flow rate is too high, false otherwise
+     */
+    function isFlowRateTooHigh() public view returns (bool) {
+        return fs.cachedFlowRate > _getMaxFlowRate();
+    }
+
+    /**
+     * @notice Balances the flow rate if it is too high
+     * @dev This function is used to balance the flow rate to the maximum flow rate
+     * @dev Emits a FlowRateDecreased event if the flow rate is successfully decreased
+     */
+    function decreaseFlowRate() external nonReentrant {
+        int96 oldRate = fs.cachedFlowRate;
+        int96 newRate = _getMaxFlowRate();
+
+        // if the flow rate is already below the maximum flow rate, do nothing
+        if (newRate >= oldRate) return;
+
+        fs.cachedFlowRate = newRate;
+        _setFlowRate(newRate);
+
+        emit FlowRateDecreased(msg.sender, oldRate, newRate);
+    }
+
+    /**
      * @notice Sets the address of the grants implementation contract
      * @param _flowImpl The new address of the grants implementation contract
      */
@@ -636,6 +726,20 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      */
     function setBaselineFlowRatePercent(uint32 _baselineFlowRatePercent) external onlyOwnerOrManager nonReentrant {
         _setBaselineFlowRatePercent(_baselineFlowRatePercent);
+    }
+
+    /**
+     * @notice Sets the flow buffer multiplier
+     * @param _bufferMultiplier The new flow buffer multiplier
+     * @dev Only callable by the owner or manager of the contract
+     */
+    function setDefaultBufferMultiplier(uint256 _bufferMultiplier) external onlyOwnerOrManager nonReentrant {
+        uint256 saneUpperBound = 20;
+        if (_bufferMultiplier < 1 || _bufferMultiplier > saneUpperBound) revert INVALID_BUFFER_MULTIPLIER();
+
+        uint256 oldBufferMultiplier = fs.defaultBufferMultiplier;
+        fs.defaultBufferMultiplier = _bufferMultiplier;
+        emit BufferMultiplierUpdated(oldBufferMultiplier, _bufferMultiplier);
     }
 
     /**

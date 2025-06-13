@@ -93,6 +93,15 @@ interface IFlowEvents {
 
     /// @notice Emitted when the sanctions oracle is set
     event SanctionsOracleSet(address indexed newSanctionsOracle);
+
+    /// @notice Emitted when the flow rate is balanced out
+    event FlowRateDecreased(address indexed caller, int96 oldRate, int96 newRate);
+
+    /// @notice Emitted when the flow rate is increased
+    event FlowRateIncreased(address indexed caller, int96 oldRate, int96 newRate, uint256 amountPulled);
+
+    /// @notice Emitted when the flow buffer multiplier is updated
+    event BufferMultiplierUpdated(uint256 oldBufferMultiplier, uint256 newBufferMultiplier);
 }
 
 /**
@@ -178,6 +187,15 @@ interface IFlow is IFlowEvents, IManagedFlow {
 
     /// @dev Reverts if the allocator is not the owner
     error ALLOCATION_LENGTH_MISMATCH();
+
+    /// @dev Reverts if the flow rate is not an increase
+    error NOT_AN_INCREASE();
+
+    /// @dev Reverts if the buffer multiplier is invalid
+    error INVALID_BUFFER_MULTIPLIER();
+
+    /// @dev Reverts if the flow rate is above the cap
+    error ABOVE_CAP();
 
     /// @dev Reverts if the ERC721 voting token weight is invalid (i.e., 0).
     error INVALID_ERC721_VOTING_WEIGHT();

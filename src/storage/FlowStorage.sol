@@ -90,6 +90,9 @@ interface FlowTypes {
         IChainalysisSanctionsList sanctionsOracle;
         // The allocation strategies
         IAllocationStrategy[] strategies;
+        // The flow buffer multiplier
+        // Set to 1 if no children
+        uint256 defaultBufferMultiplier;
     }
 }
 
@@ -111,6 +114,10 @@ contract FlowStorageV1 is FlowTypes {
     /// The member units to assign to each recipient of the baseline salary pool
     /// @dev Heed warning above
     uint128 public constant BASELINE_MEMBER_UNITS = 1e5;
+
+    /// The maximum flow rate percentage
+    /// @dev Heed warning above
+    uint32 public constant OUTFLOW_CAP_PCT = 99e4; // 99% on 1e6
 
     /// The enumerable list of child flow contracts
     /// @dev Heed warning above

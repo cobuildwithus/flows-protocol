@@ -93,6 +93,10 @@ interface FlowTypes {
         // The flow buffer multiplier
         // Set to 1 if no children
         uint256 defaultBufferMultiplier;
+        // mapping of child flow contract address to previous flow rate
+        mapping(address => int96) oldChildFlowRate;
+        // mapping of child flow contracts to whether we've stored the previous flow rate
+        mapping(address => bool) rateSnapshotTaken;
     }
 }
 
@@ -117,7 +121,7 @@ contract FlowStorageV1 is FlowTypes {
 
     /// The maximum flow rate percentage
     /// @dev Heed warning above
-    uint32 public constant OUTFLOW_CAP_PCT = 99e4; // 99% on 1e6
+    uint32 public constant OUTFLOW_CAP_PCT = 999e3; // 99.9% on 1e6
 
     /// The enumerable list of child flow contracts
     /// @dev Heed warning above

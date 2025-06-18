@@ -124,6 +124,10 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             allocator
         );
 
+        // store the previous flow rate for the child contract before we update any member units
+        // this is used to calculate the net increase in flow rate
+        _maybeTakeSnapshot(recipientAddress);
+
         // update member units
         fs.updateBonusMemberUnits(recipientAddress, memberUnits);
 
@@ -160,6 +164,10 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
             // When clearing out allocations, we need to decrement the total active allocation weight
             fs.totalActiveAllocationWeight -= allocations[i].allocationWeight;
+
+            // even if we're decreasing the flow rate, we need to store the previous rate
+            // so we can calculate the net increase in flow rate
+            _maybeTakeSnapshot(recipientAddress);
 
             // Calculate the new units by subtracting the delta from the current units
             uint128 newUnits = fs.bonusPool.getUnits(recipientAddress) - allocations[i].memberUnits;
@@ -313,6 +321,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
         fs.addFlowRecipient(_recipientId, recipient, _metadata);
         _childFlows.add(recipient);
+        _maybeTakeSnapshot(recipient);
 
         emit FlowRecipientCreated(
             _recipientId,
@@ -352,6 +361,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         for (uint256 i = 0; i < childFlows.length; i++) {
             if (childFlows[i] == ignoredAddress) continue;
 
+            _maybeTakeSnapshot(childFlows[i]);
+
             _childFlowsToUpdateFlowRate.add(childFlows[i]);
         }
     }
@@ -389,7 +400,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param updateCount The number of child flows to update
      */
     function _workOnChildFlowsToUpdate(uint256 updateCount) internal {
-        uint256 absoluteMax = 5; // reduced this to prevent crazy long txn times on Base
+        uint256 absoluteMax = 10; // reduced this to prevent crazy long txn times on Base
         address[] memory flowsToUpdate = _childFlowsToUpdateFlowRate.values();
 
         uint256 max = updateCount < flowsToUpdate.length ? updateCount : flowsToUpdate.length;
@@ -465,6 +476,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         if (recipientType == RecipientType.FlowContract) {
             _childFlows.remove(recipientAddress);
             _childFlowsToUpdateFlowRate.remove(recipientAddress);
+            _clearSnapshot(recipientAddress);
         }
 
         // Be careful changing event ordering here, indexer expects to delete recipient
@@ -483,28 +495,86 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     function _setChildFlowRate(address childAddress) internal {
         if (!_childFlows.contains(childAddress)) revert NOT_A_VALID_CHILD_FLOW();
 
-        (bool shouldTransfer, uint256 transferAmount, uint256 balanceRequiredToStartFlow) = fs
-            .calculateBufferAmountForChild(
-                childAddress,
-                address(this),
-                getMemberTotalFlowRate(childAddress),
-                PERCENTAGE_SCALE
-            );
-
         _childFlowsToUpdateFlowRate.remove(childAddress);
 
-        if (shouldTransfer) {
-            fs.superToken.transfer(childAddress, transferAmount);
+        int96 previousRate = _consumeSnapshot(childAddress);
+        int96 newRate = getMemberTotalFlowRate(childAddress);
+        int96 netIncrease = newRate - previousRate;
+        bool isTooHigh = IFlow(childAddress).isFlowRateTooHigh();
+
+        // If we aren't increasing:
+        if (netIncrease <= 0 || isTooHigh) {
+            // act only when lowering the rate or when the child is over-cap
+            if (netIncrease < 0 || isTooHigh) {
+                IFlow(childAddress).decreaseFlowRate();
+            }
+            return; // nothing to raise
         }
 
-        // Call setFlowRate on the child contract
-        // only set if balance of contract is greater than buffer required
-        if (balanceRequiredToStartFlow <= fs.superToken.balanceOf(childAddress)) {
-            IFlow(childAddress).setFlowRate(getMemberTotalFlowRate(childAddress));
-        } else {
-            // if after the transfer we don't have enough balance
-            // we still need to update the flow rate
+        // So the child can't make a crazy approval amount
+        // we use the buffer calculation here because we want to be safe
+        uint256 approvalAmount = getRequiredBufferAmount(netIncrease);
+
+        uint256 balance = fs.superToken.balanceOf(address(this));
+        if (balance < approvalAmount) {
+            // leave child in the queue, skip for now
             _childFlowsToUpdateFlowRate.add(childAddress);
+            fs.oldChildFlowRate[childAddress] = previousRate;
+            fs.rateSnapshotTaken[childAddress] = true;
+            return;
+        }
+
+        fs.superToken.approve(childAddress, 0);
+        bool ok;
+        fs.superToken.approve(childAddress, approvalAmount);
+
+        try IFlow(childAddress).increaseFlowRate(netIncrease) {
+            ok = true;
+        } catch {
+            ok = false;
+        }
+
+        fs.superToken.approve(childAddress, 0);
+
+        if (!ok) {
+            _childFlowsToUpdateFlowRate.add(childAddress);
+            fs.oldChildFlowRate[childAddress] = previousRate;
+            fs.rateSnapshotTaken[childAddress] = true;
+        }
+    }
+
+    /**
+     * @notice Consumes the snapshot of the child flow rate
+     * @param child The address of the child flow contract
+     * @return before The previous flow rate of the child flow contract
+     */
+    function _consumeSnapshot(address child) internal returns (int96 before) {
+        if (fs.rateSnapshotTaken[child]) {
+            before = fs.oldChildFlowRate[child];
+            _clearSnapshot(child);
+        } else {
+            // Fallback – shouldn't happen but keeps math correct
+            before = getMemberTotalFlowRate(child);
+        }
+    }
+
+    /**
+     * @notice Clears the snapshot of the child flow rate
+     * @param child The address of the child flow contract
+     */
+    function _clearSnapshot(address child) internal {
+        delete fs.oldChildFlowRate[child];
+        delete fs.rateSnapshotTaken[child];
+    }
+
+    /**
+     * @notice Takes a snapshot of the child flow rate
+     * @param child The address of the child flow contract
+     */
+    function _maybeTakeSnapshot(address child) internal {
+        if (_childFlows.contains(child) && !fs.rateSnapshotTaken[child]) {
+            fs.oldChildFlowRate[child] = fs.getMemberTotalFlowRate(child);
+            fs.rateSnapshotTaken[child] = true;
         }
     }
 
@@ -532,29 +602,31 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
     /**
      * @notice Raise the outflow to `desiredRate`, pulling only the incremental buffer.
-     * @param desiredRate  New total outflow the caller wants to reach.
+     * @param amount  New outflow to add to the current flow rate
      */
-    function increaseFlowRate(int96 desiredRate) external nonReentrant {
+    function increaseFlowRate(int96 amount) external nonReentrant {
         int96 oldRate = getActualFlowRate();
-        if (desiredRate <= oldRate || desiredRate <= 0) revert NOT_AN_INCREASE();
-
         int96 cap = _getMaxFlowRate();
-        if (desiredRate > cap) revert ABOVE_CAP();
 
-        uint256 oldBuf = fs.superToken.getBufferAmountByFlowRate(oldRate);
-        uint256 newBuf = fs.superToken.getBufferAmountByFlowRate(desiredRate);
-        uint256 delta = newBuf - oldBuf; // safe: desiredRate>oldRate
+        if (isFlowRateTooHigh()) return;
 
-        uint256 m = getBufferMultiplier();
-        uint256 toPull = delta * m;
+        int96 newRate = oldRate + amount;
+
+        // don't fail here, just cap it
+        if (newRate > cap) newRate = cap;
+
+        int96 delta = newRate - oldRate;
+        if (delta <= 0) return;
+
+        uint256 toPull = getRequiredBufferAmount(delta);
 
         if (toPull > 0) {
             fs.superToken.transferFrom(msg.sender, address(this), toPull);
         }
 
-        _setFlowRate(desiredRate);
+        _setFlowRate(newRate);
 
-        emit FlowRateIncreased(msg.sender, oldRate, desiredRate, toPull);
+        emit FlowRateIncreased(msg.sender, oldRate, newRate, toPull);
     }
 
     /**
@@ -565,6 +637,22 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     function getBufferMultiplier() public view returns (uint256) {
         // If no child flows yet, use default multiplier 2; otherwise use configurable value.
         return _childFlows.length() == 0 ? 2 : fs.defaultBufferMultiplier;
+    }
+
+    /**
+     * @notice Gets the required buffer amount for a given flow rate
+     * @param amount The flow rate to get the required buffer amount for
+     * @return The required buffer amount
+     */
+    function getRequiredBufferAmount(int96 amount) public view returns (uint256) {
+        if (amount <= 0) revert NOT_AN_INCREASE();
+
+        uint256 newBuf = fs.superToken.getBufferAmountByFlowRate(amount);
+
+        uint256 m = getBufferMultiplier();
+        uint256 toPull = (newBuf * m * 105) / 100;
+
+        return toPull;
     }
 
     /**
@@ -705,10 +793,11 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
         _setFlowToManagerRewardPool(managerRewardFlowRate);
 
+        _setChildrenAsNeedingUpdates(address(0));
+
         fs.distributeFlowToPools(address(this), bonusFlowRate, baselineFlowRate);
 
         // changing flow rate means we need to update all child flow rates
-        _setChildrenAsNeedingUpdates(address(0));
         _workOnChildFlowsToUpdate(10);
     }
 

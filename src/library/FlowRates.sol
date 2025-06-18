@@ -118,56 +118,6 @@ library FlowRates {
     }
 
     /**
-     * @notice Sets the flow rate for a child Flow contract
-     * @param childAddress The address of the child Flow contract
-     * @param parentFlowAddress The address of the flow contract
-     * @param desiredFlowRate The desired flow rate for the child contract
-     * @param percentageScale The percentage scale
-     * @return shouldTransfer Indicates if a transfer is needed to meet the buffer requirement
-     * @return transferAmount The amount of tokens required to be transferred
-     * @return requiredBufferAmount The total buffer amount required
-     */
-    function calculateBufferAmountForChild(
-        FlowTypes.Storage storage fs,
-        address childAddress,
-        address parentFlowAddress,
-        int96 desiredFlowRate,
-        uint32 percentageScale
-    ) external returns (bool shouldTransfer, uint256 transferAmount, uint256 requiredBufferAmount) {
-        if (childAddress == address(0)) revert IFlow.ADDRESS_ZERO();
-        int96 newFlowRateStreamingToChild = desiredFlowRate;
-
-        int96 currentFlowRateOutgoingFromChild = IFlow(childAddress).getActualFlowRate();
-
-        bool isFlowRateIncreasing = (newFlowRateStreamingToChild - currentFlowRateOutgoingFromChild) > 0;
-
-        if (isFlowRateIncreasing) {
-            uint256 additionalBuffer = getAdditionalBufferFromRewardPool(
-                fs,
-                childAddress,
-                desiredFlowRate,
-                percentageScale
-            );
-            uint256 newBuffer = fs.superToken.getBufferAmountByFlowRate(newFlowRateStreamingToChild) + additionalBuffer;
-            uint256 currentBuffer = fs.superToken.getBufferAmountByFlowRate(currentFlowRateOutgoingFromChild);
-            uint256 bufferIncrease = newBuffer - currentBuffer;
-
-            requiredBufferAmount = (bufferIncrease * 105) / 100;
-
-            uint256 balanceOfChild = fs.superToken.balanceOf(childAddress);
-            if (requiredBufferAmount > balanceOfChild) {
-                // careful here, do not use the transfer amount unless shouldTransfer is true
-                transferAmount = requiredBufferAmount - balanceOfChild;
-                // ensure this contract has enough balance to transfer to the child contract
-                if (transferAmount < fs.superToken.balanceOf(parentFlowAddress)) {
-                    // transfer supertoken to the new flow contract so the flow can be started
-                    shouldTransfer = true;
-                }
-            }
-        }
-    }
-
-    /**
      * @notice Retrieves the additional buffer from the reward pool
      * @param fs The storage of the Flow contract
      * @param childAddress The address of the child Flow contract

@@ -7,6 +7,7 @@ import { Flow } from "../../src/Flow.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { TestToken } from "@superfluid-finance/ethereum-contracts/contracts/utils/TestToken.sol";
 import { console } from "forge-std/console.sol";
+import { RewardPool } from "../../src/token-issuance/RewardPool.sol";
 
 contract VotingFlowTest is ERC721FlowTest {
     function setUp() public override {
@@ -301,13 +302,15 @@ contract VotingFlowTest is ERC721FlowTest {
             address(0),
             strategies
         );
+
+        Flow(flowRecipient).setManagerRewardFlowRatePercent(0);
         vm.stopPrank();
 
         int96 incoming = flow.getMemberTotalFlowRate(flowRecipient);
 
         // the total flow rate should be greater than 0 because flows are automatically started now
         int96 outgoing = Flow(flowRecipient).getTotalFlowRate();
-        assertEq(outgoing, incoming, "Initial incoming and outgoing flow rates should match");
+        assertEq(outgoing, (incoming * 999) / 1000, "Initial incoming and outgoing flow rates should match");
 
         bytes32[] memory recipientIds = new bytes32[](1);
         uint32[] memory percentAllocations = new uint32[](1);
@@ -323,7 +326,15 @@ contract VotingFlowTest is ERC721FlowTest {
         int96 incomingFlowRate = flow.getMemberTotalFlowRate(flowRecipient);
 
         int96 outgoingFlowRate = Flow(flowRecipient).getTotalFlowRate();
-        assertEq(outgoingFlowRate, incomingFlowRate, "After voting, incoming and outgoing flow rates should match");
+
+        console.log("incomingFlowRate", incomingFlowRate);
+        console.log("outgoingFlowRate", outgoingFlowRate);
+
+        assertEq(
+            outgoingFlowRate,
+            (incomingFlowRate * 999) / 1000, //1% buffer
+            "After voting, incoming and outgoing flow rates should match"
+        );
     }
 
     function testClearVotesAllocationsForFlows() public {

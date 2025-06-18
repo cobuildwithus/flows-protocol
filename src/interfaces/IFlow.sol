@@ -194,9 +194,6 @@ interface IFlow is IFlowEvents, IManagedFlow {
     /// @dev Reverts if the buffer multiplier is invalid
     error INVALID_BUFFER_MULTIPLIER();
 
-    /// @dev Reverts if the flow rate is above the cap
-    error ABOVE_CAP();
-
     /// @dev Reverts if the ERC721 voting token weight is invalid (i.e., 0).
     error INVALID_ERC721_VOTING_WEIGHT();
 
@@ -287,6 +284,36 @@ interface IFlow is IFlowEvents, IManagedFlow {
      * @return The actual flow rate for the Superfluid pool
      */
     function getActualFlowRate() external view returns (int96);
+
+    /**
+     * @notice Checks if the flow rate is too high
+     * @return True if the flow rate is too high, false otherwise
+     */
+    function isFlowRateTooHigh() external view returns (bool);
+
+    /**
+     * @notice Decreases the flow rate for the Superfluid pool
+     */
+    function decreaseFlowRate() external;
+
+    /**
+     * @notice Gets the max safe flow rate for the Superfluid pool
+     * @return The max safe flow rate for the Superfluid pool
+     */
+    function maxSafeFlowRate() external view returns (int96);
+
+    /**
+     * @notice Gets the required buffer amount for a given flow rate
+     * @param desiredRate The flow rate to get the required buffer amount for
+     * @return The required buffer amount
+     */
+    function getRequiredBufferAmount(int96 desiredRate) external view returns (uint256);
+
+    /**
+     * @notice Raises the flow rate for the Superfluid pool
+     * @param desiredRate The desired flow rate
+     */
+    function increaseFlowRate(int96 desiredRate) external;
 
     /**
      * @notice Sets the manager reward pool for the flow contract

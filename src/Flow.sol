@@ -453,16 +453,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     ) internal virtual returns (address);
 
     /**
-     * @notice Virtual function to be called after updating the reward pool flow
-     * @dev This function can be overridden in derived contracts to implement custom logic
-     * @param newFlowRate The new flow rate to the reward pool
-     */
-    function _afterRewardPoolFlowUpdate(int96 newFlowRate) internal virtual {
-        // Default implementation does nothing
-        // Derived contracts can override this function to add custom logic
-    }
-
-    /**
      * @notice Removes a recipient for receiving funds
      * @param recipientId The ID of the recipient to be approved
      * @dev Only callable by the manager of the contract
@@ -481,9 +471,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         // when memberUnits is set to 0
         emit RecipientRemoved(recipientAddress, recipientId);
 
-        int96 totalFlowRate = getTotalFlowRate();
         fs.removeFromPools(recipientAddress);
-        _setFlowRate(totalFlowRate);
+        _setFlowRate(getTotalFlowRate());
     }
 
     /**
@@ -698,7 +687,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         if (fs.managerRewardPool == address(0)) return;
 
         fs.setFlowToManagerRewardPool(address(this), getManagerRewardPoolFlowRate(), _newManagerRewardFlowRate);
-        _afterRewardPoolFlowUpdate(_newManagerRewardFlowRate);
     }
 
     /**

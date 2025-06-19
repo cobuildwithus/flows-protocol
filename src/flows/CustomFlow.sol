@@ -107,12 +107,6 @@ contract CustomFlow is ICustomFlow, Flow {
     }
 
     /**
-     * @notice Function to be called after updating the reward pool flow rate in Flow.sol
-     * @dev This is used to update the rewards for ERC20 curators automatically when the flow rate changes
-     */
-    function _afterRewardPoolFlowUpdate(int96 newFlowRate) internal virtual override {}
-
-    /**
      * @notice Function to calculate the total vote weight of all tokens used for voting
      * @dev This function can be overridden in derived contracts to implement custom logic
      * @return uint256 The total vote weight of all tokens used for voting

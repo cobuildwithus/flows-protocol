@@ -16,7 +16,6 @@ library FlowRates {
     /**
      * @notice Calculates the bonus flow rate based on quorum and active votes
      * @param fs The storage of the Flow contract
-     * @param _flowRate The desired total flow rate for the flow contract
      * @param _totalAllocationWeight The total token supply vote weight
      * @param _baselineFlowRate The baseline flow rate already calculated
      * @param _remainingFlowRate The remaining flow rate after manager reward deduction
@@ -25,7 +24,6 @@ library FlowRates {
      */
     function _calculateBonusFlowRate(
         FlowTypes.Storage storage fs,
-        int96 _flowRate,
         uint256 _totalAllocationWeight,
         int96 _baselineFlowRate,
         int96 _remainingFlowRate
@@ -106,7 +104,6 @@ library FlowRates {
 
         (bonusFlowRate, leftoverFlowRate) = _calculateBonusFlowRate(
             fs,
-            _flowRate,
             _totalAllocationWeight,
             baselineFlowRate,
             remainingFlowRate

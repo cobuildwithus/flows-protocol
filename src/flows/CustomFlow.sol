@@ -3,13 +3,13 @@ pragma solidity ^0.8.28;
 
 import { Flow } from "../Flow.sol";
 import { ICustomFlow } from "../interfaces/IFlow.sol";
-import { FlowVotes } from "../library/FlowVotes.sol";
+import { FlowAllocations } from "../library/FlowAllocations.sol";
 import { CustomFlowLibrary } from "../library/CustomFlowLibrary.sol";
 import { IChainalysisSanctionsList } from "../interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 import { IAllocationStrategy } from "../interfaces/IAllocationStrategy.sol";
 
 contract CustomFlow is ICustomFlow, Flow {
-    using FlowVotes for Storage;
+    using FlowAllocations for Storage;
     using CustomFlowLibrary for Storage;
 
     constructor() payable initializer {}

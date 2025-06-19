@@ -5,7 +5,7 @@ import { FlowStorageV1 } from "./storage/FlowStorage.sol";
 import { IFlow } from "./interfaces/IFlow.sol";
 import { IAllocationStrategy } from "./interfaces/IAllocationStrategy.sol";
 import { FlowRecipients } from "./library/FlowRecipients.sol";
-import { FlowVotes } from "./library/FlowVotes.sol";
+import { FlowAllocations } from "./library/FlowAllocations.sol";
 import { FlowPools } from "./library/FlowPools.sol";
 import { FlowRates } from "./library/FlowRates.sol";
 import { FlowInitialization } from "./library/FlowInitialization.sol";
@@ -22,7 +22,7 @@ import { IChainalysisSanctionsList } from "./interfaces/external/chainalysis/ICh
 abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, FlowStorageV1 {
     using SuperTokenV1Library for ISuperToken;
     using FlowRecipients for Storage;
-    using FlowVotes for Storage;
+    using FlowAllocations for Storage;
     using FlowRates for Storage;
     using FlowInitialization for Storage;
     using FlowPools for Storage;

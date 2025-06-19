@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 import { FlowTypes } from "../storage/FlowStorage.sol";
 import { IFlow } from "../interfaces/IFlow.sol";
 
-library FlowVotes {
+library FlowAllocations {
     function setAllocation(
         FlowTypes.Storage storage fs,
         bytes32 recipientId,

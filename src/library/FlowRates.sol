@@ -284,6 +284,31 @@ library FlowRates {
     }
 
     /**
+     * @notice Takes a snapshot of the child flow rate
+     * @param child The address of the child flow contract
+     */
+    function takeFlowRateSnapshot(FlowTypes.Storage storage fs, address child) public {
+        fs.oldChildFlowRate[child] = getMemberTotalFlowRate(fs, child);
+        fs.rateSnapshotTaken[child] = true;
+    }
+
+    /**
+     * @notice Sets the flow buffer multiplier
+     * @param _bufferMultiplier The new flow buffer multiplier
+     * @dev Only callable by the owner or manager of the contract
+     */
+    function setDefaultBufferMultiplier(
+        FlowTypes.Storage storage fs,
+        uint256 _bufferMultiplier
+    ) public returns (uint256 oldBufferMultiplier) {
+        uint256 saneUpperBound = 20;
+        if (_bufferMultiplier < 1 || _bufferMultiplier > saneUpperBound) revert IFlow.INVALID_BUFFER_MULTIPLIER();
+
+        oldBufferMultiplier = fs.defaultBufferMultiplier;
+        fs.defaultBufferMultiplier = _bufferMultiplier;
+    }
+
+    /**
      * @notice Multiplies an amount by a scaled percentage
      *  @param amount Amount to get `scaledPercentage` of
      *  @param scaledPercent Percent scaled by PERCENTAGE_SCALE

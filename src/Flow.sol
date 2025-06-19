@@ -549,8 +549,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      */
     function _maybeTakeFlowRateSnapshot(address child) internal {
         if (_childFlows.contains(child) && !fs.rateSnapshotTaken[child]) {
-            fs.oldChildFlowRate[child] = fs.getMemberTotalFlowRate(child);
-            fs.rateSnapshotTaken[child] = true;
+            fs.takeFlowRateSnapshot(child);
         }
     }
 
@@ -781,11 +780,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @dev Only callable by the owner or manager of the contract
      */
     function setDefaultBufferMultiplier(uint256 _bufferMultiplier) external onlyOwnerOrManager nonReentrant {
-        uint256 saneUpperBound = 20;
-        if (_bufferMultiplier < 1 || _bufferMultiplier > saneUpperBound) revert INVALID_BUFFER_MULTIPLIER();
-
-        uint256 oldBufferMultiplier = fs.defaultBufferMultiplier;
-        fs.defaultBufferMultiplier = _bufferMultiplier;
+        uint256 oldBufferMultiplier = fs.setDefaultBufferMultiplier(_bufferMultiplier);
         emit BufferMultiplierUpdated(oldBufferMultiplier, _bufferMultiplier);
     }
 

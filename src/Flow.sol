@@ -513,7 +513,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
         // So the child can't make a crazy approval amount
         // we use the buffer calculation here because we want to be safe
-        uint256 approvalAmount = getRequiredBufferAmount(netIncrease);
+        uint256 approvalAmount = fs.getRequiredBufferAmount(netIncrease, getBufferMultiplier());
 
         uint256 balance = fs.superToken.balanceOf(address(this));
         if (balance < approvalAmount) {
@@ -581,20 +581,16 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param amount  New outflow to add to the current flow rate
      */
     function increaseFlowRate(int96 amount) external nonReentrant {
-        int96 oldRate = getActualFlowRate();
-        int96 cap = getMaxSafeFlowRate();
-
         if (isFlowRateTooHigh()) return;
 
-        int96 newRate = oldRate + amount;
+        (uint256 toPull, int96 oldRate, int96 newRate, int96 delta) = fs.increaseFlowRate(
+            address(this),
+            amount,
+            getBufferMultiplier(),
+            PERCENTAGE_SCALE
+        );
 
-        // don't fail here, just cap it
-        if (newRate > cap) newRate = cap;
-
-        int96 delta = newRate - oldRate;
         if (delta <= 0) return;
-
-        uint256 toPull = getRequiredBufferAmount(delta);
 
         if (toPull > 0) {
             fs.superToken.transferFrom(msg.sender, address(this), toPull);
@@ -621,14 +617,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @return The required buffer amount
      */
     function getRequiredBufferAmount(int96 amount) public view returns (uint256) {
-        if (amount <= 0) revert NOT_AN_INCREASE();
-
-        uint256 newBuf = fs.superToken.getBufferAmountByFlowRate(amount);
-
-        uint256 m = getBufferMultiplier();
-        uint256 toPull = (newBuf * m * 105) / 100;
-
-        return toPull;
+        return fs.getRequiredBufferAmount(amount, getBufferMultiplier());
     }
 
     /**

@@ -241,6 +241,49 @@ library FlowRates {
     }
 
     /**
+     * @notice Gets the required buffer amount for a given flow rate
+     * @param amount The flow rate to get the required buffer amount for
+     * @return The required buffer amount
+     */
+    function getRequiredBufferAmount(
+        FlowTypes.Storage storage fs,
+        int96 amount,
+        uint256 multiplier
+    ) public view returns (uint256) {
+        if (amount <= 0) revert IFlow.NOT_AN_INCREASE();
+
+        uint256 newBuf = fs.superToken.getBufferAmountByFlowRate(amount);
+
+        uint256 toPull = (newBuf * multiplier * 105) / 100;
+
+        return toPull;
+    }
+
+    /**
+     * @notice Raise the outflow to `desiredRate`, pulling only the incremental buffer.
+     * @param amount  New outflow to add to the current flow rate
+     */
+    function increaseFlowRate(
+        FlowTypes.Storage storage fs,
+        address flowAddress,
+        int96 amount,
+        uint256 multiplier,
+        uint256 percentageScale
+    ) public returns (uint256 toPull, int96 oldRate, int96 newRate, int96 delta) {
+        oldRate = getActualFlowRate(fs, flowAddress);
+        int96 cap = getMaxFlowRate(fs, flowAddress, percentageScale);
+
+        newRate = oldRate + amount;
+
+        // don't fail here, just cap it
+        if (newRate > cap) newRate = cap;
+
+        delta = newRate - oldRate;
+
+        toPull = getRequiredBufferAmount(fs, delta, multiplier);
+    }
+
+    /**
      * @notice Multiplies an amount by a scaled percentage
      *  @param amount Amount to get `scaledPercentage` of
      *  @param scaledPercent Percent scaled by PERCENTAGE_SCALE

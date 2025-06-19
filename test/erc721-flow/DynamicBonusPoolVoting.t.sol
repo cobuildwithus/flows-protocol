@@ -160,9 +160,6 @@ contract DynamicBonusPoolVotingTest is ERC721FlowTest {
         int96 bonusExpected = bonusExpectedFull / 2;
         int96 baselineAdjusted = leftover - bonusExpected;
 
-        console.log("Bonus expected (half quorum):", uint256(uint96(bonusExpected)));
-        console.log("Baseline adjusted (leftover - bonus expected):", uint256(uint96(baselineAdjusted)));
-
         // Check sum baseline + bonus + manager equals total
         assertApproxEqRel(baseline + bonus + managerFlow, total, 1e14, "sum baseline+bonus+manager= total");
 

@@ -97,6 +97,8 @@ interface FlowTypes {
         mapping(address => int96) oldChildFlowRate;
         // mapping of child flow contracts to whether we've stored the previous flow rate
         mapping(address => bool) rateSnapshotTaken;
+        // The outflow cap percentage
+        uint32 outflowCapPct;
     }
 }
 
@@ -118,10 +120,6 @@ contract FlowStorageV1 is FlowTypes {
     /// The member units to assign to each recipient of the baseline salary pool
     /// @dev Heed warning above
     uint128 public constant BASELINE_MEMBER_UNITS = 1e5;
-
-    /// The maximum flow rate percentage
-    /// @dev Heed warning above
-    uint32 public constant OUTFLOW_CAP_PCT = 999e3; // 99.9% on 1e6
 
     /// The enumerable list of child flow contracts
     /// @dev Heed warning above

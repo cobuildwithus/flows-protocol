@@ -56,7 +56,7 @@ contract FlowRebalanceTest is ERC721FlowTest {
     }
 
     function _computeMaxSafeRate() internal view returns (int96) {
-        return flow.maxSafeFlowRate();
+        return flow.getMaxSafeFlowRate();
     }
 
     /* -------------------------------------------------------------------------- */

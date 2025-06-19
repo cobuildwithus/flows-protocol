@@ -79,6 +79,7 @@ library FlowInitialization {
         fs.baselinePool = fs.superToken.createPool(_flowAddress, poolConfig);
 
         fs.defaultBufferMultiplier = 3;
+        fs.outflowCapPct = 999e3; // 99.9% on 1e6
 
         // Set the metadata
         fs.metadata = _metadata;

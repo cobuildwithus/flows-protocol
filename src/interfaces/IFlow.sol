@@ -300,7 +300,7 @@ interface IFlow is IFlowEvents, IManagedFlow {
      * @notice Gets the max safe flow rate for the Superfluid pool
      * @return The max safe flow rate for the Superfluid pool
      */
-    function maxSafeFlowRate() external view returns (int96);
+    function getMaxSafeFlowRate() external view returns (int96);
 
     /**
      * @notice Gets the required buffer amount for a given flow rate

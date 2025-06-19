@@ -582,7 +582,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      */
     function increaseFlowRate(int96 amount) external nonReentrant {
         int96 oldRate = getActualFlowRate();
-        int96 cap = _getMaxFlowRate();
+        int96 cap = getMaxSafeFlowRate();
 
         if (isFlowRateTooHigh()) return;
 
@@ -637,23 +637,8 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      *      This ensures the contract never streams out more than a set fraction of what it receives.
      * @return The maximum safe flow rate (int96) that can be set without exceeding the cap.
      */
-    function maxSafeFlowRate() external view returns (int96) {
-        return _getMaxFlowRate();
-    }
-
-    function _getMaxFlowRate() internal view returns (int96) {
-        // Net = incoming - outgoing
-        // Net + outgoing (getActualFlowRate) = incoming
-        int96 netFlow = getNetFlowRate();
-        int96 outFlow = getActualFlowRate();
-        int96 inFlow = netFlow + outFlow;
-
-        // If there is no incoming flow, the safe rate is zero.
-        if (inFlow <= 0) return 0;
-
-        // Cap the outflow to `OUTFLOW_CAP_PCT` of the incoming flow (scaled by `PERCENTAGE_SCALE`).
-        uint256 capped = (uint256(uint96(inFlow)) * OUTFLOW_CAP_PCT) / PERCENTAGE_SCALE;
-        return int96(uint96(capped));
+    function getMaxSafeFlowRate() public view returns (int96) {
+        return fs.getMaxFlowRate(address(this), PERCENTAGE_SCALE);
     }
 
     /**
@@ -662,7 +647,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @return True if the flow rate is too high, false otherwise
      */
     function isFlowRateTooHigh() public view returns (bool) {
-        return getActualFlowRate() > _getMaxFlowRate();
+        return getActualFlowRate() > getMaxSafeFlowRate();
     }
 
     /**
@@ -672,7 +657,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      */
     function decreaseFlowRate() external nonReentrant {
         int96 oldRate = getActualFlowRate();
-        int96 newRate = _getMaxFlowRate();
+        int96 newRate = getMaxSafeFlowRate();
 
         // if the flow rate is already below the maximum flow rate, do nothing
         if (newRate >= oldRate) return;
@@ -688,7 +673,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @return The net flow rate
      */
     function getNetFlowRate() public view returns (int96) {
-        return fs.superToken.getNetFlowRate(address(this));
+        return fs.getNetFlowRate(address(this));
     }
 
     /**

@@ -125,7 +125,7 @@ library FlowRates {
      * @param flowAddress The address of the flow contract
      * @return actualFlowRate The actual flow rate for the Flow contract
      */
-    function getActualFlowRate(FlowTypes.Storage storage fs, address flowAddress) external view returns (int96) {
+    function getActualFlowRate(FlowTypes.Storage storage fs, address flowAddress) public view returns (int96) {
         return
             fs.superToken.getFlowRate(flowAddress, fs.managerRewardPool) +
             fs.superToken.getFlowDistributionFlowRate(flowAddress, fs.baselinePool) +
@@ -205,6 +205,39 @@ library FlowRates {
     function clearFlowRateSnapshot(FlowTypes.Storage storage fs, address child) public {
         delete fs.oldChildFlowRate[child];
         delete fs.rateSnapshotTaken[child];
+    }
+
+    /**
+     * @notice Gets the net flow rate for the contract
+     * @dev This function is used to get the net flow rate for the contract
+     * @return The net flow rate
+     */
+    function getNetFlowRate(FlowTypes.Storage storage fs, address flowAddress) public view returns (int96) {
+        return fs.superToken.getNetFlowRate(flowAddress);
+    }
+
+    /**
+     * @notice Retrieves the maximum flow rate for the Flow contract
+     * @param fs The storage of the Flow contract
+     * @return maxFlowRate The maximum flow rate for the Flow contract
+     */
+    function getMaxFlowRate(
+        FlowTypes.Storage storage fs,
+        address flowAddress,
+        uint256 percentageScale
+    ) public view returns (int96 maxFlowRate) {
+        // Net = incoming - outgoing
+        // Net + outgoing (getActualFlowRate) = incoming
+        int96 netFlow = getNetFlowRate(fs, flowAddress);
+        int96 outFlow = getActualFlowRate(fs, flowAddress);
+        int96 inFlow = netFlow + outFlow;
+
+        // If there is no incoming flow, the safe rate is zero.
+        if (inFlow <= 0) return 0;
+
+        // Cap the outflow to `outflowCapPct` of the incoming flow (scaled by `PERCENTAGE_SCALE`).
+        uint256 capped = (uint256(uint96(inFlow)) * fs.outflowCapPct) / percentageScale;
+        return int96(uint96(capped));
     }
 
     /**

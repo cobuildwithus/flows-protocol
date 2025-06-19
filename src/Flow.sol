@@ -351,17 +351,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @dev Called when total member units change (new flow added, flow removed, new vote added)
      */
     function _setChildrenAsNeedingUpdates(address ignoredAddress) internal {
-        // warning - values() copies entire array into memory, could run out of gas for huge arrays
-        // must keep child flows below ~500 per o1 estimates
-        address[] memory childFlows = _childFlows.values();
-
-        for (uint256 i = 0; i < childFlows.length; i++) {
-            if (childFlows[i] == ignoredAddress) continue;
-
-            _maybeTakeFlowRateSnapshot(childFlows[i]);
-
-            _childFlowsToUpdateFlowRate.add(childFlows[i]);
-        }
+        fs.setChildrenAsNeedingUpdates(_childFlows, _childFlowsToUpdateFlowRate, ignoredAddress);
     }
 
     /**
@@ -487,9 +477,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param child The address of the child flow contract
      */
     function _maybeTakeFlowRateSnapshot(address child) internal {
-        if (_childFlows.contains(child) && !fs.rateSnapshotTaken[child]) {
-            fs.takeFlowRateSnapshot(child);
-        }
+        fs.maybeTakeFlowRateSnapshot(_childFlows, child);
     }
 
     /**

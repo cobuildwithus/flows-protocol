@@ -393,6 +393,49 @@ library FlowRates {
     }
 
     /**
+     * @notice Takes a snapshot of the child flow rate
+     * @param fs The storage of the Flow contract
+     * @param _childFlows The set of child Flow contracts
+     * @param child The address of the child flow contract
+     */
+    function maybeTakeFlowRateSnapshot(
+        FlowTypes.Storage storage fs,
+        EnumerableSet.AddressSet storage _childFlows,
+        address child
+    ) public {
+        if (_childFlows.contains(child) && !fs.rateSnapshotTaken[child]) {
+            takeFlowRateSnapshot(fs, child);
+        }
+    }
+
+    /**
+     * @notice Sets all the child flow rates
+     * @param fs The storage of the Flow contract
+     * @param _childFlows The set of child Flow contracts
+     * @param _childFlowsToUpdateFlowRate The set of child Flow contracts to update the flow rate for
+     * @param ignoredAddress The address of the child flow to ignore. Useful when adding a new flow recipient
+     * @dev Called when total member units change (new flow added, flow removed, new vote added)
+     */
+    function setChildrenAsNeedingUpdates(
+        FlowTypes.Storage storage fs,
+        EnumerableSet.AddressSet storage _childFlows,
+        EnumerableSet.AddressSet storage _childFlowsToUpdateFlowRate,
+        address ignoredAddress
+    ) public {
+        // warning - values() copies entire array into memory, could run out of gas for huge arrays
+        // must keep child flows below ~500 per o1 estimates
+        address[] memory childFlows = _childFlows.values();
+
+        for (uint256 i = 0; i < childFlows.length; i++) {
+            if (childFlows[i] == ignoredAddress) continue;
+
+            maybeTakeFlowRateSnapshot(fs, _childFlows, childFlows[i]);
+
+            _childFlowsToUpdateFlowRate.add(childFlows[i]);
+        }
+    }
+
+    /**
      * @notice Multiplies an amount by a scaled percentage
      *  @param amount Amount to get `scaledPercentage` of
      *  @param scaledPercent Percent scaled by PERCENTAGE_SCALE

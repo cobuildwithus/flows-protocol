@@ -387,19 +387,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param updateCount The number of child flows to update
      */
     function _workOnChildFlowsToUpdate(uint256 updateCount) internal {
-        uint256 absoluteMax = 10; // reduced this to prevent crazy long txn times on Base
-        address[] memory flowsToUpdate = _childFlowsToUpdateFlowRate.values();
-
-        uint256 max = updateCount < flowsToUpdate.length ? updateCount : flowsToUpdate.length;
-
-        if (max > absoluteMax) {
-            max = absoluteMax;
-        }
-
-        for (uint256 i = 0; i < max; i++) {
-            address childFlow = flowsToUpdate[i];
-            _setChildFlowRate(childFlow);
-        }
+        fs.workOnChildFlowsToUpdate(_childFlowsToUpdateFlowRate, _childFlows, address(this), updateCount);
     }
 
     /**

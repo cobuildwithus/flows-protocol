@@ -436,6 +436,34 @@ library FlowRates {
     }
 
     /**
+     * @notice Internal function to work on the child flows that need their flow rate updated
+     * @param fs The storage of the Flow contract
+     * @param _childFlowsToUpdateFlowRate The set of child Flow contracts to update the flow rate for
+     * @param updateCount The number of child flows to update
+     */
+    function workOnChildFlowsToUpdate(
+        FlowTypes.Storage storage fs,
+        EnumerableSet.AddressSet storage _childFlowsToUpdateFlowRate,
+        EnumerableSet.AddressSet storage _childFlows,
+        address flowAddress,
+        uint256 updateCount
+    ) public {
+        uint256 absoluteMax = 10; // reduced this to prevent crazy long txn times on Base
+        address[] memory flowsToUpdate = _childFlowsToUpdateFlowRate.values();
+
+        uint256 max = updateCount < flowsToUpdate.length ? updateCount : flowsToUpdate.length;
+
+        if (max > absoluteMax) {
+            max = absoluteMax;
+        }
+
+        for (uint256 i = 0; i < max; i++) {
+            address childFlow = flowsToUpdate[i];
+            setChildFlowRate(fs, childFlow, flowAddress, _childFlows, _childFlowsToUpdateFlowRate);
+        }
+    }
+
+    /**
      * @notice Multiplies an amount by a scaled percentage
      *  @param amount Amount to get `scaledPercentage` of
      *  @param scaledPercent Percent scaled by PERCENTAGE_SCALE

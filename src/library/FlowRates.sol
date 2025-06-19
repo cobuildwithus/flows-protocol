@@ -3,11 +3,11 @@ pragma solidity ^0.8.28;
 
 import { FlowTypes } from "../storage/FlowStorage.sol";
 import { IFlow } from "../interfaces/IFlow.sol";
-import { IRewardPool } from "../interfaces/IRewardPool.sol";
 
 import { SuperTokenV1Library } from "@superfluid-finance/ethereum-contracts/contracts/apps/SuperTokenV1Library.sol";
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
 library FlowRates {
     using SuperTokenV1Library for ISuperToken;
@@ -473,14 +473,7 @@ library FlowRates {
         FlowTypes.Storage storage fs,
         uint256 amount,
         uint256 scaledPercent
-    ) public view returns (uint256 scaledAmount) {
-        uint256 percentageScale = fs.PERCENTAGE_SCALE;
-        // use assembly to bypass checking for overflow & division by 0
-        // scaledPercent has been validated to be < PERCENTAGE_SCALE)
-        // & PERCENTAGE_SCALE will never be 0
-        assembly {
-            /* eg (100 * 2*1e4) / (1e6) */
-            scaledAmount := div(mul(amount, scaledPercent), percentageScale)
-        }
+    ) public view returns (uint256) {
+        return Math.mulDiv(amount, scaledPercent, fs.PERCENTAGE_SCALE);
     }
 }

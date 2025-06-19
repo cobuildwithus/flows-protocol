@@ -130,7 +130,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
         // if recipient is a flow contract, set the flow rate for the child contract
         // note - we now do this post-voting to avoid redundant setFlowRate calls on children
-        // in _afterVotesCast
+        // in _afterAllocationSet
 
         emit AllocationSet(recipientId, strategy, allocationKey, memberUnits, bps, totalWeight);
     }
@@ -219,7 +219,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             }
         }
 
-        // update member units for previous votes
+        // update member units for previous allocations
         childFlowsToUpdate += _clearPreviousAllocations(strategy, allocationKey);
 
         // update total active vote weight
@@ -286,7 +286,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         emit RecipientCreated(_recipientId, fs.recipients[_recipientId], msg.sender);
 
         fs.updateBaselineMemberUnits(recipientAddress, BASELINE_MEMBER_UNITS);
-        // 10 units for each recipient in case there are no votes yet, everyone will split the bonus salary
+        // 10 units for each recipient in case there are no allocations yet, everyone will split the bonus salary
         fs.updateBonusMemberUnits(recipientAddress, 10);
 
         return (_recipientId, recipientAddress);
@@ -332,7 +332,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
         // do this after so member units based indexer can work
         // for indexer, need to connect tcr item in database to recipient BEFORE handling member units
-        // 10 bonus units for each recipient in case there are no votes yet, everyone will split the bonus salary
+        // 10 bonus units for each recipient in case there are no allocations yet, everyone will split the bonus salary
         fs.connectAndInitializeFlowRecipient(recipient, BASELINE_MEMBER_UNITS, 10);
 
         // set the flow rate for the child contract
@@ -355,14 +355,14 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
-     * @notice Internal function to be called after votes are cast
-     * @param recipientIds - the recipientIds that were voted for
+     * @notice Internal function to be called after allocations are set
+     * @param recipientIds - the recipientIds that were allocated for
      * @param childFlowsToUpdate - the number of child flows to update
      * @param shouldUpdateFlowRate - whether to update the flow rate
-     * Useful for saving gas when there are no new votes. If there are new member units being added however,
+     * Useful for saving gas when there are no new allocations. If there are new member units being added however,
      * we want to update all child flow rates to ensure that the correct flow rates are set
      */
-    function _afterVotesCast(
+    function _afterAllocationSet(
         bytes32[] memory recipientIds,
         uint256 childFlowsToUpdate,
         bool shouldUpdateFlowRate

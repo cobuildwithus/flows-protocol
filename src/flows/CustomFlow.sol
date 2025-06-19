@@ -78,7 +78,7 @@ contract CustomFlow is ICustomFlow, Flow {
             }
         }
 
-        _afterVotesCast(recipientIds, totalFlowsToUpdate, shouldUpdateFlowRate);
+        _afterAllocationSet(recipientIds, totalFlowsToUpdate, shouldUpdateFlowRate);
     }
 
     /**

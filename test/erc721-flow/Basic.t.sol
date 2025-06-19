@@ -347,6 +347,10 @@ contract BasicCustomFlowTest is ERC721FlowTest {
             "Bonus flow rate should be the remainder"
         );
 
+        // set manager to 0 first
+        vm.prank(flow.owner());
+        flow.setManagerRewardFlowRatePercent(0);
+
         // Test setting percentage to 100%
         uint32 percent = flow.PERCENTAGE_SCALE();
         vm.prank(flow.owner());

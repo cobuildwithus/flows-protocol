@@ -167,8 +167,15 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             // so we can calculate the net increase in flow rate
             _maybeTakeFlowRateSnapshot(recipientAddress);
 
-            // Calculate the new units by subtracting the delta from the current units
-            uint128 newUnits = fs.bonusPool.getUnits(recipientAddress) - allocations[i].memberUnits;
+            uint128 current = fs.bonusPool.getUnits(recipientAddress);
+            uint128 toSubtract = allocations[i].memberUnits;
+
+            if (current < toSubtract) {
+                // units were already reduced elsewhere; treat it as if the whole slice is already gone
+                toSubtract = current;
+                allocations[i].memberUnits = current;
+            }
+            uint128 newUnits = current - toSubtract;
 
             // Update the member units in the pool
             fs.updateBonusMemberUnits(recipientAddress, newUnits);

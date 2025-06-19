@@ -304,10 +304,10 @@ interface IFlow is IFlowEvents, IManagedFlow {
 
     /**
      * @notice Gets the required buffer amount for a given flow rate
-     * @param desiredRate The flow rate to get the required buffer amount for
+     * @param amount The flow rate to get the required buffer amount for
      * @return The required buffer amount
      */
-    function getRequiredBufferAmount(int96 desiredRate) external view returns (uint256);
+    function getRequiredBufferAmount(int96 amount) external view returns (uint256);
 
     /**
      * @notice Raises the flow rate for the Superfluid pool

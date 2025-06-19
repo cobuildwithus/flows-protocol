@@ -320,6 +320,7 @@ library FlowRates {
     function setChildFlowRate(
         FlowTypes.Storage storage fs,
         address childAddress,
+        address flowAddress,
         EnumerableSet.AddressSet storage _childFlows,
         EnumerableSet.AddressSet storage _childFlowsToUpdateFlowRate
     ) public {
@@ -342,11 +343,14 @@ library FlowRates {
         }
 
         // So the child can't make a crazy approval amount
-        // we use the buffer calculation here because we want to be safe
-        uint256 approvalAmount = getRequiredBufferAmount(fs, netIncrease, getBufferMultiplier(fs, _childFlows));
+        uint256 safeApprovalAmount = getRequiredBufferAmount(fs, netIncrease, getBufferMultiplier(fs, _childFlows));
+        uint256 approvalAmount = IFlow(childAddress).getRequiredBufferAmount(netIncrease);
+        bool isChildApprovalTooHigh = safeApprovalAmount * 5 < approvalAmount;
 
-        uint256 balance = fs.superToken.balanceOf(address(this));
-        if (balance < approvalAmount) {
+        // ensure the parent has enough balance to cover the safe approval amount
+        bool insufficientBalance = fs.superToken.balanceOf(flowAddress) < safeApprovalAmount;
+
+        if (insufficientBalance || isChildApprovalTooHigh) {
             // leave child in the queue, skip for now
             _childFlowsToUpdateFlowRate.add(childAddress);
             fs.oldChildFlowRate[childAddress] = previousRate;

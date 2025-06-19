@@ -479,7 +479,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param childAddress The address of the child Flow contract
      */
     function _setChildFlowRate(address childAddress) internal {
-        fs.setChildFlowRate(childAddress, _childFlows, _childFlowsToUpdateFlowRate);
+        fs.setChildFlowRate(childAddress, address(this), _childFlows, _childFlowsToUpdateFlowRate);
     }
 
     /**

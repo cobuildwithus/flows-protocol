@@ -334,7 +334,15 @@ library FlowRates {
         if (netIncrease <= 0 || isTooHigh) {
             // act only when lowering the rate or when the child is over-cap
             if (netIncrease < 0 || isTooHigh) {
-                IFlow(childAddress).decreaseFlowRate();
+                bool ok;
+                try IFlow(childAddress).decreaseFlowRate() {
+                    ok = true;
+                } catch {
+                    ok = false;
+                }
+                if (!ok) {
+                    _reAddChildFlowToUpdate(fs, _childFlowsToUpdateFlowRate, childAddress, previousRate);
+                }
             }
             return; // nothing to raise
         }
@@ -349,9 +357,7 @@ library FlowRates {
 
         if (insufficientBalance || isChildApprovalTooHigh) {
             // leave child in the queue, skip for now
-            _childFlowsToUpdateFlowRate.add(childAddress);
-            fs.oldChildFlowRate[childAddress] = previousRate;
-            fs.rateSnapshotTaken[childAddress] = true;
+            _reAddChildFlowToUpdate(fs, _childFlowsToUpdateFlowRate, childAddress, previousRate);
             return;
         }
 
@@ -368,10 +374,26 @@ library FlowRates {
         fs.superToken.approve(childAddress, 0);
 
         if (!ok) {
-            _childFlowsToUpdateFlowRate.add(childAddress);
-            fs.oldChildFlowRate[childAddress] = previousRate;
-            fs.rateSnapshotTaken[childAddress] = true;
+            _reAddChildFlowToUpdate(fs, _childFlowsToUpdateFlowRate, childAddress, previousRate);
         }
+    }
+
+    /**
+     * @notice Re-adds a child flow to the update flow rate set
+     * @param fs The storage of the Flow contract
+     * @param _childFlowsToUpdateFlowRate The set of child Flow contracts to update the flow rate for
+     * @param childAddress The address of the child flow contract
+     * @param previousRate The previous flow rate of the child flow contract
+     */
+    function _reAddChildFlowToUpdate(
+        FlowTypes.Storage storage fs,
+        EnumerableSet.AddressSet storage _childFlowsToUpdateFlowRate,
+        address childAddress,
+        int96 previousRate
+    ) public {
+        _childFlowsToUpdateFlowRate.add(childAddress);
+        fs.oldChildFlowRate[childAddress] = previousRate;
+        fs.rateSnapshotTaken[childAddress] = true;
     }
 
     /**

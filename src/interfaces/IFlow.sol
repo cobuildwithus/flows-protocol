@@ -238,6 +238,9 @@ interface IFlow is IFlowEvents, IManagedFlow {
     /// @dev Reverts if voting allocation is not positive
     error ALLOCATION_MUST_BE_POSITIVE();
 
+    /// @dev Reverts if duplicate recipient IDs are passed within a single allocation
+    error DUPLICATE_RECIPIENT_ID();
+
     /// @dev Reverts if pool connection fails
     error POOL_CONNECTION_FAILED();
 

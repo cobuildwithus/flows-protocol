@@ -67,6 +67,11 @@ library FlowAllocations {
 
         // ensure recipients are not 0 address and allocations are > 0
         for (uint256 i = 0; i < recipientIds.length; i++) {
+            // Check for duplicate recipient IDs to prevent allocation lock-up
+            for (uint256 j = i + 1; j < recipientIds.length; j++) {
+                if (recipientIds[i] == recipientIds[j]) revert IFlow.DUPLICATE_RECIPIENT_ID();
+            }
+
             bytes32 recipientId = recipientIds[i];
             if (fs.recipients[recipientId].recipient == address(0)) revert IFlow.INVALID_RECIPIENT_ID();
             if (fs.recipients[recipientId].removed == true) revert IFlow.NOT_APPROVED_RECIPIENT();

@@ -153,14 +153,15 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         for (uint256 i = 0; i < allocations.length; i++) {
             bytes32 recipientId = allocations[i].recipientId;
 
+            // When clearing out allocations, we need to decrement the total active allocation weight
+            // even if the recipient has been removed in order to keep totalActiveAllocationWeight accurate
+            fs.totalActiveAllocationWeight -= allocations[i].allocationWeight;
+
             // if recipient is removed, skip - don't want to update member units because they have been wiped to 0
             // fine because this vote will be deleted in the next step
             if (fs.recipients[recipientId].removed) continue;
 
             address recipientAddress = fs.recipients[recipientId].recipient;
-
-            // When clearing out allocations, we need to decrement the total active allocation weight
-            fs.totalActiveAllocationWeight -= allocations[i].allocationWeight;
 
             // even if we're decreasing the flow rate, we need to store the previous rate
             // so we can calculate the net increase in flow rate

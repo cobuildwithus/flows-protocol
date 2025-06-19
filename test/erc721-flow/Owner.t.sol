@@ -170,6 +170,11 @@ contract OwnerFlowTest is ERC721FlowTest {
     }
 
     function testMaxFlowRateAndManagerRewardPercentage() public {
+        // set baseline to 0
+        uint32 baselinePercent = 0;
+        vm.prank(manager);
+        CustomFlow(flow).setBaselineFlowRatePercent(baselinePercent);
+
         // Set max manager reward percentage
         uint32 maxManagerRewardPercent = flow.PERCENTAGE_SCALE(); // 100%
         vm.prank(manager);

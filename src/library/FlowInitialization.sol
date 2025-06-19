@@ -10,6 +10,7 @@ import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/in
 
 library FlowInitialization {
     using SuperTokenV1Library for ISuperToken;
+    uint32 public constant PERCENTAGE_SCALE = 1e6;
 
     /**
      * @notice Checks the initialization parameters for the Flow contract
@@ -36,7 +37,6 @@ library FlowInitialization {
         address _flowAddress,
         IFlow.FlowParams memory _flowParams,
         FlowTypes.RecipientMetadata memory _metadata,
-        uint256 percentageScale,
         IAllocationStrategy[] calldata _strategies
     ) public {
         if (_initialOwner == address(0)) revert IFlow.ADDRESS_ZERO();
@@ -46,8 +46,8 @@ library FlowInitialization {
         if (bytes(_metadata.title).length == 0) revert IFlow.INVALID_METADATA();
         if (bytes(_metadata.description).length == 0) revert IFlow.INVALID_METADATA();
         if (bytes(_metadata.image).length == 0) revert IFlow.INVALID_METADATA();
-        if (_flowParams.baselinePoolFlowRatePercent > percentageScale) revert IFlow.INVALID_RATE_PERCENT();
-        if (_flowParams.managerRewardPoolFlowRatePercent > percentageScale) revert IFlow.INVALID_RATE_PERCENT();
+        if (_flowParams.baselinePoolFlowRatePercent > PERCENTAGE_SCALE) revert IFlow.INVALID_RATE_PERCENT();
+        if (_flowParams.managerRewardPoolFlowRatePercent > PERCENTAGE_SCALE) revert IFlow.INVALID_RATE_PERCENT();
         if (_strategies.length == 0) revert IFlow.INVALID_STRATEGIES();
         for (uint256 i = 0; i < _strategies.length; i++) {
             if (address(_strategies[i]) == address(0)) revert IFlow.ADDRESS_ZERO();
@@ -80,6 +80,7 @@ library FlowInitialization {
 
         fs.defaultBufferMultiplier = 3;
         fs.outflowCapPct = 999e3; // 99.9% on 1e6
+        fs.PERCENTAGE_SCALE = PERCENTAGE_SCALE;
 
         // Set the metadata
         fs.metadata = _metadata;

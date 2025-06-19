@@ -62,7 +62,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             address(this),
             _flowParams,
             _metadata,
-            PERCENTAGE_SCALE,
             _strategies
         );
 
@@ -120,7 +119,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             strategy,
             allocationKey,
             totalWeight,
-            PERCENTAGE_SCALE,
             allocator
         );
 
@@ -585,8 +583,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         (uint256 toPull, int96 oldRate, int96 newRate, int96 delta) = fs.increaseFlowRate(
             address(this),
             amount,
-            getBufferMultiplier(),
-            PERCENTAGE_SCALE
+            getBufferMultiplier()
         );
 
         if (delta <= 0) return;
@@ -717,7 +714,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
         (int96 baselineFlowRate, int96 bonusFlowRate, int96 managerRewardFlowRate) = fs.calculateFlowRates(
             _flowRate,
-            PERCENTAGE_SCALE,
             totalAllocationWeight()
         );
 
@@ -738,7 +734,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @dev Emits a BaselineFlowRatePercentUpdated event with the old and new percentages
      */
     function _setBaselineFlowRatePercent(uint32 _baselineFlowRatePercent) internal {
-        if (_baselineFlowRatePercent > PERCENTAGE_SCALE) revert INVALID_PERCENTAGE();
+        if (_baselineFlowRatePercent > fs.PERCENTAGE_SCALE) revert INVALID_PERCENTAGE();
 
         emit BaselineFlowRatePercentUpdated(fs.baselinePoolFlowRatePercent, _baselineFlowRatePercent);
 
@@ -774,7 +770,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @dev Only callable by the owner or manager of the contract
      */
     function _setBonusPoolQuorum(uint32 _quorumBps) internal {
-        if (_quorumBps > PERCENTAGE_SCALE) revert INVALID_PERCENTAGE();
+        if (_quorumBps > fs.PERCENTAGE_SCALE) revert INVALID_PERCENTAGE();
 
         emit BonusPoolQuorumUpdated(fs.bonusPoolQuorumBps, _quorumBps);
 
@@ -797,7 +793,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @dev Emits a ManagerRewardFlowRatePercentUpdated event with the old and new percentages
      */
     function setManagerRewardFlowRatePercent(uint32 _managerRewardFlowRatePercent) external onlyOwner nonReentrant {
-        if (_managerRewardFlowRatePercent > PERCENTAGE_SCALE) revert INVALID_PERCENTAGE();
+        if (_managerRewardFlowRatePercent > fs.PERCENTAGE_SCALE) revert INVALID_PERCENTAGE();
 
         emit ManagerRewardFlowRatePercentUpdated(fs.managerRewardPoolFlowRatePercent, _managerRewardFlowRatePercent);
 
@@ -904,7 +900,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @return The maximum safe flow rate (int96) that can be set without exceeding the cap.
      */
     function getMaxSafeFlowRate() public view returns (int96) {
-        return fs.getMaxFlowRate(address(this), PERCENTAGE_SCALE);
+        return fs.getMaxFlowRate(address(this));
     }
 
     /**
@@ -913,7 +909,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @return True if the flow rate is too high, false otherwise
      */
     function isFlowRateTooHigh() public view returns (bool) {
-        return fs.isFlowRateTooHigh(address(this), PERCENTAGE_SCALE);
+        return fs.isFlowRateTooHigh(address(this));
     }
 
     /**
@@ -1065,6 +1061,14 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      */
     function getAllocationsForKey(address strategy, uint256 allocationKey) external view returns (Allocation[] memory) {
         return fs.allocations[strategy][allocationKey];
+    }
+
+    /**
+     * @notice Retrieves the percentage scale
+     * @return uint32 The percentage scale used for percentage calculations
+     */
+    function PERCENTAGE_SCALE() external view returns (uint32) {
+        return fs.PERCENTAGE_SCALE;
     }
 
     /**

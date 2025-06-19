@@ -15,7 +15,6 @@ library FlowRates {
      * @notice Calculates the bonus flow rate based on quorum and active votes
      * @param fs The storage of the Flow contract
      * @param _flowRate The desired total flow rate for the flow contract
-     * @param _percentageScale The percentage scale used for calculations
      * @param _totalAllocationWeight The total token supply vote weight
      * @param _baselineFlowRate The baseline flow rate already calculated
      * @param _remainingFlowRate The remaining flow rate after manager reward deduction
@@ -25,7 +24,6 @@ library FlowRates {
     function _calculateBonusFlowRate(
         FlowTypes.Storage storage fs,
         int96 _flowRate,
-        uint256 _percentageScale,
         uint256 _totalAllocationWeight,
         int96 _baselineFlowRate,
         int96 _remainingFlowRate
@@ -45,7 +43,7 @@ library FlowRates {
         uint256 totalActiveAllocationWeight = fs.totalActiveAllocationWeight;
 
         // how many votes are needed to reach quorum
-        uint256 votesToReachQuorum = _scaleAmountByPercentage(_totalAllocationWeight, quorumBps, _percentageScale);
+        uint256 votesToReachQuorum = _scaleAmountByPercentage(fs, _totalAllocationWeight, quorumBps);
 
         if (votesToReachQuorum == 0) {
             return (maxBonusFlowRate, 0);
@@ -53,15 +51,15 @@ library FlowRates {
 
         // actual bonus flow rate is linearly proportional
         // to the total active vote weight / totalSupplyVoteWeight * quorumBps
-        uint256 percentageOfQuorum = (totalActiveAllocationWeight * _percentageScale) / votesToReachQuorum;
-        if (percentageOfQuorum > _percentageScale) {
-            percentageOfQuorum = _percentageScale;
+        uint256 percentageOfQuorum = (totalActiveAllocationWeight * fs.PERCENTAGE_SCALE) / votesToReachQuorum;
+        if (percentageOfQuorum > fs.PERCENTAGE_SCALE) {
+            percentageOfQuorum = fs.PERCENTAGE_SCALE;
         }
 
         // actual bonus flow rate is linearly proportional
         // to the total active vote weight / totalSupplyVoteWeight * quorumBps
         int256 computedBonusFlowRate = int256(
-            _scaleAmountByPercentage(uint256(uint96(maxBonusFlowRate)), percentageOfQuorum, _percentageScale)
+            _scaleAmountByPercentage(fs, uint256(uint96(maxBonusFlowRate)), percentageOfQuorum)
         );
 
         if (computedBonusFlowRate > type(int96).max) revert IFlow.FLOW_RATE_TOO_HIGH();
@@ -75,7 +73,6 @@ library FlowRates {
      * @notice Calculates the flow rates for the flow contract
      * @param fs The storage of the Flow contract
      * @param _flowRate The desired flow rate for the flow contract
-     * @param _percentageScale The percentage scale
      * @param _totalAllocationWeight The total token supply vote weight
      * @return baselineFlowRate The baseline flow rate
      * @return bonusFlowRate The bonus flow rate
@@ -84,11 +81,10 @@ library FlowRates {
     function calculateFlowRates(
         FlowTypes.Storage storage fs,
         int96 _flowRate,
-        uint256 _percentageScale,
         uint256 _totalAllocationWeight
     ) external returns (int96 baselineFlowRate, int96 bonusFlowRate, int96 managerRewardFlowRate) {
         int256 managerRewardFlowRatePercent = int256(
-            _scaleAmountByPercentage(uint96(_flowRate), fs.managerRewardPoolFlowRatePercent, _percentageScale)
+            _scaleAmountByPercentage(fs, uint96(_flowRate), fs.managerRewardPoolFlowRatePercent)
         );
 
         if (managerRewardFlowRatePercent > type(int96).max) revert IFlow.FLOW_RATE_TOO_HIGH();
@@ -98,7 +94,7 @@ library FlowRates {
         int96 remainingFlowRate = _flowRate - managerRewardFlowRate;
 
         int256 baselineFlowRate256 = int256(
-            _scaleAmountByPercentage(uint96(remainingFlowRate), fs.baselinePoolFlowRatePercent, _percentageScale)
+            _scaleAmountByPercentage(fs, uint96(remainingFlowRate), fs.baselinePoolFlowRatePercent)
         );
 
         if (baselineFlowRate256 > type(int96).max) revert IFlow.FLOW_RATE_TOO_HIGH();
@@ -109,7 +105,6 @@ library FlowRates {
         (bonusFlowRate, leftoverFlowRate) = _calculateBonusFlowRate(
             fs,
             _flowRate,
-            _percentageScale,
             _totalAllocationWeight,
             baselineFlowRate,
             remainingFlowRate
@@ -221,11 +216,7 @@ library FlowRates {
      * @param fs The storage of the Flow contract
      * @return maxFlowRate The maximum flow rate for the Flow contract
      */
-    function getMaxFlowRate(
-        FlowTypes.Storage storage fs,
-        address flowAddress,
-        uint256 percentageScale
-    ) public view returns (int96 maxFlowRate) {
+    function getMaxFlowRate(FlowTypes.Storage storage fs, address flowAddress) public view returns (int96 maxFlowRate) {
         // Net = incoming - outgoing
         // Net + outgoing (getActualFlowRate) = incoming
         int96 netFlow = getNetFlowRate(fs, flowAddress);
@@ -236,7 +227,7 @@ library FlowRates {
         if (inFlow <= 0) return 0;
 
         // Cap the outflow to `outflowCapPct` of the incoming flow (scaled by `PERCENTAGE_SCALE`).
-        uint256 capped = (uint256(uint96(inFlow)) * fs.outflowCapPct) / percentageScale;
+        uint256 capped = (uint256(uint96(inFlow)) * fs.outflowCapPct) / fs.PERCENTAGE_SCALE;
         return int96(uint96(capped));
     }
 
@@ -267,11 +258,10 @@ library FlowRates {
         FlowTypes.Storage storage fs,
         address flowAddress,
         int96 amount,
-        uint256 multiplier,
-        uint256 percentageScale
+        uint256 multiplier
     ) public returns (uint256 toPull, int96 oldRate, int96 newRate, int96 delta) {
         oldRate = getActualFlowRate(fs, flowAddress);
-        int96 cap = getMaxFlowRate(fs, flowAddress, percentageScale);
+        int96 cap = getMaxFlowRate(fs, flowAddress);
 
         newRate = oldRate + amount;
 
@@ -312,15 +302,10 @@ library FlowRates {
      * @notice Checks if the flow rate is too high
      * @param fs The storage of the Flow contract
      * @param flowAddress The address of the flow contract
-     * @param percentageScale The percentage scale
      * @return True if the flow rate is too high, false otherwise
      */
-    function isFlowRateTooHigh(
-        FlowTypes.Storage storage fs,
-        address flowAddress,
-        uint256 percentageScale
-    ) public view returns (bool) {
-        return getActualFlowRate(fs, flowAddress) > getMaxFlowRate(fs, flowAddress, percentageScale);
+    function isFlowRateTooHigh(FlowTypes.Storage storage fs, address flowAddress) public view returns (bool) {
+        return getActualFlowRate(fs, flowAddress) > getMaxFlowRate(fs, flowAddress);
     }
 
     /**
@@ -330,10 +315,11 @@ library FlowRates {
      *  @return scaledAmount Percent of `amount`.
      */
     function _scaleAmountByPercentage(
+        FlowTypes.Storage storage fs,
         uint256 amount,
-        uint256 scaledPercent,
-        uint256 percentageScale
-    ) public pure returns (uint256 scaledAmount) {
+        uint256 scaledPercent
+    ) public view returns (uint256 scaledAmount) {
+        uint256 percentageScale = fs.PERCENTAGE_SCALE;
         // use assembly to bypass checking for overflow & division by 0
         // scaledPercent has been validated to be < PERCENTAGE_SCALE)
         // & PERCENTAGE_SCALE will never be 0

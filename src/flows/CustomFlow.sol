@@ -51,7 +51,7 @@ contract CustomFlow is ICustomFlow, Flow {
         bytes32[] calldata recipientIds,
         uint32[] calldata percentAllocations
     ) external nonReentrant {
-        fs.validateAllocations(recipientIds, percentAllocations, PERCENTAGE_SCALE);
+        fs.validateAllocations(recipientIds, percentAllocations);
 
         if (allocationData.length != fs.strategies.length) revert ALLOCATION_LENGTH_MISMATCH();
 
@@ -102,7 +102,6 @@ contract CustomFlow is ICustomFlow, Flow {
             managerRewardPool,
             owner(),
             address(this),
-            PERCENTAGE_SCALE,
             strategies
         );
     }

@@ -12,7 +12,6 @@ library FlowVotes {
         address strategy,
         uint256 allocationKey,
         uint256 totalWeight,
-        uint256 percentageScale,
         address allocator
     ) public returns (uint128 memberUnits, address recipientAddress, FlowTypes.RecipientType recipientType) {
         recipientAddress = fs.recipients[recipientId].recipient;
@@ -23,7 +22,7 @@ library FlowVotes {
         // and scale back by 1e15
         // per https://docs.superfluid.finance/docs/protocol/distributions/guides/pools#about-member-units
         // gives someone with 1 vote at least 1e3 units to work with
-        uint256 weightForRecipient = _scaleAmountByPercentage(totalWeight, bps, percentageScale);
+        uint256 weightForRecipient = _scaleAmountByPercentage(fs, totalWeight, bps);
         uint256 scaledUnits = weightForRecipient / 1e15;
         if (scaledUnits > type(uint128).max) revert IFlow.OVERFLOW();
         uint128 newUnits = uint128(scaledUnits);
@@ -50,8 +49,7 @@ library FlowVotes {
     function validateAllocations(
         FlowTypes.Storage storage fs,
         bytes32[] memory recipientIds,
-        uint32[] memory percentAllocations,
-        uint32 percentageScale
+        uint32[] memory percentAllocations
     ) public view {
         // must have recipientIds
         if (recipientIds.length < 1) {
@@ -74,7 +72,7 @@ library FlowVotes {
             sum += percentAllocations[i];
         }
 
-        if (sum != percentageScale) revert IFlow.INVALID_BPS_SUM();
+        if (sum != fs.PERCENTAGE_SCALE) revert IFlow.INVALID_BPS_SUM();
     }
 
     /**
@@ -84,10 +82,11 @@ library FlowVotes {
      *  @return scaledAmount Percent of `amount`.
      */
     function _scaleAmountByPercentage(
+        FlowTypes.Storage storage fs,
         uint256 amount,
-        uint256 scaledPercent,
-        uint256 percentageScale
-    ) public pure returns (uint256 scaledAmount) {
+        uint256 scaledPercent
+    ) public view returns (uint256 scaledAmount) {
+        uint256 percentageScale = fs.PERCENTAGE_SCALE;
         // use assembly to bypass checking for overflow & division by 0
         // scaledPercent has been validated to be < PERCENTAGE_SCALE)
         // & PERCENTAGE_SCALE will never be 0

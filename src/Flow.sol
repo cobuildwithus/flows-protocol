@@ -126,7 +126,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
         // store the previous flow rate for the child contract before we update any member units
         // this is used to calculate the net increase in flow rate
-        _maybeTakeSnapshot(recipientAddress);
+        _maybeTakeFlowRateSnapshot(recipientAddress);
 
         // update member units
         fs.updateBonusMemberUnits(recipientAddress, memberUnits);
@@ -167,7 +167,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
             // even if we're decreasing the flow rate, we need to store the previous rate
             // so we can calculate the net increase in flow rate
-            _maybeTakeSnapshot(recipientAddress);
+            _maybeTakeFlowRateSnapshot(recipientAddress);
 
             // Calculate the new units by subtracting the delta from the current units
             uint128 newUnits = fs.bonusPool.getUnits(recipientAddress) - allocations[i].memberUnits;
@@ -321,7 +321,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
         fs.addFlowRecipient(_recipientId, recipient, _metadata);
         _childFlows.add(recipient);
-        _maybeTakeSnapshot(recipient);
+        _maybeTakeFlowRateSnapshot(recipient);
 
         emit FlowRecipientCreated(
             _recipientId,
@@ -361,7 +361,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         for (uint256 i = 0; i < childFlows.length; i++) {
             if (childFlows[i] == ignoredAddress) continue;
 
-            _maybeTakeSnapshot(childFlows[i]);
+            _maybeTakeFlowRateSnapshot(childFlows[i]);
 
             _childFlowsToUpdateFlowRate.add(childFlows[i]);
         }
@@ -476,7 +476,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         if (recipientType == RecipientType.FlowContract) {
             _childFlows.remove(recipientAddress);
             _childFlowsToUpdateFlowRate.remove(recipientAddress);
-            _clearSnapshot(recipientAddress);
+            fs.clearFlowRateSnapshot(recipientAddress);
         }
 
         // Be careful changing event ordering here, indexer expects to delete recipient
@@ -497,7 +497,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
         _childFlowsToUpdateFlowRate.remove(childAddress);
 
-        int96 previousRate = _consumeSnapshot(childAddress);
+        int96 previousRate = fs.consumeFlowRateSnapshot(childAddress);
         int96 newRate = getMemberTotalFlowRate(childAddress);
         int96 netIncrease = newRate - previousRate;
         bool isTooHigh = IFlow(childAddress).isFlowRateTooHigh();
@@ -544,34 +544,10 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
-     * @notice Consumes the snapshot of the child flow rate
-     * @param child The address of the child flow contract
-     * @return before The previous flow rate of the child flow contract
-     */
-    function _consumeSnapshot(address child) internal returns (int96 before) {
-        if (fs.rateSnapshotTaken[child]) {
-            before = fs.oldChildFlowRate[child];
-            _clearSnapshot(child);
-        } else {
-            // Fallback – shouldn't happen but keeps math correct
-            before = getMemberTotalFlowRate(child);
-        }
-    }
-
-    /**
-     * @notice Clears the snapshot of the child flow rate
-     * @param child The address of the child flow contract
-     */
-    function _clearSnapshot(address child) internal {
-        delete fs.oldChildFlowRate[child];
-        delete fs.rateSnapshotTaken[child];
-    }
-
-    /**
      * @notice Takes a snapshot of the child flow rate
      * @param child The address of the child flow contract
      */
-    function _maybeTakeSnapshot(address child) internal {
+    function _maybeTakeFlowRateSnapshot(address child) internal {
         if (_childFlows.contains(child) && !fs.rateSnapshotTaken[child]) {
             fs.oldChildFlowRate[child] = fs.getMemberTotalFlowRate(child);
             fs.rateSnapshotTaken[child] = true;

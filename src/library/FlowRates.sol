@@ -51,13 +51,15 @@ library FlowRates {
             return (maxBonusFlowRate, 0);
         }
 
-        // actual bonus flow rate is linearly proportional to the total active vote weight / totalSupplyVoteWeight * quorumBps
+        // actual bonus flow rate is linearly proportional
+        // to the total active vote weight / totalSupplyVoteWeight * quorumBps
         uint256 percentageOfQuorum = (totalActiveAllocationWeight * _percentageScale) / votesToReachQuorum;
         if (percentageOfQuorum > _percentageScale) {
             percentageOfQuorum = _percentageScale;
         }
 
-        // actual bonus flow rate is linearly proportional to the total active vote weight / totalSupplyVoteWeight * quorumBps
+        // actual bonus flow rate is linearly proportional
+        // to the total active vote weight / totalSupplyVoteWeight * quorumBps
         int256 computedBonusFlowRate = int256(
             _scaleAmountByPercentage(uint256(uint96(maxBonusFlowRate)), percentageOfQuorum, _percentageScale)
         );
@@ -151,7 +153,7 @@ library FlowRates {
     function getMemberTotalFlowRate(
         FlowTypes.Storage storage fs,
         address memberAddr
-    ) external view returns (int96 flowRate) {
+    ) public view returns (int96 flowRate) {
         flowRate = fs.bonusPool.getMemberFlowRate(memberAddr) + fs.baselinePool.getMemberFlowRate(memberAddr);
     }
 
@@ -179,6 +181,30 @@ library FlowRates {
         address memberAddr
     ) external view returns (uint256 totalUnits) {
         totalUnits = fs.bonusPool.getUnits(memberAddr) + fs.baselinePool.getUnits(memberAddr);
+    }
+
+    /**
+     * @notice Consumes the snapshot of the child flow rate
+     * @param child The address of the child flow contract
+     * @return before The previous flow rate of the child flow contract
+     */
+    function consumeFlowRateSnapshot(FlowTypes.Storage storage fs, address child) public returns (int96 before) {
+        if (fs.rateSnapshotTaken[child]) {
+            before = fs.oldChildFlowRate[child];
+            clearFlowRateSnapshot(fs, child);
+        } else {
+            // Fallback – shouldn't happen but keeps math correct
+            before = getMemberTotalFlowRate(fs, child);
+        }
+    }
+
+    /**
+     * @notice Clears the snapshot of the child flow rate
+     * @param child The address of the child flow contract
+     */
+    function clearFlowRateSnapshot(FlowTypes.Storage storage fs, address child) public {
+        delete fs.oldChildFlowRate[child];
+        delete fs.rateSnapshotTaken[child];
     }
 
     /**

@@ -62,6 +62,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             address(this),
             _flowParams,
             _metadata,
+            _sanctionsOracle,
             _strategies
         );
 
@@ -87,8 +88,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         for (uint256 i = 0; i < _strategies.length; i++) {
             emit AllocationStrategyRegistered(address(this), address(_strategies[i]), _strategies[i].strategyKey());
         }
-
-        fs.sanctionsOracle = _sanctionsOracle;
 
         emit SanctionsOracleSet(address(_sanctionsOracle));
     }

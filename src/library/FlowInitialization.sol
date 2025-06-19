@@ -4,6 +4,7 @@ pragma solidity ^0.8.28;
 import { FlowTypes } from "../storage/FlowStorage.sol";
 import { IFlow } from "../interfaces/IFlow.sol";
 import { IAllocationStrategy } from "../interfaces/IAllocationStrategy.sol";
+import { IChainalysisSanctionsList } from "../interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
 import { PoolConfig, SuperTokenV1Library } from "@superfluid-finance/ethereum-contracts/contracts/apps/SuperTokenV1Library.sol";
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
@@ -24,6 +25,7 @@ library FlowInitialization {
      * @param _flowAddress The address of the flow contract
      * @param _flowParams The parameters for the flow contract
      * @param _metadata The metadata for the flow contract
+     * @param _sanctionsOracle The address of the sanctions oracle
      * @param _strategies The allocation strategies to use.
      */
     function checkAndSetInitializationParams(
@@ -37,6 +39,7 @@ library FlowInitialization {
         address _flowAddress,
         IFlow.FlowParams memory _flowParams,
         FlowTypes.RecipientMetadata memory _metadata,
+        IChainalysisSanctionsList _sanctionsOracle,
         IAllocationStrategy[] calldata _strategies
     ) public {
         if (_initialOwner == address(0)) revert IFlow.ADDRESS_ZERO();
@@ -59,6 +62,8 @@ library FlowInitialization {
                 }
             }
         }
+
+        fs.sanctionsOracle = _sanctionsOracle;
 
         // Set the voting power info
         fs.baselinePoolFlowRatePercent = _flowParams.baselinePoolFlowRatePercent;

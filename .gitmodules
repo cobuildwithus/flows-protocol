@@ -16,6 +16,3 @@
 [submodule "lib/optimism"]
 	path = lib/optimism
 	url = https://github.com/ethereum-optimism/optimism
-[submodule "lib/solady"]
-	path = lib/solady
-	url = https://github.com/vectorized/solady

@@ -480,54 +480,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param childAddress The address of the child Flow contract
      */
     function _setChildFlowRate(address childAddress) internal {
-        if (!_childFlows.contains(childAddress)) revert NOT_A_VALID_CHILD_FLOW();
-
-        _childFlowsToUpdateFlowRate.remove(childAddress);
-
-        int96 previousRate = fs.consumeFlowRateSnapshot(childAddress);
-        int96 newRate = getMemberTotalFlowRate(childAddress);
-        int96 netIncrease = newRate - previousRate;
-        bool isTooHigh = IFlow(childAddress).isFlowRateTooHigh();
-
-        // If we aren't increasing:
-        if (netIncrease <= 0 || isTooHigh) {
-            // act only when lowering the rate or when the child is over-cap
-            if (netIncrease < 0 || isTooHigh) {
-                IFlow(childAddress).decreaseFlowRate();
-            }
-            return; // nothing to raise
-        }
-
-        // So the child can't make a crazy approval amount
-        // we use the buffer calculation here because we want to be safe
-        uint256 approvalAmount = fs.getRequiredBufferAmount(netIncrease, getBufferMultiplier());
-
-        uint256 balance = fs.superToken.balanceOf(address(this));
-        if (balance < approvalAmount) {
-            // leave child in the queue, skip for now
-            _childFlowsToUpdateFlowRate.add(childAddress);
-            fs.oldChildFlowRate[childAddress] = previousRate;
-            fs.rateSnapshotTaken[childAddress] = true;
-            return;
-        }
-
-        fs.superToken.approve(childAddress, 0);
-        bool ok;
-        fs.superToken.approve(childAddress, approvalAmount);
-
-        try IFlow(childAddress).increaseFlowRate(netIncrease) {
-            ok = true;
-        } catch {
-            ok = false;
-        }
-
-        fs.superToken.approve(childAddress, 0);
-
-        if (!ok) {
-            _childFlowsToUpdateFlowRate.add(childAddress);
-            fs.oldChildFlowRate[childAddress] = previousRate;
-            fs.rateSnapshotTaken[childAddress] = true;
-        }
+        fs.setChildFlowRate(childAddress, _childFlows, _childFlowsToUpdateFlowRate);
     }
 
     /**
@@ -592,8 +545,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @return The buffer multiplier
      */
     function getBufferMultiplier() public view returns (uint256) {
-        // If no child flows yet, use default multiplier 2; otherwise use configurable value.
-        return _childFlows.length() == 0 ? 2 : fs.defaultBufferMultiplier;
+        return fs.getBufferMultiplier(_childFlows);
     }
 
     /**

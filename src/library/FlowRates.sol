@@ -7,9 +7,11 @@ import { IRewardPool } from "../interfaces/IRewardPool.sol";
 
 import { SuperTokenV1Library } from "@superfluid-finance/ethereum-contracts/contracts/apps/SuperTokenV1Library.sol";
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 library FlowRates {
     using SuperTokenV1Library for ISuperToken;
+    using EnumerableSet for EnumerableSet.AddressSet;
 
     /**
      * @notice Calculates the bonus flow rate based on quorum and active votes
@@ -306,6 +308,84 @@ library FlowRates {
      */
     function isFlowRateTooHigh(FlowTypes.Storage storage fs, address flowAddress) public view returns (bool) {
         return getActualFlowRate(fs, flowAddress) > getMaxFlowRate(fs, flowAddress);
+    }
+
+    /**
+     * @notice Sets the flow rate for a child Flow contract
+     * @param fs The storage of the Flow contract
+     * @param childAddress The address of the child Flow contract
+     * @param _childFlows The set of child Flow contracts
+     * @param _childFlowsToUpdateFlowRate The set of child Flow contracts to update the flow rate for
+     */
+    function setChildFlowRate(
+        FlowTypes.Storage storage fs,
+        address childAddress,
+        EnumerableSet.AddressSet storage _childFlows,
+        EnumerableSet.AddressSet storage _childFlowsToUpdateFlowRate
+    ) public {
+        if (!_childFlows.contains(childAddress)) revert IFlow.NOT_A_VALID_CHILD_FLOW();
+
+        _childFlowsToUpdateFlowRate.remove(childAddress);
+
+        int96 previousRate = consumeFlowRateSnapshot(fs, childAddress);
+        int96 newRate = getMemberTotalFlowRate(fs, childAddress);
+        int96 netIncrease = newRate - previousRate;
+        bool isTooHigh = isFlowRateTooHigh(fs, childAddress);
+
+        // If we aren't increasing:
+        if (netIncrease <= 0 || isTooHigh) {
+            // act only when lowering the rate or when the child is over-cap
+            if (netIncrease < 0 || isTooHigh) {
+                IFlow(childAddress).decreaseFlowRate();
+            }
+            return; // nothing to raise
+        }
+
+        // So the child can't make a crazy approval amount
+        // we use the buffer calculation here because we want to be safe
+        uint256 approvalAmount = getRequiredBufferAmount(fs, netIncrease, getBufferMultiplier(fs, _childFlows));
+
+        uint256 balance = fs.superToken.balanceOf(address(this));
+        if (balance < approvalAmount) {
+            // leave child in the queue, skip for now
+            _childFlowsToUpdateFlowRate.add(childAddress);
+            fs.oldChildFlowRate[childAddress] = previousRate;
+            fs.rateSnapshotTaken[childAddress] = true;
+            return;
+        }
+
+        fs.superToken.approve(childAddress, 0);
+        bool ok;
+        fs.superToken.approve(childAddress, approvalAmount);
+
+        try IFlow(childAddress).increaseFlowRate(netIncrease) {
+            ok = true;
+        } catch {
+            ok = false;
+        }
+
+        fs.superToken.approve(childAddress, 0);
+
+        if (!ok) {
+            _childFlowsToUpdateFlowRate.add(childAddress);
+            fs.oldChildFlowRate[childAddress] = previousRate;
+            fs.rateSnapshotTaken[childAddress] = true;
+        }
+    }
+
+    /**
+     * @notice Gets the buffer multiplier
+     * @param fs The storage of the Flow contract
+     * @param _childFlows The set of child Flow contracts
+     * @dev This function is used to get the buffer multiplier
+     * @return The buffer multiplier
+     */
+    function getBufferMultiplier(
+        FlowTypes.Storage storage fs,
+        EnumerableSet.AddressSet storage _childFlows
+    ) public view returns (uint256) {
+        // If no child flows yet, use default multiplier 2; otherwise use configurable value.
+        return _childFlows.length() == 0 ? 2 : fs.defaultBufferMultiplier;
     }
 
     /**

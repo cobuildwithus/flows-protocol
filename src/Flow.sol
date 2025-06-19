@@ -683,7 +683,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param _bufferMultiplier The new flow buffer multiplier
      * @dev Only callable by the owner or manager of the contract
      */
-    function setDefaultBufferMultiplier(uint256 _bufferMultiplier) external onlyOwnerOrManager nonReentrant {
+    function setDefaultBufferMultiplier(uint256 _bufferMultiplier) external onlyOwnerOrManager {
         uint256 oldBufferMultiplier = fs.setDefaultBufferMultiplier(_bufferMultiplier);
         emit BufferMultiplierUpdated(oldBufferMultiplier, _bufferMultiplier);
     }

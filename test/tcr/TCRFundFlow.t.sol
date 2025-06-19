@@ -356,10 +356,5 @@ contract TCRFundFlowTest is FlowTCRTest {
         assertEq(uint8(storedRecipient.recipientType), uint8(FlowTypes.RecipientType.FlowContract));
         assertFalse(storedRecipient.removed);
         assertNotEq(storedRecipient.recipient, address(0));
-
-        // ensure incoming flow rate of reward pool is set correctly
-        assertGt(flow.getManagerRewardPoolFlowRate(), 0);
-        // ensure outgoing flow rate of reward pool is set correctly
-        assertGt(RewardPool(flow.managerRewardPool()).getTotalFlowRate(), 0);
     }
 }

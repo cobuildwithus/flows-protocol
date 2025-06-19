@@ -620,25 +620,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
-     * @notice Returns the maximum safe outflow rate allowed by the contract.
-     * @dev Calculates the highest outflow rate permitted, capped as a percentage of the current incoming Superfluid stream.
-     *      This ensures the contract never streams out more than a set fraction of what it receives.
-     * @return The maximum safe flow rate (int96) that can be set without exceeding the cap.
-     */
-    function getMaxSafeFlowRate() public view returns (int96) {
-        return fs.getMaxFlowRate(address(this), PERCENTAGE_SCALE);
-    }
-
-    /**
-     * @notice Checks if the flow rate is too high
-     * @dev This function is used to check if incoming flow rate is less than the outgoing flow rate
-     * @return True if the flow rate is too high, false otherwise
-     */
-    function isFlowRateTooHigh() public view returns (bool) {
-        return getActualFlowRate() > getMaxSafeFlowRate();
-    }
-
-    /**
      * @notice Balances the flow rate if it is too high
      * @dev This function is used to balance the flow rate to the maximum flow rate
      * @dev Emits a FlowRateDecreased event if the flow rate is successfully decreased
@@ -914,6 +895,25 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      */
     function getActualFlowRate() public view returns (int96) {
         return fs.getActualFlowRate(address(this));
+    }
+
+    /**
+     * @notice Returns the maximum safe outflow rate allowed by the contract.
+     * @dev Calculates the highest outflow rate permitted, capped as a percentage of the current incoming Superfluid stream.
+     *      This ensures the contract never streams out more than a set fraction of what it receives.
+     * @return The maximum safe flow rate (int96) that can be set without exceeding the cap.
+     */
+    function getMaxSafeFlowRate() public view returns (int96) {
+        return fs.getMaxFlowRate(address(this), PERCENTAGE_SCALE);
+    }
+
+    /**
+     * @notice Checks if the flow rate is too high
+     * @dev This function is used to check if incoming flow rate is less than the outgoing flow rate
+     * @return True if the flow rate is too high, false otherwise
+     */
+    function isFlowRateTooHigh() public view returns (bool) {
+        return fs.isFlowRateTooHigh(address(this), PERCENTAGE_SCALE);
     }
 
     /**

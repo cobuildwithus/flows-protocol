@@ -309,6 +309,21 @@ library FlowRates {
     }
 
     /**
+     * @notice Checks if the flow rate is too high
+     * @param fs The storage of the Flow contract
+     * @param flowAddress The address of the flow contract
+     * @param percentageScale The percentage scale
+     * @return True if the flow rate is too high, false otherwise
+     */
+    function isFlowRateTooHigh(
+        FlowTypes.Storage storage fs,
+        address flowAddress,
+        uint256 percentageScale
+    ) public view returns (bool) {
+        return getActualFlowRate(fs, flowAddress) > getMaxFlowRate(fs, flowAddress, percentageScale);
+    }
+
+    /**
      * @notice Multiplies an amount by a scaled percentage
      *  @param amount Amount to get `scaledPercentage` of
      *  @param scaledPercent Percent scaled by PERCENTAGE_SCALE

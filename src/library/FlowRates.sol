@@ -348,7 +348,7 @@ library FlowRates {
         bool isChildApprovalTooHigh = safeApprovalAmount * 5 < approvalAmount;
 
         // ensure the parent has enough balance to cover the safe approval amount
-        bool insufficientBalance = fs.superToken.balanceOf(flowAddress) < safeApprovalAmount;
+        bool insufficientBalance = fs.superToken.balanceOf(flowAddress) < approvalAmount;
 
         if (insufficientBalance || isChildApprovalTooHigh) {
             // leave child in the queue, skip for now

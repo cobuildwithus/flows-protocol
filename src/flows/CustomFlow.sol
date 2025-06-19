@@ -12,7 +12,9 @@ contract CustomFlow is ICustomFlow, Flow {
     using FlowAllocations for Storage;
     using CustomFlowLibrary for Storage;
 
-    constructor() payable initializer {}
+    constructor() payable {
+        _disableInitializers();
+    }
 
     function initialize(
         address _initialOwner,

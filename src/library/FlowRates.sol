@@ -118,39 +118,6 @@ library FlowRates {
     }
 
     /**
-     * @notice Retrieves the additional buffer from the reward pool
-     * @param fs The storage of the Flow contract
-     * @param childAddress The address of the child Flow contract
-     * @param desiredFlowRate The desired flow rate for the child contract
-     * @param percentageScale The percentage scale
-     * @return additionalBuffer The additional buffer from the reward pool
-     */
-    function getAdditionalBufferFromRewardPool(
-        FlowTypes.Storage storage fs,
-        address childAddress,
-        int96 desiredFlowRate,
-        uint32 percentageScale
-    ) public returns (uint256 additionalBuffer) {
-        int96 desiredManagerFlowRate = int96(
-            uint96(
-                _scaleAmountByPercentage(
-                    uint96(desiredFlowRate),
-                    IFlow(childAddress).managerRewardPoolFlowRatePercent(),
-                    percentageScale
-                )
-            )
-        );
-        (, uint256 transferAmountForRewardPool, ) = calculateBufferAmountForRewardPool(
-            fs,
-            IFlow(childAddress).managerRewardPool(),
-            childAddress,
-            desiredManagerFlowRate
-        );
-
-        additionalBuffer = transferAmountForRewardPool;
-    }
-
-    /**
      * @notice Retrieves the actual flow rate for the Flow contract
      * @param fs The storage of the Flow contract
      * @param flowAddress The address of the flow contract
@@ -161,51 +128,6 @@ library FlowRates {
             fs.superToken.getFlowRate(flowAddress, fs.managerRewardPool) +
             fs.superToken.getFlowDistributionFlowRate(flowAddress, fs.baselinePool) +
             fs.superToken.getFlowDistributionFlowRate(flowAddress, fs.bonusPool);
-    }
-
-    /**
-     * @notice Sets the flow rate for a child Flow contract
-     * @param rewardPoolAddress The address of the reward pool
-     * @param flowAddress The address of the flow contract
-     * @return shouldTransfer Indicates if a transfer is needed to meet the buffer requirement
-     * @return transferAmount The amount of tokens required to be transferred
-     * @return requiredBufferAmount The total buffer amount required
-     */
-    function calculateBufferAmountForRewardPool(
-        FlowTypes.Storage storage fs,
-        address rewardPoolAddress,
-        address flowAddress,
-        int96 desiredFlowRate
-    ) public returns (bool shouldTransfer, uint256 transferAmount, uint256 requiredBufferAmount) {
-        if (rewardPoolAddress == address(0)) return (false, 0, 0);
-
-        int96 newFlowRateStreamingToPool = desiredFlowRate;
-
-        int96 currentFlowRateOutgoingFromPool = IRewardPool(rewardPoolAddress).getActualFlowRate();
-
-        bool isFlowRateIncreasing = (newFlowRateStreamingToPool - currentFlowRateOutgoingFromPool) > 0;
-
-        // we only need to transfer more buffer tokens if the flow rate is increasing
-        if (isFlowRateIncreasing) {
-            uint256 newBuffer = fs.superToken.getBufferAmountByFlowRate(newFlowRateStreamingToPool);
-            uint256 currentBuffer = fs.superToken.getBufferAmountByFlowRate(currentFlowRateOutgoingFromPool);
-            uint256 bufferIncrease = newBuffer - currentBuffer;
-
-            requiredBufferAmount = (bufferIncrease * 105) / 100;
-
-            uint256 balanceOfRewardPool = fs.superToken.balanceOf(rewardPoolAddress);
-
-            if (requiredBufferAmount > balanceOfRewardPool) {
-                // careful here, do not use the transfer amount unless shouldTransfer is true
-                // set it here for use in the above function
-                transferAmount = requiredBufferAmount - balanceOfRewardPool;
-                // ensure this contract has enough balance to transfer to the child contract
-                if (transferAmount < fs.superToken.balanceOf(flowAddress)) {
-                    // transfer supertoken to the new flow contract so the flow can be started
-                    shouldTransfer = true;
-                }
-            }
-        }
     }
 
     /**

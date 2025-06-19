@@ -10,6 +10,5 @@ TokenEmitter
 TCRFactory
 RewardPool
 FlowStorageV1
-CustomFlow
 ERC721VotingStrategy
 SingleAllocatorStrategy

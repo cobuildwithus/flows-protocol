@@ -51,6 +51,8 @@ library FlowInitialization {
         if (bytes(_metadata.image).length == 0) revert IFlow.INVALID_METADATA();
         if (_flowParams.baselinePoolFlowRatePercent > PERCENTAGE_SCALE) revert IFlow.INVALID_RATE_PERCENT();
         if (_flowParams.managerRewardPoolFlowRatePercent > PERCENTAGE_SCALE) revert IFlow.INVALID_RATE_PERCENT();
+        if (_flowParams.managerRewardPoolFlowRatePercent + _flowParams.baselinePoolFlowRatePercent > PERCENTAGE_SCALE)
+            revert IFlow.INVALID_RATE_PERCENT();
         if (_strategies.length == 0) revert IFlow.INVALID_STRATEGIES();
         for (uint256 i = 0; i < _strategies.length; i++) {
             if (address(_strategies[i]) == address(0)) revert IFlow.ADDRESS_ZERO();

@@ -51,7 +51,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         RecipientMetadata memory _metadata,
         IChainalysisSanctionsList _sanctionsOracle,
         IAllocationStrategy[] calldata _strategies
-    ) public {
+    ) internal onlyInitializing {
         fs.checkAndSetInitializationParams(
             _initialOwner,
             _flowImpl,

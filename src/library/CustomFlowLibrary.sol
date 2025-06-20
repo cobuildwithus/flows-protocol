@@ -33,12 +33,7 @@ library CustomFlowLibrary {
         address recipient = address(new ERC1967Proxy(flowImpl, ""));
         if (recipient == address(0)) revert IFlow.ADDRESS_ZERO();
 
-        // Calculate new manager reward rate, ensuring it doesn't exceed PERCENTAGE_SCALE
-        uint32 newManagerRewardRate = fs.managerRewardPoolFlowRatePercent * 2;
-        // If doubling would exceed max percentage (PERCENTAGE_SCALE), cap at max
-        if (newManagerRewardRate > fs.PERCENTAGE_SCALE) {
-            newManagerRewardRate = fs.PERCENTAGE_SCALE;
-        }
+        uint32 newManagerRewardRate = fs.managerRewardPoolFlowRatePercent;
 
         ICustomFlow(recipient).initialize({
             initialOwner: initialOwner,

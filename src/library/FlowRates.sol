@@ -469,17 +469,18 @@ library FlowRates {
         uint256 updateCount
     ) public {
         uint256 absoluteMax = 10; // reduced this to prevent crazy long txn times on Base
-        address[] memory flowsToUpdate = _childFlowsToUpdateFlowRate.values();
 
-        uint256 max = updateCount < flowsToUpdate.length ? updateCount : flowsToUpdate.length;
+        uint256 limit = _childFlowsToUpdateFlowRate.length();
+        if (limit > updateCount) limit = updateCount;
+        if (limit > absoluteMax) limit = absoluteMax;
 
-        if (max > absoluteMax) {
-            max = absoluteMax;
+        address[] memory batch = new address[](limit);
+        for (uint256 i; i < limit; ++i) {
+            batch[i] = _childFlowsToUpdateFlowRate.at(i);
         }
 
-        for (uint256 i = 0; i < max; i++) {
-            address childFlow = flowsToUpdate[i];
-            setChildFlowRate(fs, childFlow, flowAddress, _childFlows, _childFlowsToUpdateFlowRate);
+        for (uint256 i; i < limit; ++i) {
+            setChildFlowRate(fs, batch[i], flowAddress, _childFlows, _childFlowsToUpdateFlowRate);
         }
     }
 

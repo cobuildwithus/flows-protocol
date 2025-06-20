@@ -443,14 +443,15 @@ library FlowRates {
     ) public {
         // warning - values() copies entire array into memory, could run out of gas for huge arrays
         // must keep child flows below ~500 per o1 estimates
-        address[] memory childFlows = _childFlows.values();
+        uint256 len = _childFlows.length();
 
-        for (uint256 i = 0; i < childFlows.length; i++) {
-            if (childFlows[i] == ignoredAddress) continue;
+        for (uint256 i = 0; i < len; i++) {
+            address child = _childFlows.at(i);
+            if (child == ignoredAddress) continue;
 
-            maybeTakeFlowRateSnapshot(fs, _childFlows, childFlows[i]);
+            maybeTakeFlowRateSnapshot(fs, _childFlows, child);
 
-            _childFlowsToUpdateFlowRate.add(childFlows[i]);
+            _childFlowsToUpdateFlowRate.add(child);
         }
     }
 

@@ -358,7 +358,7 @@ library FlowRates {
         // So the child can't make a crazy approval amount
         uint256 safeApprovalAmount = getRequiredBufferAmount(fs, netIncrease, getBufferMultiplier(fs, _childFlows));
         uint256 approvalAmount = IFlow(childAddress).getRequiredBufferAmount(netIncrease);
-        bool isChildApprovalTooHigh = safeApprovalAmount * 5 < approvalAmount;
+        bool isChildApprovalTooHigh = safeApprovalAmount * 3 < approvalAmount;
 
         // ensure the parent has enough balance to cover the safe approval amount
         bool insufficientBalance = fs.superToken.balanceOf(flowAddress) < approvalAmount;

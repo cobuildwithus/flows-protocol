@@ -707,7 +707,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     /**
      * @dev Only callable by the owner or manager of the contract
      */
-    function setBonusPoolQuorum(uint32 _quorumBps) external onlyOwnerOrManager {
+    function setBonusPoolQuorum(uint32 _quorumBps) external onlyOwnerOrManager nonReentrant {
         _setBonusPoolQuorum(_quorumBps);
     }
 
@@ -1001,7 +1001,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     /**
      * @notice Upgrades all child flows to a new implementation
      */
-    function upgradeAllChildFlows() external onlyOwner {
+    function upgradeAllChildFlows() external onlyOwner nonReentrant {
         address[] memory flowsToUpdate = _childFlows.values();
 
         for (uint256 i = 0; i < flowsToUpdate.length; i++) {

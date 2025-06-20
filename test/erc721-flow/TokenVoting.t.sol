@@ -37,7 +37,7 @@ contract TokenVotingFlowTest is ERC721FlowTest {
         tokenIds[0] = tokenId;
 
         vm.prank(voter1);
-        flow.castVotes(tokenIds, recipientIds, percentAllocations);
+        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
 
         // get current member units of the pool
         uint128 currentUnits = flow.bonusPool().getUnits(recipient);
@@ -48,7 +48,7 @@ contract TokenVotingFlowTest is ERC721FlowTest {
         nounsToken.transferFrom(voter1, voter2, tokenId);
 
         vm.prank(voter2);
-        flow.castVotes(tokenIds, recipientIds, percentAllocations);
+        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
 
         uint128 newUnits = flow.bonusPool().getUnits(recipient);
 
@@ -75,7 +75,7 @@ contract TokenVotingFlowTest is ERC721FlowTest {
         tokenIds[0] = tokenId;
 
         vm.prank(voter1);
-        flow.castVotes(tokenIds, recipientIds, percentAllocations);
+        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
 
         // get current member units of the pool
         uint128 currentUnits = flow.bonusPool().getUnits(recipient);
@@ -86,8 +86,9 @@ contract TokenVotingFlowTest is ERC721FlowTest {
         twoTokenIds[0] = tokenId;
         twoTokenIds[1] = tokenId;
 
-        vm.prank(voter1);
-        flow.castVotes(twoTokenIds, recipientIds, percentAllocations);
+        vm.startPrank(voter1);
+        flow.allocate(_prepTokens(twoTokenIds), recipientIds, percentAllocations);
+        vm.stopPrank();
 
         uint128 newUnits = flow.bonusPool().getUnits(recipient);
 
@@ -115,14 +116,14 @@ contract TokenVotingFlowTest is ERC721FlowTest {
         tokenIds[0] = tokenId;
 
         vm.prank(voter1);
-        flow.castVotes(tokenIds, recipientIds, percentAllocations);
+        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
 
         vm.prank(voter1);
         nounsToken.transferFrom(voter1, voter2, tokenId);
 
         vm.prank(voter1);
-        vm.expectRevert(IFlow.NOT_ABLE_TO_VOTE_WITH_TOKEN.selector);
-        flow.castVotes(tokenIds, recipientIds, percentAllocations);
+        vm.expectRevert(IFlow.NOT_ABLE_TO_ALLOCATE.selector);
+        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
     }
 
     function test__NotTokenOwner_MultiTokens() public {
@@ -148,14 +149,14 @@ contract TokenVotingFlowTest is ERC721FlowTest {
         tokenIds[1] = 1;
 
         vm.prank(voter1);
-        vm.expectRevert(IFlow.NOT_ABLE_TO_VOTE_WITH_TOKEN.selector);
-        flow.castVotes(tokenIds, recipientIds, percentAllocations);
+        vm.expectRevert(IFlow.NOT_ABLE_TO_ALLOCATE.selector);
+        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
 
         vm.prank(voter1);
         nounsToken.transferFrom(voter1, voter2, tokenId);
 
         vm.prank(voter1);
-        vm.expectRevert(IFlow.NOT_ABLE_TO_VOTE_WITH_TOKEN.selector);
-        flow.castVotes(tokenIds, recipientIds, percentAllocations);
+        vm.expectRevert(IFlow.NOT_ABLE_TO_ALLOCATE.selector);
+        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
     }
 }

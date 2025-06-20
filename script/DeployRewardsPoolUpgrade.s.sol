@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import { DeployScript } from "./DeployScript.s.sol";
-import { RewardPool } from "../src/RewardPool.sol";
+import { RewardPool } from "../src/token-issuance/RewardPool.sol";
 
 contract DeployRewardsPoolUpgrade is DeployScript {
     address public rewardsPoolImplementation;

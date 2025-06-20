@@ -5,7 +5,7 @@
   "scripts": {
     "prettier:check": "prettier --check 'src/**/*.sol' 'test/**/*.sol' 'script/**/*.sol'",
     "prettier:write": "prettier --write 'src/**/*.sol' 'test/**/*.sol' 'script/**/*.sol'",
-    "test": "forge test -vv",
+    "test": "forge test -vvv",
     "dev": "forge test --watch -vvv",
     "test-gas": "forge test --gas-report",
     "build:sizes": "forge build --sizes",

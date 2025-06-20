@@ -269,6 +269,14 @@ library FlowRates {
 
         delta = newRate - oldRate;
 
+        // If there is no real increase (delta <= 0) we can safely
+        // return early without attempting to pull additional buffer.
+        // This avoids the NOT_AN_INCREASE revert in
+        // `getRequiredBufferAmount`
+        if (delta <= 0) {
+            return (0, oldRate, newRate, delta);
+        }
+
         toPull = getRequiredBufferAmount(fs, delta, multiplier);
     }
 

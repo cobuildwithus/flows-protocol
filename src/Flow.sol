@@ -444,11 +444,13 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @dev Emits a RecipientRemoved event if the recipient is successfully removed
      */
     function removeRecipient(bytes32 recipientId) external onlyManager nonReentrant {
-        (address recipientAddress, RecipientType recipientType) = fs.removeRecipient(recipientId);
+        (address recipientAddress, RecipientType recipientType) = fs.removeRecipient(
+            _childFlows,
+            _childFlowsToUpdateFlowRate,
+            recipientId
+        );
 
         if (recipientType == RecipientType.FlowContract) {
-            _childFlows.remove(recipientAddress);
-            _childFlowsToUpdateFlowRate.remove(recipientAddress);
             fs.clearFlowRateSnapshot(recipientAddress);
         }
 

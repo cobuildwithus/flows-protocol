@@ -560,15 +560,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
-     * @notice Gets the net flow rate for the contract
-     * @dev This function is used to get the net flow rate for the contract
-     * @return The net flow rate
-     */
-    function getNetFlowRate() public view returns (int96) {
-        return fs.getNetFlowRate(address(this));
-    }
-
-    /**
      * @notice Sets the address of the grants implementation contract
      * @param _flowImpl The new address of the grants implementation contract
      */
@@ -820,6 +811,15 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      */
     function getActualFlowRate() public view returns (int96) {
         return fs.getActualFlowRate(address(this));
+    }
+
+    /**
+     * @notice Gets the net flow rate for the contract
+     * @dev This function is used to get the net flow rate for the contract
+     * @return The net flow rate
+     */
+    function getNetFlowRate() public view returns (int96) {
+        return fs.getNetFlowRate(address(this));
     }
 
     /**

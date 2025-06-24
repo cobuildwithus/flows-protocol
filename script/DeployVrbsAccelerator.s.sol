@@ -19,8 +19,9 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 ///         and sets up child flows which use a SingleAllocatorStrategy.
 contract DeployVrbsAccelerator is DeployScript {
     // Top-level flow addresses
+    address public vrbsFlow;
+    address public vrbsFlowImpl;
     address public vrbsAccelerator;
-    address public vrbsAcceleratorImpl;
 
     // Strategy addresses
     address public erc721VotingStrategy;
@@ -32,7 +33,6 @@ contract DeployVrbsAccelerator is DeployScript {
     string public contractName;
 
     // Example curator/manager addresses (keep from reference script)
-    address internal constant RIDERWAY = 0x2830e21792019CE670fBc548AacB004b08c7f71f;
     address internal constant ROCKETMAN = 0x289715fFBB2f4b482e2917D2f183FeAb564ec84F;
 
     function deploy() internal override {
@@ -63,20 +63,18 @@ contract DeployVrbsAccelerator is DeployScript {
         IAllocationStrategy[] memory topStrategies = new IAllocationStrategy[](1);
         topStrategies[0] = IAllocationStrategy(erc721VotingStrategy);
 
-        // ---------------------------------------------------------------------
-        // Use shared CustomFlow implementation and deploy proxy
-        // ---------------------------------------------------------------------
-        vrbsAcceleratorImpl = _loadImplementation("CustomFlowImpl");
-        vrbsAccelerator = address(new ERC1967Proxy(vrbsAcceleratorImpl, ""));
+        // ------------------------------------------------------------------
+        // Flow proxy using shared CustomFlow implementation
+        // ------------------------------------------------------------------
+        vrbsFlowImpl = _loadImplementation("CustomFlowImpl");
+        vrbsFlow = address(new ERC1967Proxy(vrbsFlowImpl, ""));
 
-        // ---------------------------------------------------------------------
-        // Initialize the proxy
-        // ---------------------------------------------------------------------
-        ICustomFlow(vrbsAccelerator).initialize({
+        // Initialize proxy
+        ICustomFlow(vrbsFlow).initialize({
             initialOwner: initialOwner,
             superToken: superToken,
-            flowImpl: vrbsAcceleratorImpl,
-            manager: initialOwner,
+            flowImpl: vrbsFlowImpl,
+            manager: ROCKETMAN,
             managerRewardPool: address(0),
             parent: address(0),
             flowParams: IFlow.FlowParams({
@@ -85,10 +83,10 @@ contract DeployVrbsAccelerator is DeployScript {
                 bonusPoolQuorumBps: bonusPoolQuorumBps
             }),
             metadata: FlowTypes.RecipientMetadata({
-                title: "Vrbs Accelerator",
-                description: unicode"Back and mentor Vrbs-branded ventures that onboard the public to crypto, uplift their communities, and reach break-even within six months—returning a share of revenue to fuel future grants.",
-                image: "ipfs://bafkreices36hj7akzelx2jfw6dxmkfxfjis44koxcolkbisqopufcbolju",
-                tagline: "Founders welcome",
+                title: "Vrbs Flow",
+                description: unicode"## Our mission \n\n Do good with no expectation of return. Steward public spaces. Create positive externalities. Empower people to uplift their communities. Embrace absurdity & difference. Teach people about Vrbs & crypto. Dare greatly. Have fun. ## Our goals \n\n Create Vrbs-branded products, services, experiences, and art that reach and empower the public, improve public spaces, and generate positive externalities—always in an open, daring, and sustainable way.",
+                image: "ipfs://bafybeibj6cb2nyzxgpoi5l2cnhqv4ituu63wxp6tls45sqadvd7ysyn55i",
+                tagline: "We fund the next generation of visionaries making a difference in their local communities.",
                 url: "https://flows.wtf/vrbs"
             }),
             sanctionsOracle: IChainalysisSanctionsList(sanctionsOracle),
@@ -101,88 +99,43 @@ contract DeployVrbsAccelerator is DeployScript {
         // ------------------------------------------------------------------
 
         // Metadata definitions
-        FlowTypes.RecipientMetadata memory realMadridMeta = FlowTypes.RecipientMetadata({
-            title: "Real Madrid",
-            description: "Support Real Madrid's community initiatives and youth development programs through Vrbs ecosystem integration.",
-            image: "ipfs://bafkreifrolsnnjbklsvs5uutiua336m2y33kb2zggj4e3kion5672uuz3u",
-            tagline: "Football legends",
-            url: "https://flows.wtf/vrbs/realmadrid"
+        FlowTypes.RecipientMetadata memory vrbsAcceleratorMeta = FlowTypes.RecipientMetadata({
+            title: "Vrbs Accelerator",
+            description: unicode"Back and mentor Vrbs-branded ventures that onboard the public to crypto, uplift their communities, and reach break-even within six months to help fuel future grants.",
+            image: "ipfs://bafybeibj6cb2nyzxgpoi5l2cnhqv4ituu63wxp6tls45sqadvd7ysyn55i",
+            tagline: "We fund the next generation of visionaries making a difference in their local communities.",
+            url: "https://flows.wtf/vrbs"
         });
 
-        FlowTypes.RecipientMetadata memory healthAiMeta = FlowTypes.RecipientMetadata({
-            title: "Vrbs Health AI",
-            description: "Develop AI-powered health solutions leveraging blockchain for secure data management and community wellness initiatives.",
-            image: "ipfs://bafkreices36hj7akzelx2jfw6dxmkfxfjis44koxcolkbisqopufcbolju",
-            tagline: "AI for wellness",
-            url: "https://flows.wtf/vrbs/healthai"
+        FlowTypes.RecipientMetadata memory artistsBudgetsMeta = FlowTypes.RecipientMetadata({
+            title: "Vrbs Artist Budgets",
+            description: unicode"Fund artists working on Vrbs-branded creative projects that bring art to public spaces, onboard communities to crypto through creative expression, and celebrate the absurd beauty of decentralized culture.",
+            image: "ipfs://bafybeibj6cb2nyzxgpoi5l2cnhqv4ituu63wxp6tls45sqadvd7ysyn55i",
+            tagline: "Art for all",
+            url: "https://flows.wtf/vrbs"
         });
 
         // Add child flows to top-level accelerator
-        (, address realMadrid) = Flow(vrbsAccelerator).addFlowRecipient(
-            keccak256(abi.encode(realMadridMeta)),
-            realMadridMeta,
+        Flow(vrbsFlow).addFlowRecipient(
+            keccak256(abi.encode(vrbsAcceleratorMeta)),
+            vrbsAcceleratorMeta,
             ROCKETMAN,
             address(0),
-            _singleAllocator(RIDERWAY, initialOwner)
+            topStrategies
         );
 
-        (, address healthAi) = Flow(vrbsAccelerator).addFlowRecipient(
-            keccak256(abi.encode(healthAiMeta)),
-            healthAiMeta,
+        Flow(vrbsFlow).addFlowRecipient(
+            keccak256(abi.encode(artistsBudgetsMeta)),
+            artistsBudgetsMeta,
             ROCKETMAN,
             address(0),
-            _singleAllocator(ROCKETMAN, initialOwner)
+            topStrategies
         );
-
-        // ------------------------------------------------------------------
-        // Deploy budgets under each child flow
-        // ------------------------------------------------------------------
-        FlowTypes.RecipientMetadata memory realMadridBudgetMeta = FlowTypes.RecipientMetadata({
-            title: "Real Madrid Budget",
-            description: "Budget allocation for Real Madrid community projects.",
-            image: "ipfs://bafkreiabcdefghijklmnopqrstuvwxyz123456789abcdefghi",
-            tagline: "Supporting football legends",
-            url: "https://flows.wtf/vrbs/realmadrid/budget"
-        });
-
-        FlowTypes.RecipientMetadata memory healthAiBudgetMeta = FlowTypes.RecipientMetadata({
-            title: "Health AI Budget",
-            description: "Budget to fuel AI-powered health product development.",
-            image: "ipfs://bafkreizyxwvutsrqponmlkjihgfedcba987654321zyxwvutsrqponmlk",
-            tagline: "Empowering AI-assisted wellness",
-            url: "https://flows.wtf/vrbs/healthai/budget"
-        });
-
-        // Add budgets (second-level)
-        Flow(realMadrid).addFlowRecipient(
-            keccak256(abi.encode(realMadridBudgetMeta)),
-            realMadridBudgetMeta,
-            RIDERWAY,
-            address(0),
-            _singleAllocator(RIDERWAY, initialOwner)
-        );
-
-        Flow(healthAi).addFlowRecipient(
-            keccak256(abi.encode(healthAiBudgetMeta)),
-            healthAiBudgetMeta,
-            ROCKETMAN,
-            address(0),
-            _singleAllocator(ROCKETMAN, initialOwner)
-        );
-
-        // Set manager for real madrid to riderway
-        Flow(realMadrid).setManager(RIDERWAY);
     }
 
     function writeAdditionalDeploymentDetails(string memory filePath) internal override {
-        vm.writeLine(filePath, string(abi.encodePacked("VrbsAcceleratorImpl: ", addressToString(vrbsAcceleratorImpl))));
-        vm.writeLine(filePath, string(abi.encodePacked(contractName, ": ", addressToString(vrbsAccelerator))));
-
-        // Record pool addresses for convenience
-        address bonusPool = address(IFlow(vrbsAccelerator).bonusPool());
-        address baselinePool = address(IFlow(vrbsAccelerator).baselinePool());
-        vm.writeLine(filePath, string(abi.encodePacked("BonusPool: ", addressToString(bonusPool))));
-        vm.writeLine(filePath, string(abi.encodePacked("BaselinePool: ", addressToString(baselinePool))));
+        vm.writeLine(filePath, string(abi.encodePacked("VrbsFlowImpl: ", addressToString(vrbsFlowImpl))));
+        vm.writeLine(filePath, string(abi.encodePacked("VrbsFlow: ", addressToString(vrbsFlow))));
     }
 
     function getContractName() internal view override returns (string memory) {

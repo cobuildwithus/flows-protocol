@@ -9,7 +9,7 @@ contract SingleAllocatorStrategy is IAllocationStrategy, UUPSUpgradeable, Ownabl
     address public allocator;
 
     // The virtual weight used for sub-BPS resolution in allocation calculations
-    uint256 public constant VIRTUAL_WEIGHT = 1e21;
+    uint256 public constant VIRTUAL_WEIGHT = 1e24;
 
     // Strategy JSON key exposed to front-end helpers (unquoted).
     string public constant STRATEGY_KEY = "SingleAllocator";

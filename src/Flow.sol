@@ -712,8 +712,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      */
     function setManagerRewardFlowRatePercent(uint32 _managerRewardFlowRatePercent) external onlyOwner nonReentrant {
         if (_managerRewardFlowRatePercent > fs.PERCENTAGE_SCALE) revert INVALID_PERCENTAGE();
-        if (_managerRewardFlowRatePercent + fs.baselinePoolFlowRatePercent > fs.PERCENTAGE_SCALE)
-            revert INVALID_PERCENTAGE();
 
         emit ManagerRewardFlowRatePercentUpdated(fs.managerRewardPoolFlowRatePercent, _managerRewardFlowRatePercent);
 
@@ -727,7 +725,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @notice Let's the owner set the metadata for the flow
      * @param metadata The metadata of the flow
      */
-    function setMetadata(RecipientMetadata memory metadata) external onlyOwner {
+    function setMetadata(RecipientMetadata memory metadata) external onlyOwnerOrManager {
         FlowRecipients.validateMetadata(metadata);
         fs.metadata = metadata;
         emit MetadataSet(metadata);
@@ -737,7 +735,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @notice Sets the description for the flow
      * @param description The new description for the flow
      */
-    function setDescription(string calldata description) external onlyOwner {
+    function setDescription(string calldata description) external onlyOwnerOrManager {
         fs.metadata.description = description;
         emit MetadataSet(fs.metadata);
     }

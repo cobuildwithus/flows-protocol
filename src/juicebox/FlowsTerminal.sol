@@ -11,7 +11,7 @@ import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/
 
 /** @notice A basic terminal implementation for Flows integration with Juicebox */
 contract FlowsTerminal is IJBTerminal, UUPSUpgradeable, Ownable2StepUpgradeable, ReentrancyGuardUpgradeable {
-    constructor() {
+    constructor() payable {
         _disableInitializers();
     }
 

@@ -2,7 +2,10 @@
 pragma solidity ^0.8.28;
 
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 import { IJBTerminal } from "../interfaces/external/juicebox/IJBTerminal.sol";
+import { IJBDirectory } from "../interfaces/external/juicebox/IJBDirectory.sol";
 import { JBAccountingContext } from "../interfaces/external/juicebox/structs/JBAccountingContext.sol";
 
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -11,6 +14,32 @@ import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/
 
 /** @notice A basic terminal implementation for Flows integration with Juicebox */
 contract FlowsTerminal is IJBTerminal, UUPSUpgradeable, Ownable2StepUpgradeable, ReentrancyGuardUpgradeable {
+    //*********************************************************************//
+    // -------------------------- constants ----------------------------- //
+    //*********************************************************************//
+
+    address public constant ETH = 0x000000000000000000000000000000000000EEEe;
+
+    IJBDirectory public constant DIRECTORY = IJBDirectory(0x0bC9F153DEe4d3D474ce0903775b9b2AAae9AA41);
+
+    uint256 public constant FLOW_PROJECT_ID = 99;
+
+    address public constant FLOWS_TOKEN = 0xa66c1FAEFd257DbE9Da50e56C7816B5710C9E2A1;
+
+    //*********************************************************************//
+    // -------------------------- errors ----------------------------- //
+    //*********************************************************************//
+
+    error TERMINAL_NOT_FOUND();
+    error NO_VALUE();
+    error INCORRECT_VALUE();
+    error NO_FLOWS_ETH_TERMINAL();
+    error NO_DEST_TERMINAL();
+
+    //*********************************************************************//
+    // -------------------------- constructors ---------------------------- //
+    //*********************************************************************//
+
     constructor() payable {
         _disableInitializers();
     }
@@ -25,6 +54,7 @@ contract FlowsTerminal is IJBTerminal, UUPSUpgradeable, Ownable2StepUpgradeable,
 
         _transferOwnership(_owner);
     }
+
     //*********************************************************************//
     // -------------------------- public views --------------------------- //
     //*********************************************************************//
@@ -41,6 +71,65 @@ contract FlowsTerminal is IJBTerminal, UUPSUpgradeable, Ownable2StepUpgradeable,
     //*********************************************************************//
     // ------------------------- external views -------------------------- //
     //*********************************************************************//
+
+    /** @notice Make a payment to a project.
+     * @dev This is a stub implementation that always returns 0. In a full implementation,
+     * this would process the payment, potentially mint tokens for the beneficiary, and handle
+     * any associated hooks or metadata processing.
+     * @param projectId The ID of the project being paid.
+     * @param token The address of the token being paid with.
+     * @param amount The amount of tokens being paid.
+     * @param beneficiary The address that will receive any tokens minted from this payment.
+     * @param minReturnedTokens The minimum number of tokens expected to be minted for the beneficiary.
+     * @param memo A memo to include with the payment.
+     * @param metadata Additional metadata for the payment.
+     * @return beneficiaryTokenCount The number of tokens minted for the beneficiary.
+     */
+    function pay(
+        uint256 projectId,
+        address token,
+        uint256 amount,
+        address beneficiary,
+        uint256 minReturnedTokens,
+        string calldata memo,
+        bytes calldata metadata
+    ) external payable override nonReentrant returns (uint256 beneficiaryTokenCount) {
+        if (msg.value == 0) revert NO_VALUE();
+        if (msg.value != amount) revert INCORRECT_VALUE();
+
+        // Get the primary terminal for the project, assume payment in ETH.
+        IJBTerminal terminal = DIRECTORY.primaryTerminalOf(FLOW_PROJECT_ID, token);
+
+        // If the terminal is not found, revert.
+        if (address(terminal) == address(0)) {
+            revert NO_FLOWS_ETH_TERMINAL();
+        }
+
+        // Pay the terminal.
+        uint256 flowsReceived = terminal.pay{ value: msg.value }(
+            FLOW_PROJECT_ID,
+            ETH, // token in
+            msg.value,
+            address(this), // router receives $FLOWS
+            0,
+            memo,
+            metadata
+        );
+
+        // Get the primary terminal for the project, assume payment in FLOWS.
+        IJBTerminal destTerminal = DIRECTORY.primaryTerminalOf(projectId, FLOWS_TOKEN);
+
+        // If the terminal is not found, revert.
+        if (address(destTerminal) == address(0)) {
+            revert NO_DEST_TERMINAL();
+        }
+
+        // Approve the terminal to spend the FLOWS tokens.
+        IERC20(FLOWS_TOKEN).approve(address(destTerminal), flowsReceived);
+
+        // Pay the terminal.
+        destTerminal.pay(projectId, FLOWS_TOKEN, flowsReceived, beneficiary, minReturnedTokens, memo, metadata);
+    }
 
     /**
      * @notice Get the accounting context for the specified project ID and token.
@@ -143,29 +232,9 @@ contract FlowsTerminal is IJBTerminal, UUPSUpgradeable, Ownable2StepUpgradeable,
         return 0;
     }
 
-    /** @notice Make a payment to a project.
-     * @dev This is a stub implementation that always returns 0. In a full implementation,
-     * this would process the payment, potentially mint tokens for the beneficiary, and handle
-     * any associated hooks or metadata processing.
-     * @param projectId The ID of the project being paid.
-     * @param token The address of the token being paid with.
-     * @param amount The amount of tokens being paid.
-     * @param beneficiary The address that will receive any tokens minted from this payment.
-     * @param minReturnedTokens The minimum number of tokens expected to be minted for the beneficiary.
-     * @param memo A memo to include with the payment.
-     * @param metadata Additional metadata for the payment.
-     * @return beneficiaryTokenCount The number of tokens minted for the beneficiary.
-     */
-    function pay(
-        uint256 projectId,
-        address token,
-        uint256 amount,
-        address beneficiary,
-        uint256 minReturnedTokens,
-        string calldata memo,
-        bytes calldata metadata
-    ) external payable override returns (uint256 beneficiaryTokenCount) {
-        /** Empty implementation - always returns 0 */
-        return 0;
-    }
+    //*********************************************************************//
+    // -------------------------- internal functions ---------------------- //
+    //*********************************************************************//
+
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 }

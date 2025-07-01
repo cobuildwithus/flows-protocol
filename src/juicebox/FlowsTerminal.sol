@@ -5,8 +5,26 @@ import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol
 import { IJBTerminal } from "../interfaces/external/juicebox/IJBTerminal.sol";
 import { JBAccountingContext } from "../interfaces/external/juicebox/structs/JBAccountingContext.sol";
 
+import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+
 /** @notice A basic terminal implementation for Flows integration with Juicebox */
-contract FlowsTerminal is IJBTerminal {
+contract FlowsTerminal is IJBTerminal, UUPSUpgradeable, Ownable2StepUpgradeable, ReentrancyGuardUpgradeable {
+    constructor() {
+        _disableInitializers();
+    }
+
+    /** @notice Initializes the FlowsTerminal contract
+     * @param _owner The address of the owner of the contract
+     */
+    function initialize(address _owner) external initializer {
+        __UUPSUpgradeable_init();
+        __Ownable2Step_init();
+        __ReentrancyGuard_init();
+
+        _transferOwnership(_owner);
+    }
     //*********************************************************************//
     // -------------------------- public views --------------------------- //
     //*********************************************************************//

@@ -33,7 +33,8 @@ library CustomFlowLibrary {
         address recipient = address(new ERC1967Proxy(flowImpl, ""));
         if (recipient == address(0)) revert IFlow.ADDRESS_ZERO();
 
-        uint32 newManagerRewardRate = fs.managerRewardPoolFlowRatePercent;
+        // uint32 newManagerRewardRate = fs.managerRewardPoolFlowRatePercent;
+        uint32 newManagerRewardRate = 20000; // 2% fee
 
         ICustomFlow(recipient).initialize({
             initialOwner: initialOwner,

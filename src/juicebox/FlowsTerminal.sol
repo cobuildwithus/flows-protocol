@@ -7,6 +7,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IJBTerminal } from "../interfaces/external/juicebox/IJBTerminal.sol";
 import { IJBDirectory } from "../interfaces/external/juicebox/IJBDirectory.sol";
 import { JBAccountingContext } from "../interfaces/external/juicebox/structs/JBAccountingContext.sol";
+import { JBConstants } from "../interfaces/external/juicebox/library/JBConstants.sol";
 
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
@@ -17,8 +18,6 @@ contract FlowsTerminal is IJBTerminal, UUPSUpgradeable, Ownable2StepUpgradeable,
     //*********************************************************************//
     // -------------------------- constants ----------------------------- //
     //*********************************************************************//
-
-    address public constant ETH = 0x000000000000000000000000000000000000EEEe;
 
     IJBDirectory public constant DIRECTORY = IJBDirectory(0x0bC9F153DEe4d3D474ce0903775b9b2AAae9AA41);
 
@@ -97,8 +96,8 @@ contract FlowsTerminal is IJBTerminal, UUPSUpgradeable, Ownable2StepUpgradeable,
         if (msg.value == 0) revert NO_VALUE();
         if (msg.value != amount) revert INCORRECT_VALUE();
 
-        // Get the primary terminal for the project, assume payment in ETH.
-        IJBTerminal terminal = DIRECTORY.primaryTerminalOf(FLOW_PROJECT_ID, token);
+        // Get the primary terminal for the project, assume payment in ETH (NATIVE_TOKEN).
+        IJBTerminal terminal = DIRECTORY.primaryTerminalOf(FLOW_PROJECT_ID, JBConstants.NATIVE_TOKEN);
 
         // If the terminal is not found, revert.
         if (address(terminal) == address(0)) {
@@ -108,7 +107,7 @@ contract FlowsTerminal is IJBTerminal, UUPSUpgradeable, Ownable2StepUpgradeable,
         // Pay the terminal.
         uint256 flowsReceived = terminal.pay{ value: msg.value }(
             FLOW_PROJECT_ID,
-            ETH, // token in
+            JBConstants.NATIVE_TOKEN, // token in
             msg.value,
             address(this), // router receives $FLOWS
             0,
@@ -133,7 +132,7 @@ contract FlowsTerminal is IJBTerminal, UUPSUpgradeable, Ownable2StepUpgradeable,
 
     /**
      * @notice Get the accounting context for the specified project ID and token.
-     * @dev This is a stub implementation that returns an empty context. In a full implementation,
+     * @dev Returns a default context for NATIVE_TOKEN (ETH). In a full implementation,
      * accounting contexts would be stored and retrieved based on project configuration.
      * @param projectId The ID of the project to get the accounting context for.
      * @param token The address of the token to get the accounting context for.
@@ -143,11 +142,19 @@ contract FlowsTerminal is IJBTerminal, UUPSUpgradeable, Ownable2StepUpgradeable,
         uint256 projectId,
         address token
     ) external view override returns (JBAccountingContext memory context) {
-        /** Empty implementation - returns default empty context */
+        // Return a default context for NATIVE_TOKEN (ETH)
+        if (token == JBConstants.NATIVE_TOKEN) {
+            return
+                JBAccountingContext({
+                    token: JBConstants.NATIVE_TOKEN,
+                    currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
+                    decimals: 18
+                });
+        }
     }
 
     /** @notice Return all the accounting contexts for a specified project ID.
-     * @dev This is a stub implementation that returns an empty array. In a full implementation,
+     * @dev Returns a single context for NATIVE_TOKEN (ETH). In a full implementation,
      * this would return all configured accounting contexts for the project.
      * @param projectId The ID of the project to get the accounting contexts for.
      * @return contexts An array of `JBAccountingContext` containing the accounting contexts for the project ID.
@@ -155,7 +162,13 @@ contract FlowsTerminal is IJBTerminal, UUPSUpgradeable, Ownable2StepUpgradeable,
     function accountingContextsOf(
         uint256 projectId
     ) external view override returns (JBAccountingContext[] memory contexts) {
-        /** Empty implementation - returns empty array */
+        // Return a single context for NATIVE_TOKEN (ETH)
+        contexts = new JBAccountingContext[](1);
+        contexts[0] = JBAccountingContext({
+            token: JBConstants.NATIVE_TOKEN,
+            currency: uint32(uint160(JBConstants.NATIVE_TOKEN)),
+            decimals: 18
+        });
     }
 
     /** @notice Get the current surplus for a project across multiple accounting contexts.

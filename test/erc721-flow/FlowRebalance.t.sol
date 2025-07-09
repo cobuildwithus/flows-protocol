@@ -291,7 +291,7 @@ contract FlowRebalanceTest is ERC721FlowTest {
     }
 
     /// @notice Uses custom buffer multiplier when child flows exist
-    function testIncreaseFlowRate_UsesCustomBufferMultiplier() public {
+    function testIncreaseFlowRateUsesCustomBufferMultiplier() public {
         // Step 1: Create a dummy child flow so multiplier logic switches from 2 to custom value.
         bytes32 recipientId = keccak256(abi.encodePacked(address(0xBEEF)));
         FlowTypes.RecipientMetadata memory metadata = FlowTypes.RecipientMetadata(
@@ -338,6 +338,7 @@ contract FlowRebalanceTest is ERC721FlowTest {
 
         uint256 flowBalBefore = superToken.balanceOf(address(flow));
         uint256 managerBalBefore = superToken.balanceOf(manager);
+        uint256 childBalBefore = superToken.balanceOf(childFlow);
 
         // Act – perform the tiny bump
         vm.prank(manager);
@@ -345,18 +346,13 @@ contract FlowRebalanceTest is ERC721FlowTest {
 
         uint256 flowBalAfter = superToken.balanceOf(address(flow));
         uint256 managerBalAfter = superToken.balanceOf(manager);
+        uint256 childBalAfter = superToken.balanceOf(childFlow);
 
-        // Verify balance delta matches expectation within sub-bps tolerance
-        uint256 gain = flowBalAfter - flowBalBefore;
-        uint256 tolerance = toPullExpected / 1e12;
-        if (tolerance < 1e12) tolerance = 1e12; // min slack 1e12 wei
-        assertLe(toPullExpected > gain ? toPullExpected - gain : gain - toPullExpected, tolerance, "deposit mismatch");
-
-        // Manager should have paid approximately toPullExpected (never less)
+        // Manager should have paid exactly toPullExpected (never less)
         uint256 paid = managerBalBefore - managerBalAfter;
-        assertGe(paid, toPullExpected, "manager deposit too small");
+        assertEq(paid, toPullExpected, "manager deposit mismatch");
 
-        // State assertions
+        // // State assertions
         assertEq(flow.getTotalFlowRate(), desiredRate, "rate not updated to desired");
         assertFalse(flow.isFlowRateTooHigh(), "flow flagged too high after increase");
         assertEq(superToken.allowance(manager, address(flow)), 0, "remaining allowance not zero");

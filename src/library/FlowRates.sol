@@ -8,10 +8,16 @@ import { SuperTokenV1Library } from "@superfluid-finance/ethereum-contracts/cont
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 library FlowRates {
     using SuperTokenV1Library for ISuperToken;
     using EnumerableSet for EnumerableSet.AddressSet;
+
+    /// @dev how much extra buffer we add to the buffer amount
+    uint256 constant EXTRA_BUFFER_PERCENT = 5; // 5%
+    /// @dev how many child flows we can update per tx
+    uint256 constant MAX_CHILD_UPDATES_PER_TX = 10;
 
     /**
      * @notice Calculates the bonus flow rate based on quorum and active votes
@@ -43,7 +49,12 @@ library FlowRates {
         uint256 totalActiveAllocationWeight = fs.totalActiveAllocationWeight;
 
         // how many votes are needed to reach quorum
-        uint256 votesToReachQuorum = _scaleAmountByPercentage(fs, _totalAllocationWeight, quorumBps);
+        uint256 votesToReachQuorum = Math.mulDiv(
+            _totalAllocationWeight,
+            quorumBps,
+            fs.PERCENTAGE_SCALE,
+            Math.Rounding.Up
+        );
 
         if (votesToReachQuorum == 0) {
             return (maxBonusFlowRate, 0);
@@ -58,8 +69,8 @@ library FlowRates {
 
         // actual bonus flow rate is linearly proportional
         // to the total active vote weight / totalSupplyVoteWeight * quorumBps
-        int256 computedBonusFlowRate = int256(
-            _scaleAmountByPercentage(fs, uint256(uint96(maxBonusFlowRate)), percentageOfQuorum)
+        int256 computedBonusFlowRate = SafeCast.toInt256(
+            _scaleAmountByPercentage(fs, SafeCast.toUint256(maxBonusFlowRate), percentageOfQuorum)
         );
 
         if (computedBonusFlowRate > type(int96).max) revert IFlow.FLOW_RATE_TOO_HIGH();
@@ -83,8 +94,8 @@ library FlowRates {
         int96 _flowRate,
         uint256 _totalAllocationWeight
     ) external returns (int96 baselineFlowRate, int96 bonusFlowRate, int96 managerRewardFlowRate) {
-        int256 managerRewardFlowRatePercent = int256(
-            _scaleAmountByPercentage(fs, uint96(_flowRate), fs.managerRewardPoolFlowRatePercent)
+        int256 managerRewardFlowRatePercent = SafeCast.toInt256(
+            _scaleAmountByPercentage(fs, SafeCast.toUint256(_flowRate), fs.managerRewardPoolFlowRatePercent)
         );
 
         if (managerRewardFlowRatePercent > type(int96).max) revert IFlow.FLOW_RATE_TOO_HIGH();
@@ -93,8 +104,8 @@ library FlowRates {
 
         int96 remainingFlowRate = _flowRate - managerRewardFlowRate;
 
-        int256 baselineFlowRate256 = int256(
-            _scaleAmountByPercentage(fs, uint96(remainingFlowRate), fs.baselinePoolFlowRatePercent)
+        int256 baselineFlowRate256 = SafeCast.toInt256(
+            _scaleAmountByPercentage(fs, SafeCast.toUint256(remainingFlowRate), fs.baselinePoolFlowRatePercent)
         );
 
         if (baselineFlowRate256 > type(int96).max) revert IFlow.FLOW_RATE_TOO_HIGH();
@@ -215,7 +226,10 @@ library FlowRates {
      * @param fs The storage of the Flow contract
      * @return maxFlowRate The maximum flow rate for the Flow contract
      */
-    function getMaxFlowRate(FlowTypes.Storage storage fs, address flowAddress) public view returns (int96 maxFlowRate) {
+    function getMaxSafeFlowRate(
+        FlowTypes.Storage storage fs,
+        address flowAddress
+    ) public view returns (int96 maxFlowRate) {
         // Net = incoming - outgoing
         // Net + outgoing (getActualFlowRate) = incoming
         int96 netFlow = getNetFlowRate(fs, flowAddress);
@@ -226,8 +240,8 @@ library FlowRates {
         if (inFlow <= 0) return 0;
 
         // Cap the outflow to `outflowCapPct` of the incoming flow (scaled by `PERCENTAGE_SCALE`).
-        uint256 capped = (uint256(uint96(inFlow)) * fs.outflowCapPct) / fs.PERCENTAGE_SCALE;
-        return int96(uint96(capped));
+        uint256 capped = _scaleAmountByPercentage(fs, SafeCast.toUint256(inFlow), fs.outflowCapPct);
+        return SafeCast.toInt96(SafeCast.toInt256(capped));
     }
 
     /**
@@ -244,9 +258,7 @@ library FlowRates {
 
         uint256 newBuf = fs.superToken.getBufferAmountByFlowRate(amount);
 
-        uint256 toPull = (newBuf * multiplier * 105) / 100;
-
-        return toPull;
+        return Math.mulDiv(newBuf, multiplier * (100 + EXTRA_BUFFER_PERCENT), 100, Math.Rounding.Up);
     }
 
     /**
@@ -260,7 +272,7 @@ library FlowRates {
         uint256 multiplier
     ) public returns (uint256 toPull, int96 oldRate, int96 newRate, int96 delta) {
         oldRate = getActualFlowRate(fs, flowAddress);
-        int96 cap = getMaxFlowRate(fs, flowAddress);
+        int96 cap = getMaxSafeFlowRate(fs, flowAddress);
 
         newRate = oldRate + amount;
 
@@ -285,8 +297,10 @@ library FlowRates {
      * @param child The address of the child flow contract
      */
     function takeFlowRateSnapshot(FlowTypes.Storage storage fs, address child) public {
-        fs.oldChildFlowRate[child] = getMemberTotalFlowRate(fs, child);
-        fs.rateSnapshotTaken[child] = true;
+        if (!fs.rateSnapshotTaken[child]) {
+            fs.oldChildFlowRate[child] = getMemberTotalFlowRate(fs, child);
+            fs.rateSnapshotTaken[child] = true;
+        }
     }
 
     /**
@@ -312,7 +326,7 @@ library FlowRates {
      * @return True if the flow rate is too high, false otherwise
      */
     function isFlowRateTooHigh(FlowTypes.Storage storage fs, address flowAddress) public view returns (bool) {
-        return getActualFlowRate(fs, flowAddress) > getMaxFlowRate(fs, flowAddress);
+        return getActualFlowRate(fs, flowAddress) > getMaxSafeFlowRate(fs, flowAddress);
     }
 
     /**
@@ -336,7 +350,7 @@ library FlowRates {
         int96 previousRate = consumeFlowRateSnapshot(fs, childAddress);
         int96 newRate = getMemberTotalFlowRate(fs, childAddress);
         int96 netIncrease = newRate - previousRate;
-        bool isTooHigh = isFlowRateTooHigh(fs, childAddress);
+        bool isTooHigh = IFlow(childAddress).isFlowRateTooHigh();
 
         // If we aren't increasing:
         if (netIncrease <= 0 || isTooHigh) {
@@ -345,6 +359,7 @@ library FlowRates {
                 bool ok;
                 try IFlow(childAddress).decreaseFlowRate() {
                     ok = true;
+                    takeFlowRateSnapshot(fs, childAddress);
                 } catch {
                     ok = false;
                 }
@@ -355,22 +370,37 @@ library FlowRates {
             return; // nothing to raise
         }
 
-        // So the child can't make a crazy approval amount
-        uint256 safeApprovalAmount = getRequiredBufferAmount(fs, netIncrease, getBufferMultiplier(fs, _childFlows));
+        // get the current flow rate out of the child
+        int96 childFlowRateBefore = IFlow(childAddress).getActualFlowRate();
+        int96 headroom = IFlow(childAddress).getMaxSafeFlowRate() - childFlowRateBefore;
+
+        if (headroom <= 0) {
+            // nothing to do;
+            return;
+        }
+
+        // cant increase above the cap
+        if (netIncrease > headroom) netIncrease = headroom;
+
+        // after clamping
+        if (netIncrease <= 0) {
+            // nothing to do;
+            return;
+        }
+
         uint256 approvalAmount = IFlow(childAddress).getRequiredBufferAmount(netIncrease);
-        bool isChildApprovalTooHigh = safeApprovalAmount * 3 < approvalAmount;
 
         // ensure the parent has enough balance to cover the safe approval amount
         bool insufficientBalance = fs.superToken.balanceOf(flowAddress) < approvalAmount;
 
-        if (insufficientBalance || isChildApprovalTooHigh) {
+        if (insufficientBalance) {
             // leave child in the queue, skip for now
             _reAddChildFlowToUpdate(fs, _childFlowsToUpdateFlowRate, childAddress, previousRate);
             return;
         }
 
         fs.superToken.approve(childAddress, 0);
-        bool ok;
+        bool ok = true;
         fs.superToken.approve(childAddress, approvalAmount);
 
         try IFlow(childAddress).increaseFlowRate(netIncrease) {
@@ -379,11 +409,52 @@ library FlowRates {
             ok = false;
         }
 
+        // reset approval
         fs.superToken.approve(childAddress, 0);
 
-        if (!ok) {
-            _reAddChildFlowToUpdate(fs, _childFlowsToUpdateFlowRate, childAddress, previousRate);
+        // get the new flow rate increase
+        int96 actualIncrease = IFlow(childAddress).getActualFlowRate() - childFlowRateBefore;
+        bool closeEnough = _withinTolerance(netIncrease, actualIncrease);
+
+        // tolerate small rounding differences
+        if (!closeEnough) {
+            ok = false;
         }
+
+        if (!ok) {
+            _reAddChildFlowToUpdate(fs, _childFlowsToUpdateFlowRate, childAddress, previousRate + actualIncrease);
+        }
+    }
+
+    /**
+     * @notice Returns true when `actual` is within the allowed rounding band of `expected`.
+     * @param expected The expected flow rate
+     * @param actual The actual flow rate
+     * @return True if the actual flow rate is within the allowed rounding band of the expected flow rate, false otherwise
+     */
+    function _withinTolerance(int96 expected, int96 actual) public returns (bool) {
+        if (expected == actual) return true; // fast path
+        // if the flow rate was actually lowered, we can tolerate it
+        if (actual < 0) return true;
+
+        uint256 exp = SafeCast.toUint256(expected);
+        uint256 act = SafeCast.toUint256(actual);
+
+        // absolute difference
+        uint256 diff = exp > act ? exp - act : act - exp;
+
+        // Allowed band: 0.10 % of expected, but never less than 1 wei/sec.
+        //                ─────┬─────
+        //                     │  Single constant
+        //                     ▼
+        uint256 allowed = exp / 1000 + 1; // 1 / 1000  = 0.10 %
+
+        // we can tolerate a small amount of rounding error
+        uint256 minDiff = 1e3;
+        bool isBelowMinDiff = diff < minDiff;
+
+        // if the difference is within the allowed band or below the minimum difference, we can tolerate it
+        return diff <= allowed || isBelowMinDiff;
     }
 
     /**
@@ -399,9 +470,11 @@ library FlowRates {
         address childAddress,
         int96 previousRate
     ) public {
-        _childFlowsToUpdateFlowRate.add(childAddress);
-        fs.oldChildFlowRate[childAddress] = previousRate;
-        fs.rateSnapshotTaken[childAddress] = true;
+        if (!fs.rateSnapshotTaken[childAddress]) {
+            _childFlowsToUpdateFlowRate.add(childAddress);
+            fs.oldChildFlowRate[childAddress] = previousRate;
+            fs.rateSnapshotTaken[childAddress] = true;
+        }
     }
 
     /**
@@ -476,11 +549,9 @@ library FlowRates {
         address flowAddress,
         uint256 updateCount
     ) public {
-        uint256 absoluteMax = 10; // reduced this to prevent crazy long txn times on Base
-
         uint256 limit = _childFlowsToUpdateFlowRate.length();
         if (limit > updateCount) limit = updateCount;
-        if (limit > absoluteMax) limit = absoluteMax;
+        if (limit > MAX_CHILD_UPDATES_PER_TX) limit = MAX_CHILD_UPDATES_PER_TX;
 
         address[] memory batch = new address[](limit);
         for (uint256 i; i < limit; ++i) {

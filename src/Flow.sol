@@ -293,9 +293,14 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
 
         emit RecipientCreated(_recipientId, fs.recipients[_recipientId], msg.sender);
 
+        // need to do this here because we just added new member units
+        _setChildrenAsNeedingUpdates(recipientAddress);
+
         fs.updateBaselineMemberUnits(recipientAddress, BASELINE_MEMBER_UNITS);
         // 10 units for each recipient in case there are no allocations yet, everyone will split the bonus salary
         fs.updateBonusMemberUnits(recipientAddress, 10);
+
+        _workOnChildFlowsToUpdate(10);
 
         return (_recipientId, recipientAddress);
     }
@@ -338,6 +343,9 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         );
         emit RecipientCreated(_recipientId, fs.recipients[_recipientId], msg.sender);
 
+        // need to do this here because we just added new member units
+        _setChildrenAsNeedingUpdates(recipient);
+
         // do this after so member units based indexer can work
         // for indexer, need to connect tcr item in database to recipient BEFORE handling member units
         // 10 bonus units for each recipient in case there are no allocations yet, everyone will split the bonus salary
@@ -346,8 +354,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         // set the flow rate for the child contract
         _setChildFlowRate(recipient);
 
-        // need to do this here because we just added new member units
-        _setChildrenAsNeedingUpdates(recipient);
         _workOnChildFlowsToUpdate(10);
 
         return (_recipientId, recipient);
@@ -827,7 +833,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @return The maximum safe flow rate (int96) that can be set without exceeding the cap.
      */
     function getMaxSafeFlowRate() public view returns (int96) {
-        return fs.getMaxFlowRate(address(this));
+        return fs.getMaxSafeFlowRate(address(this));
     }
 
     /**

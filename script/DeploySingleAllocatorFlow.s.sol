@@ -40,6 +40,8 @@ contract DeploySingleAllocatorFlow is DeployScript {
         address managerRewardPool = vm.envAddress("MANAGER_REWARD_POOL");
         contractName = vm.envString("CONTRACT_NAME");
 
+        address connectPoolAdmin = 0x6eD3cec4ec39786094350FbCf10a6761B93f350d;
+
         // ------------------------------------------------------------------
         // Top-level strategy - SingleAllocatorStrategy with allocator
         // ------------------------------------------------------------------
@@ -59,6 +61,7 @@ contract DeploySingleAllocatorFlow is DeployScript {
             manager: allocator,
             managerRewardPool: address(0),
             parent: address(0),
+            connectPoolAdmin: connectPoolAdmin,
             flowParams: IFlow.FlowParams({
                 baselinePoolFlowRatePercent: baselinePoolFlowRatePercent,
                 managerRewardPoolFlowRatePercent: managerRewardPoolFlowRatePercent,

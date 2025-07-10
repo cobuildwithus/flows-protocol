@@ -67,6 +67,7 @@ contract BasicCustomFlowTest is ERC721FlowTest {
             manager: manager,
             managerRewardPool: address(dummyRewardPool),
             parent: address(0),
+            connectPoolAdmin: address(0),
             flowParams: flowParams,
             metadata: flowMetadata,
             sanctionsOracle: IChainalysisSanctionsList(address(0)),
@@ -86,6 +87,7 @@ contract BasicCustomFlowTest is ERC721FlowTest {
             manager: manager,
             managerRewardPool: address(dummyRewardPool),
             parent: address(0),
+            connectPoolAdmin: address(0),
             flowParams: flowParams,
             metadata: FlowTypes.RecipientMetadata(
                 "Test Flow",
@@ -111,6 +113,7 @@ contract BasicCustomFlowTest is ERC721FlowTest {
             manager: manager,
             managerRewardPool: address(dummyRewardPool),
             parent: address(0),
+            connectPoolAdmin: address(0),
             flowParams: flowParams,
             metadata: FlowTypes.RecipientMetadata(
                 "Test Flow",
@@ -130,6 +133,7 @@ contract BasicCustomFlowTest is ERC721FlowTest {
             address(flowImpl),
             manager,
             address(dummyRewardPool),
+            address(0),
             address(0),
             flowParams,
             FlowTypes.RecipientMetadata(
@@ -151,6 +155,7 @@ contract BasicCustomFlowTest is ERC721FlowTest {
             address(flowImpl),
             manager,
             address(dummyRewardPool),
+            address(0),
             address(0),
             flowParams,
             FlowTypes.RecipientMetadata(

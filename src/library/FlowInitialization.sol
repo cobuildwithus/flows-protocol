@@ -22,6 +22,7 @@ library FlowInitialization {
      * @param _superToken The address of the SuperToken to be used for the pool
      * @param _managerRewardPool The address of the manager reward pool (optional)
      * @param _parent The address of the parent flow contract (optional)
+     * @param _connectPoolAdmin The address of the admin that can connect the pool
      * @param _flowAddress The address of the flow contract
      * @param _flowParams The parameters for the flow contract
      * @param _metadata The metadata for the flow contract
@@ -37,6 +38,7 @@ library FlowInitialization {
         address _managerRewardPool,
         address _parent,
         address _flowAddress,
+        address _connectPoolAdmin,
         IFlow.FlowParams memory _flowParams,
         FlowTypes.RecipientMetadata memory _metadata,
         IChainalysisSanctionsList _sanctionsOracle,
@@ -88,6 +90,7 @@ library FlowInitialization {
         fs.defaultBufferMultiplier = 3;
         fs.outflowCapPct = 999e3; // 99.9% on 1e6
         fs.PERCENTAGE_SCALE = PERCENTAGE_SCALE;
+        fs.connectPoolAdmin = _connectPoolAdmin;
 
         // Set the metadata
         fs.metadata = _metadata;

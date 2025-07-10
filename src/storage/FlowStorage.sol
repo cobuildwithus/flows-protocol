@@ -102,6 +102,8 @@ interface FlowTypes {
         // The percentage scale
         /// @notice constant to scale uints into percentages (1e6 == 100%)
         uint32 PERCENTAGE_SCALE;
+        // The address of the address that can connect the pool
+        address connectPoolAdmin;
     }
 }
 

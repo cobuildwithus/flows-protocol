@@ -43,6 +43,7 @@ library CustomFlowLibrary {
             manager: flowManager,
             managerRewardPool: managerRewardPool,
             parent: parent,
+            connectPoolAdmin: fs.connectPoolAdmin,
             flowParams: IFlow.FlowParams({
                 baselinePoolFlowRatePercent: fs.baselinePoolFlowRatePercent,
                 managerRewardPoolFlowRatePercent: newManagerRewardRate,

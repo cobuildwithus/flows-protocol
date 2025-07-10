@@ -55,6 +55,7 @@ contract ERC721FlowTest is Test {
             manager: manager,
             managerRewardPool: address(dummyRewardPool),
             parent: address(0),
+            connectPoolAdmin: address(0),
             flowParams: flowParams,
             metadata: flowMetadata,
             sanctionsOracle: IChainalysisSanctionsList(address(0)),

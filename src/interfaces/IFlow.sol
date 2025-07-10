@@ -88,6 +88,9 @@ interface IFlowEvents {
     /// @notice Emitted when the manager is updated
     event ManagerUpdated(address indexed oldManager, address indexed newManager);
 
+    /// @notice Emitted when the connect pool admin is updated
+    event ConnectPoolAdminUpdated(address indexed oldConnectPoolAdmin, address indexed newConnectPoolAdmin);
+
     /// @notice Emitted when the bonus pool quorum is updated
     event BonusPoolQuorumUpdated(uint32 oldBonusPoolQuorum, uint32 newBonusPoolQuorum);
 
@@ -166,6 +169,9 @@ interface IFlow is IFlowEvents, IManagedFlow {
 
     /// @dev Reverts if the caller is not the owner or the parent
     error NOT_OWNER_OR_PARENT();
+
+    /// @dev Reverts if the caller cannot connect a pool
+    error NOT_ALLOWED_TO_CONNECT_POOL();
 
     /// @dev Reverts if the baseline flow rate percentage is invalid
     error INVALID_PERCENTAGE();
@@ -366,6 +372,7 @@ interface ICustomFlow is IFlow {
      * @param manager The address of the flow manager
      * @param managerRewardPool The address of the manager reward pool
      * @param parent The address of the parent flow contract (optional)
+     * @param connectPoolAdmin The address of the admin that can connect the pool
      * @param flowParams The parameters for the flow contract
      * @param metadata The metadata for the flow contract
      * @param sanctionsOracle The address of the sanctions oracle
@@ -378,6 +385,7 @@ interface ICustomFlow is IFlow {
         address manager,
         address managerRewardPool,
         address parent,
+        address connectPoolAdmin,
         FlowParams memory flowParams,
         FlowTypes.RecipientMetadata memory metadata,
         IChainalysisSanctionsList sanctionsOracle,

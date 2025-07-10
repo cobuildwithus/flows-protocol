@@ -26,7 +26,7 @@ contract DeploySingleAllocatorStrategy is DeployScript {
         // Initialize proxy with owner and allocator
         SingleAllocatorStrategy(singleAllocatorStrategy).initialize(owner, allocator);
 
-        contractName = "SingleAllocatorStrategy.curtiscoffee.eth";
+        contractName = "SingleAllocatorStrategy.nickhaaz";
     }
 
     function writeAdditionalDeploymentDetails(string memory filePath) internal override {

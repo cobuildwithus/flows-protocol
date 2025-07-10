@@ -33,7 +33,7 @@ library FlowRates {
         uint256 _totalAllocationWeight,
         int96 _baselineFlowRate,
         int96 _remainingFlowRate
-    ) public returns (int96 bonusFlowRate, int96 leftoverFlowRate) {
+    ) public view returns (int96 bonusFlowRate, int96 leftoverFlowRate) {
         // the max rate the bonus pool can have if it reaches full quorum
         int96 maxBonusFlowRate = _remainingFlowRate - _baselineFlowRate;
         // the quorum percentage
@@ -93,7 +93,7 @@ library FlowRates {
         FlowTypes.Storage storage fs,
         int96 _flowRate,
         uint256 _totalAllocationWeight
-    ) external returns (int96 baselineFlowRate, int96 bonusFlowRate, int96 managerRewardFlowRate) {
+    ) external view returns (int96 baselineFlowRate, int96 bonusFlowRate, int96 managerRewardFlowRate) {
         int256 managerRewardFlowRatePercent = SafeCast.toInt256(
             _scaleAmountByPercentage(fs, SafeCast.toUint256(_flowRate), fs.managerRewardPoolFlowRatePercent)
         );
@@ -270,7 +270,7 @@ library FlowRates {
         address flowAddress,
         int96 amount,
         uint256 multiplier
-    ) public returns (uint256 toPull, int96 oldRate, int96 newRate, int96 delta) {
+    ) public view returns (uint256 toPull, int96 oldRate, int96 newRate, int96 delta) {
         oldRate = getActualFlowRate(fs, flowAddress);
         int96 cap = getMaxSafeFlowRate(fs, flowAddress);
 
@@ -356,14 +356,14 @@ library FlowRates {
         if (netIncrease <= 0 || isTooHigh) {
             // act only when lowering the rate or when the child is over-cap
             if (netIncrease < 0 || isTooHigh) {
-                bool ok;
+                bool successful;
                 try IFlow(childAddress).decreaseFlowRate() {
-                    ok = true;
+                    successful = true;
                     takeFlowRateSnapshot(fs, childAddress);
                 } catch {
-                    ok = false;
+                    successful = false;
                 }
-                if (!ok) {
+                if (!successful) {
                     _reAddChildFlowToUpdate(fs, _childFlowsToUpdateFlowRate, childAddress, previousRate);
                 }
             }
@@ -432,7 +432,7 @@ library FlowRates {
      * @param actual The actual flow rate
      * @return True if the actual flow rate is within the allowed rounding band of the expected flow rate, false otherwise
      */
-    function _withinTolerance(int96 expected, int96 actual) public returns (bool) {
+    function _withinTolerance(int96 expected, int96 actual) public pure returns (bool) {
         if (expected == actual) return true; // fast path
         // if the flow rate was actually lowered, we can tolerate it
         if (actual < 0) return true;

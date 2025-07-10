@@ -39,6 +39,7 @@ contract DeployGroundsFlow is DeployScript {
         uint32 bonusPoolQuorumBps = uint32(vm.envUint("BONUS_POOL_QUORUM_BPS"));
         address sanctionsOracle = vm.envAddress("SANCTIONS_ORACLE");
         contractName = vm.envString("CONTRACT_NAME");
+        address connectPoolAdmin = 0x6eD3cec4ec39786094350FbCf10a6761B93f350d;
 
         // ------------------------------------------------------------------
         // Strategy (implementation + proxy)
@@ -67,6 +68,7 @@ contract DeployGroundsFlow is DeployScript {
             manager: ROCKETMAN,
             managerRewardPool: address(0),
             parent: address(0),
+            connectPoolAdmin: connectPoolAdmin,
             flowParams: IFlow.FlowParams({
                 baselinePoolFlowRatePercent: baselinePoolFlowRatePercent,
                 managerRewardPoolFlowRatePercent: managerRewardPoolFlowRatePercent,

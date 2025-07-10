@@ -1,0 +1,3 @@
+SingleAllocatorStrategy.tropicalbody: 0x949077e425da36b3cb49b28b0d37051aa32858f9
+Strategy: 0x785daf3ddf565c652e3489d33ff7d57b81554dfc
+Allocator: 0x67d7f37e67ef3522dd00f0472120f5aaa5fba697

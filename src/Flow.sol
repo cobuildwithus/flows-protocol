@@ -35,6 +35,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @param _manager The address of the flow manager
      * @param _managerRewardPool The address of the manager reward pool
      * @param _parent The address of the parent flow contract (optional)
+     * @param _connectPoolAdmin The address of the admin that can connect the pool
      * @param _flowParams The parameters for the flow contract
      * @param _metadata The metadata for the flow contract
      * @param _sanctionsOracle The address of the sanctions oracle
@@ -47,6 +48,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         address _manager,
         address _managerRewardPool,
         address _parent,
+        address _connectPoolAdmin,
         FlowParams memory _flowParams,
         RecipientMetadata memory _metadata,
         IChainalysisSanctionsList _sanctionsOracle,
@@ -60,6 +62,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
             _managerRewardPool,
             _parent,
             address(this),
+            _connectPoolAdmin,
             _flowParams,
             _metadata,
             _sanctionsOracle,
@@ -490,8 +493,10 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @dev Only callable by the owner or parent of the contract
      * @dev Emits a PoolConnected event upon successful connection
      */
-    function connectPool(ISuperfluidPool poolAddress) external onlyOwnerOrParent nonReentrant {
+    function connectPool(ISuperfluidPool poolAddress) external nonReentrant {
         if (address(poolAddress) == address(0)) revert ADDRESS_ZERO();
+        if (msg.sender != owner() && msg.sender != fs.parent && msg.sender != fs.connectPoolAdmin)
+            revert NOT_ALLOWED_TO_CONNECT_POOL();
 
         bool success = fs.superToken.connectPool(poolAddress);
         if (!success) revert POOL_CONNECTION_FAILED();
@@ -580,7 +585,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      * @notice Sets a new manager for the Flow contract
      * @param _newManager The address of the new manager
      * @dev Only callable by the current owner
-     * @dev Emits a ManagerUpdated event with the old and new manager addresses
      */
     function setManager(address _newManager) external onlyOwnerOrManager nonReentrant {
         if (_newManager == address(0)) revert ADDRESS_ZERO();
@@ -588,6 +592,19 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         address oldManager = fs.manager;
         fs.manager = _newManager;
         emit ManagerUpdated(oldManager, _newManager);
+    }
+
+    /**
+     * @notice Sets the address of the admin that can connect the pool
+     * @param _connectPoolAdmin The address of the admin that can connect the pool
+     * @dev Only callable by the current owner
+     */
+    function setConnectPoolAdmin(address _connectPoolAdmin) external onlyOwner nonReentrant {
+        if (_connectPoolAdmin == address(0)) revert ADDRESS_ZERO();
+
+        address oldConnectPoolAdmin = fs.connectPoolAdmin;
+        fs.connectPoolAdmin = _connectPoolAdmin;
+        emit ConnectPoolAdminUpdated(oldConnectPoolAdmin, _connectPoolAdmin);
     }
 
     /**
@@ -935,6 +952,14 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      */
     function manager() external view returns (address) {
         return fs.manager;
+    }
+
+    /**
+     * @notice Retrieves the connect pool admin address
+     * @return address The address of the connect pool admin
+     */
+    function connectPoolAdmin() external view returns (address) {
+        return fs.connectPoolAdmin;
     }
 
     /**

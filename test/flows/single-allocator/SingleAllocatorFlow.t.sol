@@ -126,6 +126,7 @@ contract SingleAllocatorFlowTestBase is Test {
             manager: _manager,
             managerRewardPool: address(_managerRewardPool),
             parent: address(0),
+            connectPoolAdmin: address(0),
             flowParams: _flowParams,
             metadata: _flowMetadata,
             sanctionsOracle: IChainalysisSanctionsList(address(0)),

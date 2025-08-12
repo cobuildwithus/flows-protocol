@@ -217,17 +217,13 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
 
         uint256 totalFeeCollected;
 
-        // Pass 2: pull USDC (FoT-safe), compute fee on received, then swap via UR
+        // Pass 2: pull USDC, compute fee from declared amountIn, then swap via UR
         for (uint256 i; i < len; ) {
             V4SingleSwap calldata s = swaps[i];
 
-            uint256 balBefore = usdc.balanceOf(address(this));
             usdc.safeTransferFrom(s.user, address(this), s.amountIn);
-            uint256 received = usdc.balanceOf(address(this)) - balBefore;
-            if (received != s.amountIn) revert INVALID_AMOUNTS(); // FoT base token not supported
-
-            uint256 fee = (received * bps) / _MAX_BPS;
-            uint256 net = received - fee;
+            uint256 fee = (uint256(s.amountIn) * bps) / _MAX_BPS;
+            uint256 net = uint256(s.amountIn) - fee;
             totalFeeCollected += fee;
 
             if (net > type(uint128).max) revert INVALID_AMOUNTS();
@@ -320,14 +316,10 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
             if (!allowedSpenders[s.spender]) revert SPENDER_NOT_ALLOWED();
             if (s.value != 0) revert INVALID_AMOUNTS();
 
-            // Pull USDC and verify FoT not applied
-            uint256 preIn = usdc.balanceOf(address(this));
+            // Pull USDC and compute fee from declared amountIn
             usdc.safeTransferFrom(s.user, address(this), s.amountIn);
-            uint256 received = usdc.balanceOf(address(this)) - preIn;
-            if (received != s.amountIn) revert INVALID_AMOUNTS();
-
-            uint256 fee = (received * bps) / _MAX_BPS;
-            uint256 net = received - fee;
+            uint256 fee = (uint256(s.amountIn) * bps) / _MAX_BPS;
+            uint256 net = uint256(s.amountIn) - fee;
             totalFeeCollected += fee;
 
             // Record balances for exact-input enforcement and FoT-safe out measurement

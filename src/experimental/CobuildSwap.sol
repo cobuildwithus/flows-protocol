@@ -36,7 +36,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
 
     // ---- config ----
     IERC20 public USDC; // base token
-    IPermit2 public PERMIT2; // 0x000000000022D473030F116dDEE9F6B43aC78BA3 (chain-agnostic Permit2)
+    IPermit2 public PERMIT2; // 0x000000000022D473030F116dDEE9F6B43aC78BA3
 
     address public executor;
     address public feeCollector;
@@ -45,17 +45,17 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
     // ---- constants ----
     uint256 private constant _MAX_BPS = 10_000;
 
-    // Universal Router: command & v4 action constants (verify against your linked periphery)
+    // Universal Router: command & v4 action constants
     uint8 private constant CMD_V4_SWAP = 0x10;
     uint8 private constant ACT_SWAP_EXACT_IN_SINGLE = 0x06;
-    uint8 private constant ACT_SETTLE = 0x0b; // unused here
+    uint8 private constant ACT_SETTLE = 0x0b; // unused
     uint8 private constant ACT_SETTLE_ALL = 0x0c;
-    uint8 private constant ACT_TAKE = 0x0e; // unused here
-    uint8 private constant ACT_TAKE_ALL = 0x0f;
+    uint8 private constant ACT_TAKE = 0x0e;
+    uint8 private constant ACT_TAKE_ALL = 0x0f; // unused here
 
     // ---- allowlists ----
     mapping(address => bool) public allowedRouters; // e.g., Universal Router, 0x router
-    mapping(address => bool) public allowedSpenders; // e.g., 0x v2 AllowanceHolder / Permit2
+    mapping(address => bool) public allowedSpenders; // e.g., 0x AllowanceTarget / Permit2
 
     // ---- modifiers ----
     modifier onlyExecutor() {
@@ -63,7 +63,6 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         _;
     }
 
-    // ---- ctor / initializer ----
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -81,12 +80,9 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
             _universalRouter == address(0) ||
             _executor == address(0) ||
             _feeCollector == address(0)
-        ) {
-            revert ZERO_ADDR();
-        }
+        ) revert ZERO_ADDR();
         if (_feeBps > 500) revert FEE_TOO_HIGH(); // hard cap 5%
 
-        // Init upgradeable mixins
         __ReentrancyGuard_init();
         __UUPSUpgradeable_init();
         __Ownable2Step_init();
@@ -98,7 +94,6 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         feeCollector = _feeCollector;
         feeBps = _feeBps;
 
-        // Permit2 address (canonical across major chains)
         PERMIT2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3);
 
         // One-time infinite approval from THIS contract to Permit2
@@ -138,9 +133,16 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
 
     event SpenderAllowed(address spender, bool allowed);
 
+    // Sticky approval pattern for 0x spenders (gas-saver)
     function setSpenderAllowed(address s, bool allowed) external onlyOwner {
         allowedSpenders[s] = allowed;
         emit SpenderAllowed(s, allowed);
+        if (allowed) {
+            USDC.safeApprove(s, 0);
+            USDC.safeApprove(s, type(uint256).max);
+        } else {
+            USDC.safeApprove(s, 0);
+        }
     }
 
     function rescueTokens(address token, address to, uint256 amount) external onlyOwner {
@@ -158,41 +160,49 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
     function executeBatchUniV4Single(
         address universalRouter,
         V4SingleSwap[] calldata swaps
-    ) external override nonReentrant onlyExecutor returns (uint256[] memory amountsOut) {
+    ) external override nonReentrant onlyExecutor {
         if (universalRouter == address(0) || !allowedRouters[universalRouter]) revert ROUTER_NOT_ALLOWED();
+
+        // cache hot storage
+        IERC20 usdc = USDC;
+        IPermit2 permit2 = PERMIT2;
+        address feeTo = feeCollector;
+        uint16 bps = feeBps;
 
         uint256 len = swaps.length;
         if (len == 0 || len > 500) revert BAD_BATCH_SIZE();
 
-        amountsOut = new uint256[](len);
+        // Pre-encode constant UR command/actions
+        bytes memory commands = abi.encodePacked(uint8(CMD_V4_SWAP));
+        bytes memory actions = abi.encodePacked(
+            uint8(ACT_SWAP_EXACT_IN_SINGLE),
+            uint8(ACT_SETTLE_ALL),
+            uint8(ACT_TAKE) // TAKE(..., recipient, OPEN_DELTA)
+        );
 
         uint256 totalNet;
         uint256 maxDeadline;
 
-        // Pass 1: validate & aggregate (compute nets from declared amounts for batch Permit2 allowance)
+        // Pass 1: validate & aggregate (compute nets from declared amounts for Permit2 allowance)
         for (uint256 i; i < len; ) {
             V4SingleSwap calldata s = swaps[i];
-
             if (s.user == address(0) || s.recipient == address(0)) revert INVALID_ADDRESS();
             if (s.amountIn == 0 || s.minAmountOut == 0) revert INVALID_AMOUNTS();
             if (s.deadline < block.timestamp) revert EXPIRED_DEADLINE();
 
-            // ensure pool includes USDC and direction is USDC -> token
             address c0 = Currency.unwrap(s.key.currency0);
             address c1 = Currency.unwrap(s.key.currency1);
-            bool c0IsUSDC = (c0 == address(USDC));
-            bool c1IsUSDC = (c1 == address(USDC));
+            bool c0IsUSDC = (c0 == address(usdc));
+            bool c1IsUSDC = (c1 == address(usdc));
             if (!(c0IsUSDC || c1IsUSDC)) revert PATH_IN_MISMATCH();
-
-            // Direction must be from the USDC side
             if (c0IsUSDC && !s.zeroForOne) revert PATH_IN_MISMATCH();
             if (c1IsUSDC && s.zeroForOne) revert PATH_IN_MISMATCH();
 
-            uint256 fee = (uint256(s.amountIn) * feeBps) / _MAX_BPS;
-            uint256 net = uint256(s.amountIn) - fee;
-            if (net == 0) revert NET_AMOUNT_ZERO();
+            uint256 feeEst = (uint256(s.amountIn) * bps) / _MAX_BPS;
+            uint256 netEst = uint256(s.amountIn) - feeEst;
+            if (netEst == 0) revert NET_AMOUNT_ZERO();
 
-            totalNet += net;
+            totalNet += netEst;
             if (s.deadline > maxDeadline) maxDeadline = s.deadline;
 
             unchecked {
@@ -200,48 +210,37 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
             }
         }
 
-        // Batch-scoped Permit2 approval for UR to pull the NET USDC from THIS contract.
+        // Batch-scoped Permit2 approval for UR to pull NET USDC from THIS contract
         if (totalNet > type(uint160).max) revert INVALID_AMOUNTS();
         uint48 expiry = maxDeadline > type(uint48).max ? type(uint48).max : uint48(maxDeadline);
-        PERMIT2.approve(address(USDC), universalRouter, uint160(totalNet), expiry);
+        permit2.approve(address(usdc), universalRouter, uint160(totalNet), expiry);
 
-        // Pass 2: pull USDC from users (FoT-safe), take fee, then swap via UR
+        uint256 totalFeeCollected;
+
+        // Pass 2: pull USDC (FoT-safe), compute fee on received, then swap via UR
         for (uint256 i; i < len; ) {
             V4SingleSwap calldata s = swaps[i];
 
-            // Pull gross from user and verify FoT is not applied
-            uint256 usdcBefore = USDC.balanceOf(address(this));
-            USDC.safeTransferFrom(s.user, address(this), s.amountIn);
-            uint256 received = USDC.balanceOf(address(this)) - usdcBefore;
+            uint256 balBefore = usdc.balanceOf(address(this));
+            usdc.safeTransferFrom(s.user, address(this), s.amountIn);
+            uint256 received = usdc.balanceOf(address(this)) - balBefore;
             if (received != s.amountIn) revert INVALID_AMOUNTS(); // FoT base token not supported
 
-            // Fee -> collector, compute net
-            uint256 fee = (received * feeBps) / _MAX_BPS;
+            uint256 fee = (received * bps) / _MAX_BPS;
             uint256 net = received - fee;
-            if (fee > 0) USDC.safeTransfer(feeCollector, fee);
+            totalFeeCollected += fee;
 
-            // guard uint128 downcast for v4 param
             if (net > type(uint128).max) revert INVALID_AMOUNTS();
 
-            // currencies
-            Currency inCur = s.zeroForOne ? s.key.currency0 : s.key.currency1; // must be USDC side
+            Currency inCur = s.zeroForOne ? s.key.currency0 : s.key.currency1; // USDC side
             Currency outCur = s.zeroForOne ? s.key.currency1 : s.key.currency0;
 
-            // forbid native (ETH) out to avoid IERC20(0) calls here
             address tokenOutAddr = Currency.unwrap(outCur);
             if (tokenOutAddr == address(0)) revert INVALID_TOKEN_OUT();
 
-            // Build UR payload: SWAP_EXACT_IN_SINGLE -> SETTLE_ALL -> TAKE (full credit to recipient)
-            bytes memory commands = abi.encodePacked(uint8(CMD_V4_SWAP));
-            bytes memory actions = abi.encodePacked(
-                uint8(ACT_SWAP_EXACT_IN_SINGLE),
-                uint8(ACT_SETTLE_ALL),
-                uint8(ACT_TAKE)
-            );
-
             bytes[] memory params = new bytes[](3);
 
-            // [0] SWAP_EXACT_IN_SINGLE - rely on router's slippage protection
+            // [0] SWAP_EXACT_IN_SINGLE
             params[0] = abi.encode(
                 IV4Router.ExactInputSingleParams({
                     poolKey: s.key,
@@ -251,53 +250,65 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
                     hookData: bytes("")
                 })
             );
-
             // [1] SETTLE_ALL(currencyIn, maxAmount)
             params[1] = abi.encode(inCur, uint256(net));
-
-            // [2] TAKE(currencyOut, recipient, OPEN_DELTA)
-            params[2] = abi.encode(outCur, s.recipient, uint256(0)); // OPEN_DELTA sentinel
+            // [2] TAKE(currencyOut, recipient, OPEN_DELTA=0)
+            params[2] = abi.encode(outCur, s.recipient, uint256(0));
 
             bytes[] memory inputs = new bytes[](1);
             inputs[0] = abi.encode(actions, params);
 
-            // measure recipient diff for output tracking
+            // (Optional defense) Track delivered out to recipient
             uint256 beforeBal = IERC20(tokenOutAddr).balanceOf(s.recipient);
             IUniversalRouter(universalRouter).execute(commands, inputs, s.deadline);
             uint256 afterBal = IERC20(tokenOutAddr).balanceOf(s.recipient);
-            uint256 out = afterBal > beforeBal ? (afterBal - beforeBal) : 0;
+            uint256 outAmt = afterBal > beforeBal ? (afterBal - beforeBal) : 0;
 
-            amountsOut[i] = out;
-
-            emit SwapExecuted(s.user, s.recipient, tokenOutAddr, address(USDC), s.amountIn, fee, out, universalRouter);
+            // emit with tokenIn first, then tokenOut
+            emit SwapExecuted(
+                s.user,
+                s.recipient,
+                s.creator,
+                address(usdc),
+                tokenOutAddr,
+                s.amountIn,
+                fee,
+                outAmt,
+                universalRouter
+            );
 
             unchecked {
                 ++i;
             }
         }
 
-        // Optional: revoke UR's batch Permit2 allowance immediately:
-        PERMIT2.approve(address(USDC), universalRouter, 0, 0);
+        // Transfer aggregated fees once at the end
+        if (totalFeeCollected != 0) usdc.safeTransfer(feeTo, totalFeeCollected);
+
+        // Revoke UR's batch Permit2 allowance (defense-in-depth)
+        permit2.approve(address(usdc), universalRouter, 0, 0);
     }
 
     // ---------------------------
     // 0x Swap API (router adapter) lane
     // ---------------------------
-
     function executeBatch0x(
-        address expectedRouter, // 0x router entrypoint; must be allowlisted
+        address expectedRouter,
         OxSwap[] calldata swaps
-    ) external override nonReentrant onlyExecutor returns (uint256[] memory amountsOut) {
+    ) external override nonReentrant onlyExecutor {
         if (expectedRouter == address(0) || !allowedRouters[expectedRouter]) revert ROUTER_NOT_ALLOWED();
+
+        // cache hot storage
+        IERC20 usdc = USDC;
+        address feeTo = feeCollector;
+        uint16 bps = feeBps;
 
         uint256 len = swaps.length;
         if (len == 0 || len > 500) revert BAD_BATCH_SIZE();
 
-        // First pass: validate & compute per-spender summed nets for single approval each
-        address[] memory spenders = new address[](len);
-        uint256[] memory sums = new uint256[](len);
-        uint256 uniq;
+        uint256 totalFeeCollected;
 
+        // Single pass: validate, pull, swap, enforce exact-input, accumulate fee, forward outs
         for (uint256 i; i < len; ) {
             OxSwap calldata s = swaps[i];
 
@@ -307,77 +318,38 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
             if (s.deadline < block.timestamp) revert EXPIRED_DEADLINE();
             if (s.callTarget != expectedRouter) revert ROUTER_NOT_ALLOWED();
             if (!allowedSpenders[s.spender]) revert SPENDER_NOT_ALLOWED();
-
-            uint256 fee = (s.amountIn * feeBps) / _MAX_BPS;
-            uint256 net = s.amountIn - fee;
-            if (net == 0) revert NET_AMOUNT_ZERO();
-
-            bool found;
-            for (uint256 j; j < uniq; ++j) {
-                if (spenders[j] == s.spender) {
-                    sums[j] += net;
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                spenders[uniq] = s.spender;
-                sums[uniq] = net;
-                ++uniq;
-            }
-
-            unchecked {
-                ++i;
-            }
-        }
-
-        // Approve each spender once for its total net (zero-then-set pattern)
-        for (uint256 j; j < uniq; ++j) {
-            USDC.safeApprove(spenders[j], 0);
-            if (sums[j] > 0) USDC.safeApprove(spenders[j], sums[j]);
-        }
-
-        amountsOut = new uint256[](len);
-
-        // Second pass: pull funds & execute swaps with per-swap accounting
-        for (uint256 i; i < len; ) {
-            OxSwap calldata s = swaps[i];
-
-            // forbid sending ETH value in USDC-in swaps
             if (s.value != 0) revert INVALID_AMOUNTS();
 
-            // Pull USDC from user and verify FoT is not applied
-            uint256 preIn = USDC.balanceOf(address(this));
-            USDC.safeTransferFrom(s.user, address(this), s.amountIn);
-            uint256 received = USDC.balanceOf(address(this)) - preIn;
-            if (received != s.amountIn) revert INVALID_AMOUNTS(); // FoT base token not supported
+            // Pull USDC and verify FoT not applied
+            uint256 preIn = usdc.balanceOf(address(this));
+            usdc.safeTransferFrom(s.user, address(this), s.amountIn);
+            uint256 received = usdc.balanceOf(address(this)) - preIn;
+            if (received != s.amountIn) revert INVALID_AMOUNTS();
 
-            // Fee -> collector (on actual received), compute net
-            uint256 fee = (received * feeBps) / _MAX_BPS;
+            uint256 fee = (received * bps) / _MAX_BPS;
             uint256 net = received - fee;
-            if (fee > 0) USDC.safeTransfer(feeCollector, fee);
+            totalFeeCollected += fee;
 
             // Record balances for exact-input enforcement and FoT-safe out measurement
-            uint256 usdcBeforeSpend = USDC.balanceOf(address(this));
+            uint256 usdcBeforeSpend = usdc.balanceOf(address(this));
             IERC20 out = IERC20(s.tokenOut);
             uint256 beforeRecipient = out.balanceOf(s.recipient);
             uint256 beforeSelfOut = out.balanceOf(address(this));
 
-            // Execute 0x call
+            // Execute 0x call (spender already has sticky allowance)
             (bool ok, bytes memory ret) = s.callTarget.call{ value: s.value }(s.callData);
             if (!ok) {
-                // bubble revert reason
                 assembly {
                     revert(add(ret, 32), mload(ret))
                 }
             }
 
             // Enforce exact-input (or refund if price improved)
-            uint256 usdcAfterSpend = USDC.balanceOf(address(this));
+            uint256 usdcAfterSpend = usdc.balanceOf(address(this));
             if (usdcBeforeSpend < usdcAfterSpend) revert USDC_BALANCE_INCREASED();
             uint256 spent = usdcBeforeSpend - usdcAfterSpend;
-            if (spent > net) revert INVALID_AMOUNTS(); // overspent vs intended net
-            if (spent < net) USDC.safeTransfer(s.user, net - spent); // refund unspent USDC immediately
+            if (spent > net) revert INVALID_AMOUNTS();
+            if (spent < net) usdc.safeTransfer(s.user, net - spent);
 
             // If router paid to us, forward only what arrived in THIS call
             uint256 afterSelfOut = out.balanceOf(address(this));
@@ -386,24 +358,31 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
                 out.safeTransfer(s.recipient, deltaSelfOut);
             }
 
-            // Final slippage check AFTER any forward; saturating diff for safety
+            // Final slippage check AFTER forwarding
             uint256 afterRecipient = out.balanceOf(s.recipient);
             uint256 outAmt = afterRecipient > beforeRecipient ? (afterRecipient - beforeRecipient) : 0;
             if (outAmt < s.minAmountOut) revert SLIPPAGE();
 
-            amountsOut[i] = outAmt;
-
-            emit SwapExecuted(s.user, s.recipient, s.tokenOut, address(USDC), s.amountIn, fee, outAmt, s.callTarget);
+            // emit with tokenIn first, then tokenOut
+            emit SwapExecuted(
+                s.user,
+                s.recipient,
+                s.creator,
+                address(usdc),
+                s.tokenOut,
+                s.amountIn,
+                fee,
+                outAmt,
+                s.callTarget
+            );
 
             unchecked {
                 ++i;
             }
         }
 
-        // Clear approvals (defense-in-depth)
-        for (uint256 j; j < uniq; ++j) {
-            USDC.safeApprove(spenders[j], 0);
-        }
+        // Transfer aggregated fees once at the end
+        if (totalFeeCollected != 0) usdc.safeTransfer(feeTo, totalFeeCollected);
     }
 
     // ---- UUPS ----

@@ -13,17 +13,19 @@ contract TCRFundFlowTest is FlowTCRTest {
         vm.createSelectFork(vm.rpcUrl("optimism"));
 
         address gardensFlow = address(0x329A322e591D5B7B71d45d956607998D8d71C819);
-        address childFlow = address(0xcCE2d712B67d42a023E63F1E115952Be99bfeF99);
+        address childFlow = address(0x329A322e591D5B7B71d45d956607998D8d71C819);
 
-        address newImpl = address(new CustomFlow());
+        // address newImpl = address(new CustomFlow());
 
-        vm.startPrank(0x289715fFBB2f4b482e2917D2f183FeAb564ec84F);
-        Flow(gardensFlow).upgradeTo(newImpl);
+        // vm.startPrank(0x289715fFBB2f4b482e2917D2f183FeAb564ec84F);
+        // Flow(gardensFlow).upgradeTo(newImpl);
 
         uint256 outOfSync = Flow(gardensFlow).childFlowRatesOutOfSync();
 
+        assertEq(outOfSync, 1);
+
         Flow(gardensFlow).workOnChildFlowsToUpdate(1);
 
-        assertEq(Flow(gardensFlow).childFlowRatesOutOfSync(), outOfSync - 1);
+        assertEq(Flow(gardensFlow).childFlowRatesOutOfSync(), 0);
     }
 }

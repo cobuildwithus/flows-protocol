@@ -55,12 +55,13 @@ contract DeployVrbsAccelerator is DeployScript {
         // Deploy voting strategy (implementation + proxy)
         // ---------------------------------------------------------------------
         address votingImpl = _loadImplementation("ERC721VotesStrategyImpl");
-        erc721VotingStrategy = address(new ERC1967Proxy(votingImpl, ""));
-        ERC721VotesStrategy(erc721VotingStrategy).initialize(
-            initialOwner,
-            IERC721Votes(erc721TokenAddress),
-            tokenVoteWeight
+
+        bytes memory votingInitData = abi.encodeCall(
+            ERC721VotesStrategy.initialize,
+            (initialOwner, IERC721Votes(erc721TokenAddress), tokenVoteWeight)
         );
+
+        erc721VotingStrategy = address(new ERC1967Proxy(votingImpl, votingInitData));
 
         IAllocationStrategy[] memory topStrategies = new IAllocationStrategy[](1);
         topStrategies[0] = IAllocationStrategy(erc721VotingStrategy);
@@ -69,32 +70,35 @@ contract DeployVrbsAccelerator is DeployScript {
         // Flow proxy using shared CustomFlow implementation
         // ------------------------------------------------------------------
         vrbsFlowImpl = _loadImplementation("CustomFlowImpl");
-        vrbsFlow = address(new ERC1967Proxy(vrbsFlowImpl, ""));
 
-        // Initialize proxy
-        ICustomFlow(vrbsFlow).initialize({
-            initialOwner: initialOwner,
-            superToken: superToken,
-            flowImpl: vrbsFlowImpl,
-            manager: ROCKETMAN,
-            managerRewardPool: address(0),
-            parent: address(0),
-            connectPoolAdmin: connectPoolAdmin,
-            flowParams: IFlow.FlowParams({
-                baselinePoolFlowRatePercent: baselinePoolFlowRatePercent,
-                managerRewardPoolFlowRatePercent: managerRewardPoolFlowRatePercent,
-                bonusPoolQuorumBps: bonusPoolQuorumBps
-            }),
-            metadata: FlowTypes.RecipientMetadata({
-                title: "Vrbs Flow",
-                description: unicode"## Our mission \n\n Do good with no expectation of return. Steward public spaces. Create positive externalities. Empower people to uplift their communities. Embrace absurdity & difference. Teach people about Vrbs & crypto. Dare greatly. Have fun. ## Our goals \n\n Create Vrbs-branded products, services, experiences, and art that reach and empower the public, improve public spaces, and generate positive externalities—always in an open, daring, and sustainable way.",
-                image: "ipfs://bafybeibj6cb2nyzxgpoi5l2cnhqv4ituu63wxp6tls45sqadvd7ysyn55i",
-                tagline: "We fund the next generation of visionaries making a difference in their local communities.",
-                url: "https://flows.wtf/vrbs"
-            }),
-            sanctionsOracle: IChainalysisSanctionsList(sanctionsOracle),
-            strategies: topStrategies
-        });
+        bytes memory flowInitData = abi.encodeCall(
+            ICustomFlow.initialize,
+            (
+                initialOwner,
+                superToken,
+                vrbsFlowImpl,
+                ROCKETMAN,
+                address(0),
+                address(0),
+                connectPoolAdmin,
+                IFlow.FlowParams({
+                    baselinePoolFlowRatePercent: baselinePoolFlowRatePercent,
+                    managerRewardPoolFlowRatePercent: managerRewardPoolFlowRatePercent,
+                    bonusPoolQuorumBps: bonusPoolQuorumBps
+                }),
+                FlowTypes.RecipientMetadata({
+                    title: "Vrbs Flow",
+                    description: unicode"## Our mission \n\n Do good with no expectation of return. Steward public spaces. Create positive externalities. Empower people to uplift their communities. Embrace absurdity & difference. Teach people about Vrbs & crypto. Dare greatly. Have fun. ## Our goals \n\n Create Vrbs-branded products, services, experiences, and art that reach and empower the public, improve public spaces, and generate positive externalities—always in an open, daring, and sustainable way.",
+                    image: "ipfs://bafybeibj6cb2nyzxgpoi5l2cnhqv4ituu63wxp6tls45sqadvd7ysyn55i",
+                    tagline: "We fund the next generation of visionaries making a difference in their local communities.",
+                    url: "https://flows.wtf/vrbs"
+                }),
+                IChainalysisSanctionsList(sanctionsOracle),
+                topStrategies
+            )
+        );
+
+        vrbsFlow = address(new ERC1967Proxy(vrbsFlowImpl, flowInitData));
 
         // ------------------------------------------------------------------
         // Deploy child flows (Real Madrid & Health AI) each with
@@ -148,8 +152,10 @@ contract DeployVrbsAccelerator is DeployScript {
     /// @dev Deploys a SingleAllocatorStrategy with the given allocator and returns it as a single-item array.
     function _singleAllocator(address allocator, address owner) internal returns (IAllocationStrategy[] memory arr) {
         address impl = _loadImplementation("SingleAllocatorStrategyImpl");
-        address proxy = address(new ERC1967Proxy(impl, ""));
-        SingleAllocatorStrategy(proxy).initialize(owner, allocator);
+
+        bytes memory stratInitData = abi.encodeCall(SingleAllocatorStrategy.initialize, (owner, allocator));
+
+        address proxy = address(new ERC1967Proxy(impl, stratInitData));
         singleAllocatorStrategies.push(proxy);
         arr = new IAllocationStrategy[](1);
         arr[0] = IAllocationStrategy(proxy);

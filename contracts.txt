@@ -12,3 +12,4 @@ RewardPool
 FlowStorageV1
 ERC721VotesStrategy
 SingleAllocatorStrategy
+CobuildSwap

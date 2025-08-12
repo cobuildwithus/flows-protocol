@@ -11,19 +11,19 @@ import { SingleAllocatorStrategy } from "../src/allocation-strategies/SingleAllo
 import { IAllocationStrategy } from "../src/interfaces/IAllocationStrategy.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
-/// @title DeploySingleAllocatorFlow
-/// @notice Deploys a standalone CustomFlow with a single allocator
-contract DeploySingleAllocatorFlow is DeployScript {
+/// @title DeployBaseFlow
+/// @notice Deploys a standalone CustomFlow (Base Flow) with a single top-level flow using SingleAllocatorStrategy with ROCKETMAN as allocator
+contract DeployBaseFlow is DeployScript {
     // Deployed contract addresses
-    address public singleAllocatorFlow;
-    address public singleAllocatorFlowImpl;
+    address public baseFlow;
+    address public baseFlowImpl;
 
     string public contractName;
 
     // Track deployed SingleAllocatorStrategy addresses for logging
     address[] public singleAllocatorStrategies;
 
-    // Manager
+    // Allocator
     address internal constant ROCKETMAN = 0x289715fFBB2f4b482e2917D2f183FeAb564ec84F;
 
     function deploy() internal override {
@@ -32,33 +32,31 @@ contract DeploySingleAllocatorFlow is DeployScript {
         // ------------------------------------------------------------------
         address initialOwner = vm.envAddress("INITIAL_OWNER");
         address superToken = vm.envAddress("SUPER_TOKEN");
-        uint32 baselinePoolFlowRatePercent = uint32(vm.envUint("BASELINE_POOL_FLOW_RATE_PERCENT"));
-        uint32 managerRewardPoolFlowRatePercent = uint32(vm.envUint("REWARDS_POOL_FLOW_RATE_PERCENT"));
-        uint32 bonusPoolQuorumBps = uint32(vm.envUint("BONUS_POOL_QUORUM_BPS"));
+        uint32 baselinePoolFlowRatePercent = 0;
+        uint32 managerRewardPoolFlowRatePercent = 0;
+        uint32 bonusPoolQuorumBps = 1e6;
         address sanctionsOracle = vm.envAddress("SANCTIONS_ORACLE");
-        address allocator = vm.envAddress("ALLOCATOR");
-        address managerRewardPool = vm.envAddress("MANAGER_REWARD_POOL");
-        contractName = vm.envString("CONTRACT_NAME");
+        contractName = "Base";
 
         address connectPoolAdmin = 0x6eD3cec4ec39786094350FbCf10a6761B93f350d;
 
         // ------------------------------------------------------------------
-        // Top-level strategy - SingleAllocatorStrategy with allocator
+        // Top-level strategy - SingleAllocatorStrategy with ROCKETMAN
         // ------------------------------------------------------------------
-        IAllocationStrategy[] memory topStrategies = _singleAllocator(allocator, initialOwner);
+        IAllocationStrategy[] memory topStrategies = _singleAllocator(ROCKETMAN, initialOwner);
 
         // ------------------------------------------------------------------
         // Flow proxy using shared CustomFlow implementation
         // ------------------------------------------------------------------
-        singleAllocatorFlowImpl = _loadImplementation("CustomFlowImpl");
+        baseFlowImpl = _loadImplementation("CustomFlowImpl");
 
-        bytes memory flowInitData = abi.encodeCall(
+        bytes memory initData = abi.encodeCall(
             ICustomFlow.initialize,
             (
                 initialOwner,
                 superToken,
-                singleAllocatorFlowImpl,
-                allocator,
+                baseFlowImpl,
+                ROCKETMAN,
                 address(0),
                 address(0),
                 connectPoolAdmin,
@@ -68,26 +66,23 @@ contract DeploySingleAllocatorFlow is DeployScript {
                     bonusPoolQuorumBps: bonusPoolQuorumBps
                 }),
                 FlowTypes.RecipientMetadata({
-                    title: unicode"Vrbs Coffee's Public Good",
-                    description: unicode"Vrbs Coffee exists to fuel people on a mission. Whether that's chasing a creative idea, training for a race, or giving back to the world. We craft great coffee that powers purpose, and we use our profits to support causes that matter.",
-                    image: "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/716dbbeb-c537-4b65-a843-6f96f39a7200/original",
-                    tagline: "Fueling global impact",
-                    url: "https://flows.wtf"
+                    title: unicode"Base Batches",
+                    description: unicode"The internet should belong to all of us. Right now, most of it is closed, owned by a few, and built to extract. We believe in something better: An open internet where value flows freely, and where what you create is yours to own, grow, and share. That’s why we’re building Base. A home for builders, creators, and anyone who wants to shape the future. A new foundation for a truly free global economy. This flow tracks the winners from Base Batches Demo Day 001, an incubator program to help onchain founders grow their startups.",
+                    image: "ipfs://bafkreiggz5srh65jpqrbslils375fptumccvsal2jra6x5cfpnssestqoa",
+                    tagline: "Base is for everyone",
+                    url: "https://flows.wtf/base"
                 }),
                 IChainalysisSanctionsList(sanctionsOracle),
                 topStrategies
             )
         );
 
-        singleAllocatorFlow = address(new ERC1967Proxy(singleAllocatorFlowImpl, flowInitData));
+        baseFlow = address(new ERC1967Proxy(baseFlowImpl, initData));
     }
 
     function writeAdditionalDeploymentDetails(string memory filePath) internal override {
-        vm.writeLine(
-            filePath,
-            string(abi.encodePacked("SingleAllocatorFlowImpl: ", addressToString(singleAllocatorFlowImpl)))
-        );
-        vm.writeLine(filePath, string(abi.encodePacked(contractName, ": ", addressToString(singleAllocatorFlow))));
+        vm.writeLine(filePath, string(abi.encodePacked("BaseFlowImpl: ", addressToString(baseFlowImpl))));
+        vm.writeLine(filePath, string(abi.encodePacked(contractName, ": ", addressToString(baseFlow))));
     }
 
     function getContractName() internal view override returns (string memory) {
@@ -98,9 +93,10 @@ contract DeploySingleAllocatorFlow is DeployScript {
     function _singleAllocator(address allocator, address owner) internal returns (IAllocationStrategy[] memory arr) {
         address impl = _loadImplementation("SingleAllocatorStrategyImpl");
 
-        bytes memory stratInitData = abi.encodeCall(SingleAllocatorStrategy.initialize, (owner, allocator));
+        bytes memory strategyInitData = abi.encodeCall(SingleAllocatorStrategy.initialize, (owner, allocator));
 
-        address proxy = address(new ERC1967Proxy(impl, stratInitData));
+        address proxy = address(new ERC1967Proxy(impl, strategyInitData));
+
         singleAllocatorStrategies.push(proxy);
         arr = new IAllocationStrategy[](1);
         arr[0] = IAllocationStrategy(proxy);

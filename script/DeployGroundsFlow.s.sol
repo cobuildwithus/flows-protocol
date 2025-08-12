@@ -45,12 +45,13 @@ contract DeployGroundsFlow is DeployScript {
         // Strategy (implementation + proxy)
         // ------------------------------------------------------------------
         address votingImpl = _loadImplementation("ERC721VotesStrategyImpl");
-        erc721VotingStrategy = address(new ERC1967Proxy(votingImpl, ""));
-        ERC721VotesStrategy(erc721VotingStrategy).initialize(
-            initialOwner,
-            IERC721Votes(erc721TokenAddress),
-            tokenVoteWeight
+
+        bytes memory votingInitData = abi.encodeCall(
+            ERC721VotesStrategy.initialize,
+            (initialOwner, IERC721Votes(erc721TokenAddress), tokenVoteWeight)
         );
+
+        erc721VotingStrategy = address(new ERC1967Proxy(votingImpl, votingInitData));
         IAllocationStrategy[] memory topStrategies = new IAllocationStrategy[](1);
         topStrategies[0] = IAllocationStrategy(erc721VotingStrategy);
 
@@ -58,32 +59,35 @@ contract DeployGroundsFlow is DeployScript {
         // Flow proxy using shared CustomFlow implementation
         // ------------------------------------------------------------------
         groundsFlowImpl = _loadImplementation("CustomFlowImpl");
-        groundsFlow = address(new ERC1967Proxy(groundsFlowImpl, ""));
 
-        // Initialize proxy
-        ICustomFlow(groundsFlow).initialize({
-            initialOwner: initialOwner,
-            superToken: superToken,
-            flowImpl: groundsFlowImpl,
-            manager: ROCKETMAN,
-            managerRewardPool: address(0),
-            parent: address(0),
-            connectPoolAdmin: connectPoolAdmin,
-            flowParams: IFlow.FlowParams({
-                baselinePoolFlowRatePercent: baselinePoolFlowRatePercent,
-                managerRewardPoolFlowRatePercent: managerRewardPoolFlowRatePercent,
-                bonusPoolQuorumBps: bonusPoolQuorumBps
-            }),
-            metadata: FlowTypes.RecipientMetadata({
-                title: "Grounds Flow",
-                description: unicode"Our mission? Wake up! Be bold, pour freely, and brew good. Percolate stimulating ideas, with a rich blend of people and cultures. Stay the grind and distribute well. It might be a long shot, but by applying the right pressure, we have a robust opportunity to make a global impact.",
-                image: "ipfs://bafkreich7a6w5m5a5u5dbh7kh5wqxfm6itbjqcdnv5fw5lgjo3uyq2evbe",
-                tagline: "Grounds world wide",
-                url: "https://flows.wtf/grounds"
-            }),
-            sanctionsOracle: IChainalysisSanctionsList(sanctionsOracle),
-            strategies: topStrategies
-        });
+        bytes memory flowInitData = abi.encodeCall(
+            ICustomFlow.initialize,
+            (
+                initialOwner,
+                superToken,
+                groundsFlowImpl,
+                ROCKETMAN,
+                address(0),
+                address(0),
+                connectPoolAdmin,
+                IFlow.FlowParams({
+                    baselinePoolFlowRatePercent: baselinePoolFlowRatePercent,
+                    managerRewardPoolFlowRatePercent: managerRewardPoolFlowRatePercent,
+                    bonusPoolQuorumBps: bonusPoolQuorumBps
+                }),
+                FlowTypes.RecipientMetadata({
+                    title: "Grounds Flow",
+                    description: unicode"Our mission? Wake up! Be bold, pour freely, and brew good. Percolate stimulating ideas, with a rich blend of people and cultures. Stay the grind and distribute well. It might be a long shot, but by applying the right pressure, we have a robust opportunity to make a global impact.",
+                    image: "ipfs://bafkreich7a6w5m5a5u5dbh7kh5wqxfm6itbjqcdnv5fw5lgjo3uyq2evbe",
+                    tagline: "Grounds world wide",
+                    url: "https://flows.wtf/grounds"
+                }),
+                IChainalysisSanctionsList(sanctionsOracle),
+                topStrategies
+            )
+        );
+
+        groundsFlow = address(new ERC1967Proxy(groundsFlowImpl, flowInitData));
 
         // ------------------------------------------------------------------
         // Deploy child flow: Grounds Meetups

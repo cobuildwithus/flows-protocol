@@ -21,10 +21,9 @@ contract DeploySingleAllocatorStrategy is DeployScript {
         implementation = _loadImplementation("SingleAllocatorStrategyImpl");
 
         // Deploy proxy
-        singleAllocatorStrategy = address(new ERC1967Proxy(implementation, ""));
+        bytes memory initData = abi.encodeCall(SingleAllocatorStrategy.initialize, (owner, allocator));
 
-        // Initialize proxy with owner and allocator
-        SingleAllocatorStrategy(singleAllocatorStrategy).initialize(owner, allocator);
+        singleAllocatorStrategy = address(new ERC1967Proxy(implementation, initData));
 
         contractName = "SingleAllocatorStrategy.nickhaaz";
     }

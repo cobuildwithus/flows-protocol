@@ -50,32 +50,35 @@ contract DeployGardensFlow is DeployScript {
         // Flow proxy using shared CustomFlow implementation
         // ------------------------------------------------------------------
         gardensFlowImpl = _loadImplementation("CustomFlowImpl");
-        gardensFlow = address(new ERC1967Proxy(gardensFlowImpl, ""));
 
-        // Initialize proxy with ROCKETMAN as initial manager
-        ICustomFlow(gardensFlow).initialize({
-            initialOwner: initialOwner,
-            superToken: superToken,
-            flowImpl: gardensFlowImpl,
-            manager: ROCKETMAN,
-            managerRewardPool: address(0),
-            parent: address(0),
-            connectPoolAdmin: connectPoolAdmin,
-            flowParams: IFlow.FlowParams({
-                baselinePoolFlowRatePercent: baselinePoolFlowRatePercent,
-                managerRewardPoolFlowRatePercent: managerRewardPoolFlowRatePercent,
-                bonusPoolQuorumBps: bonusPoolQuorumBps
-            }),
-            metadata: FlowTypes.RecipientMetadata({
-                title: unicode"⚘GARDEN",
-                description: unicode"Gardens is a community governance platform that helps people allocate shared resources as effectively as possible.\n\nOur platform lets communities govern themselves intelligently, using innovative mechanism design to give decision-making power to the people closest to the work, while protecting the greater collective from abuse and apathy.\n\nOrganizations that thrive on Gardens:\n\nExist for a mission, not just profit\nBenefit from decentralized security and resilience\n\nThese include open source projects, pop-up cities, web3 ecosystems, chapter-based orgs, activists, and many other public goods providers — digital or IRL.",
-                image: "ipfs://QmYwTPdtxi8JVkpv8AzPSvvxH4pmR19QBVNdK8uZErnfZi",
-                tagline: "Community governance platform",
-                url: "https://flows.wtf/gardens"
-            }),
-            sanctionsOracle: IChainalysisSanctionsList(sanctionsOracle),
-            strategies: topStrategies
-        });
+        bytes memory initData = abi.encodeCall(
+            ICustomFlow.initialize,
+            (
+                initialOwner,
+                superToken,
+                gardensFlowImpl,
+                ROCKETMAN,
+                address(0),
+                address(0),
+                connectPoolAdmin,
+                IFlow.FlowParams({
+                    baselinePoolFlowRatePercent: baselinePoolFlowRatePercent,
+                    managerRewardPoolFlowRatePercent: managerRewardPoolFlowRatePercent,
+                    bonusPoolQuorumBps: bonusPoolQuorumBps
+                }),
+                FlowTypes.RecipientMetadata({
+                    title: unicode"⚘GARDEN",
+                    description: unicode"Gardens is a community governance platform that helps people allocate shared resources as effectively as possible.\n\nOur platform lets communities govern themselves intelligently, using innovative mechanism design to give decision-making power to the people closest to the work, while protecting the greater collective from abuse and apathy.\n\nOrganizations that thrive on Gardens:\n\nExist for a mission, not just profit\nBenefit from decentralized security and resilience\n\nThese include open source projects, pop-up cities, web3 ecosystems, chapter-based orgs, activists, and many other public goods providers — digital or IRL.",
+                    image: "ipfs://QmYwTPdtxi8JVkpv8AzPSvvxH4pmR19QBVNdK8uZErnfZi",
+                    tagline: "Community governance platform",
+                    url: "https://flows.wtf/gardens"
+                }),
+                IChainalysisSanctionsList(sanctionsOracle),
+                topStrategies
+            )
+        );
+
+        gardensFlow = address(new ERC1967Proxy(gardensFlowImpl, initData));
 
         // ------------------------------------------------------------------
         // Deploy child flows: 7 allocation groups
@@ -202,8 +205,11 @@ contract DeployGardensFlow is DeployScript {
     /// @dev Deploys a SingleAllocatorStrategy with the given allocator and returns it as a single-item array.
     function _singleAllocator(address allocator, address owner) internal returns (IAllocationStrategy[] memory arr) {
         address impl = _loadImplementation("SingleAllocatorStrategyImpl");
-        address proxy = address(new ERC1967Proxy(impl, ""));
-        SingleAllocatorStrategy(proxy).initialize(owner, allocator);
+
+        bytes memory strategyInitData = abi.encodeCall(SingleAllocatorStrategy.initialize, (owner, allocator));
+
+        address proxy = address(new ERC1967Proxy(impl, strategyInitData));
+
         singleAllocatorStrategies.push(proxy);
         arr = new IAllocationStrategy[](1);
         arr[0] = IAllocationStrategy(proxy);

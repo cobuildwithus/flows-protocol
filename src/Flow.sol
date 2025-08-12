@@ -218,6 +218,13 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         address allocator,
         uint256 allocationWeight
     ) internal returns (uint256 childFlowsToUpdate, bool shouldUpdateFlowRate) {
+        // Get the old weight of the allocation
+        uint256 oldWeight = 0;
+        Allocation[] memory allocations = fs.allocations[strategy][allocationKey];
+        for (uint256 i = 0; i < allocations.length; i++) {
+            oldWeight += allocations[i].allocationWeight;
+        }
+
         if (fs.allocations[strategy][allocationKey].length == 0) {
             // this is a new vote, which means we're adding new member units
             // so we need to reset child flow rates
@@ -239,6 +246,11 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         // set new allocations
         for (uint256 i = 0; i < recipientIds.length; i++) {
             _allocate(recipientIds[i], percentAllocations[i], strategy, allocationKey, allocator, allocationWeight);
+        }
+
+        // If the total weight changed and quorum is enabled, trigger flow rate update
+        if (oldWeight != allocationWeight && fs.bonusPoolQuorumBps > 0) {
+            shouldUpdateFlowRate = true;
         }
     }
 
@@ -462,6 +474,9 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         if (recipientType == RecipientType.FlowContract) {
             fs.clearFlowRateSnapshot(recipientAddress);
         }
+
+        // snapshot the surviving children *before* units change
+        _setChildrenAsNeedingUpdates(address(0));
 
         // Be careful changing event ordering here, indexer expects to delete recipient
         // when memberUnits is set to 0

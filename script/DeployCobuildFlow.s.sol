@@ -11,19 +11,19 @@ import { SingleAllocatorStrategy } from "../src/allocation-strategies/SingleAllo
 import { IAllocationStrategy } from "../src/interfaces/IAllocationStrategy.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
-/// @title DeploySingleAllocatorFlow
-/// @notice Deploys a standalone CustomFlow with a single allocator
-contract DeploySingleAllocatorFlow is DeployScript {
+/// @title DeployCobuildFlow
+/// @notice Deploys a standalone CustomFlow (Cobuild Flow) with a single top-level flow using SingleAllocatorStrategy with ROCKETMAN as allocator
+contract DeployCobuildFlow is DeployScript {
     // Deployed contract addresses
-    address public singleAllocatorFlow;
-    address public singleAllocatorFlowImpl;
+    address public cobuildFlow;
+    address public cobuildFlowImpl;
 
     string public contractName;
 
     // Track deployed SingleAllocatorStrategy addresses for logging
     address[] public singleAllocatorStrategies;
 
-    // Manager
+    // Allocator
     address internal constant ROCKETMAN = 0x289715fFBB2f4b482e2917D2f183FeAb564ec84F;
 
     function deploy() internal override {
@@ -32,33 +32,31 @@ contract DeploySingleAllocatorFlow is DeployScript {
         // ------------------------------------------------------------------
         address initialOwner = vm.envAddress("INITIAL_OWNER");
         address superToken = vm.envAddress("SUPER_TOKEN");
-        uint32 baselinePoolFlowRatePercent = uint32(vm.envUint("BASELINE_POOL_FLOW_RATE_PERCENT"));
-        uint32 managerRewardPoolFlowRatePercent = uint32(vm.envUint("REWARDS_POOL_FLOW_RATE_PERCENT"));
-        uint32 bonusPoolQuorumBps = uint32(vm.envUint("BONUS_POOL_QUORUM_BPS"));
+        uint32 baselinePoolFlowRatePercent = 0;
+        uint32 managerRewardPoolFlowRatePercent = 0;
+        uint32 bonusPoolQuorumBps = 1e6;
         address sanctionsOracle = vm.envAddress("SANCTIONS_ORACLE");
-        address allocator = vm.envAddress("ALLOCATOR");
-        address managerRewardPool = vm.envAddress("MANAGER_REWARD_POOL");
-        contractName = vm.envString("CONTRACT_NAME");
+        contractName = "Cobuild";
 
         address connectPoolAdmin = 0x6eD3cec4ec39786094350FbCf10a6761B93f350d;
 
         // ------------------------------------------------------------------
-        // Top-level strategy - SingleAllocatorStrategy with allocator
+        // Top-level strategy - SingleAllocatorStrategy with ROCKETMAN
         // ------------------------------------------------------------------
-        IAllocationStrategy[] memory topStrategies = _singleAllocator(allocator, initialOwner);
+        IAllocationStrategy[] memory topStrategies = _singleAllocator(ROCKETMAN, initialOwner);
 
         // ------------------------------------------------------------------
         // Flow proxy using shared CustomFlow implementation
         // ------------------------------------------------------------------
-        singleAllocatorFlowImpl = _loadImplementation("CustomFlowImpl");
+        cobuildFlowImpl = _loadImplementation("CustomFlowImpl");
 
-        bytes memory flowInitData = abi.encodeCall(
+        bytes memory initData = abi.encodeCall(
             ICustomFlow.initialize,
             (
                 initialOwner,
                 superToken,
-                singleAllocatorFlowImpl,
-                allocator,
+                cobuildFlowImpl,
+                ROCKETMAN,
                 address(0),
                 address(0),
                 connectPoolAdmin,
@@ -68,10 +66,10 @@ contract DeploySingleAllocatorFlow is DeployScript {
                     bonusPoolQuorumBps: bonusPoolQuorumBps
                 }),
                 FlowTypes.RecipientMetadata({
-                    title: unicode"Vrbs Coffee's Public Good",
-                    description: unicode"Vrbs Coffee exists to fuel people on a mission. Whether that's chasing a creative idea, training for a race, or giving back to the world. We craft great coffee that powers purpose, and we use our profits to support causes that matter.",
-                    image: "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/716dbbeb-c537-4b65-a843-6f96f39a7200/original",
-                    tagline: "Fueling global impact",
+                    title: unicode"Flows",
+                    description: unicode"Our mission is to increase community driven impact in the world.",
+                    image: "ipfs://QmWzuj5XWACjZmUG8uyc5ZCf2DYSXU4kdi1PNvAdpfUcdn",
+                    tagline: "Helping you build what matters",
                     url: "https://flows.wtf"
                 }),
                 IChainalysisSanctionsList(sanctionsOracle),
@@ -79,15 +77,12 @@ contract DeploySingleAllocatorFlow is DeployScript {
             )
         );
 
-        singleAllocatorFlow = address(new ERC1967Proxy(singleAllocatorFlowImpl, flowInitData));
+        cobuildFlow = address(new ERC1967Proxy(cobuildFlowImpl, initData));
     }
 
     function writeAdditionalDeploymentDetails(string memory filePath) internal override {
-        vm.writeLine(
-            filePath,
-            string(abi.encodePacked("SingleAllocatorFlowImpl: ", addressToString(singleAllocatorFlowImpl)))
-        );
-        vm.writeLine(filePath, string(abi.encodePacked(contractName, ": ", addressToString(singleAllocatorFlow))));
+        vm.writeLine(filePath, string(abi.encodePacked("CobuildFlowImpl: ", addressToString(cobuildFlowImpl))));
+        vm.writeLine(filePath, string(abi.encodePacked(contractName, ": ", addressToString(cobuildFlow))));
     }
 
     function getContractName() internal view override returns (string memory) {
@@ -98,9 +93,10 @@ contract DeploySingleAllocatorFlow is DeployScript {
     function _singleAllocator(address allocator, address owner) internal returns (IAllocationStrategy[] memory arr) {
         address impl = _loadImplementation("SingleAllocatorStrategyImpl");
 
-        bytes memory stratInitData = abi.encodeCall(SingleAllocatorStrategy.initialize, (owner, allocator));
+        bytes memory strategyInitData = abi.encodeCall(SingleAllocatorStrategy.initialize, (owner, allocator));
 
-        address proxy = address(new ERC1967Proxy(impl, stratInitData));
+        address proxy = address(new ERC1967Proxy(impl, strategyInitData));
+
         singleAllocatorStrategies.push(proxy);
         arr = new IAllocationStrategy[](1);
         arr[0] = IAllocationStrategy(proxy);

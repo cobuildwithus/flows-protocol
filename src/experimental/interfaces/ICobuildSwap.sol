@@ -19,6 +19,7 @@ interface ICobuildSwap {
     event ExecutorChanged(address indexed oldExec, address indexed newExec);
     event FeeParamsChanged(uint16 feeBps, address feeCollector);
     event RouterAllowed(address router, bool allowed);
+    event MinFeeAbsoluteChanged(uint256 minFeeAbsolute);
 
     // ---- errors ----
     error FEE_TOO_HIGH();
@@ -38,6 +39,7 @@ interface ICobuildSwap {
     error SLIPPAGE();
     error ETH_TRANSFER_FAIL();
     error USDC_BALANCE_INCREASED();
+    error AMOUNT_LT_MIN_FEE();
 
     // ---- v4 single-pool swap ----
     struct V4SingleSwap {

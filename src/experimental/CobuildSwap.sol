@@ -42,6 +42,9 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
     address public feeCollector;
     uint16 public feeBps; // e.g., 200 = 2%
 
+    // Absolute per-trade fee floor, denominated in USDC/base token units
+    uint256 public minFeeAbsolute;
+
     // ---- constants ----
     uint256 private constant _MAX_BPS = 10_000;
 
@@ -73,7 +76,8 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         address _universalRouter,
         address _executor,
         address _feeCollector,
-        uint16 _feeBps
+        uint16 _feeBps,
+        uint256 _minFeeAbsolute
     ) external initializer {
         if (
             _usdc == address(0) ||
@@ -93,6 +97,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         executor = _executor;
         feeCollector = _feeCollector;
         feeBps = _feeBps;
+        minFeeAbsolute = _minFeeAbsolute;
 
         PERMIT2 = IPermit2(0x000000000022D473030F116dDEE9F6B43aC78BA3);
 
@@ -126,6 +131,12 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         emit FeeParamsChanged(feeBps, c);
     }
 
+    // Set absolute per-trade fee floor in USDC units (e.g., 20_000 = $0.02 for 6d tokens)
+    function setMinFeeAbsolute(uint256 minAbs) external onlyOwner {
+        minFeeAbsolute = minAbs;
+        emit MinFeeAbsoluteChanged(minAbs);
+    }
+
     function setRouterAllowed(address r, bool allowed) external onlyOwner {
         allowedRouters[r] = allowed;
         emit RouterAllowed(r, allowed);
@@ -154,6 +165,20 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         if (!ok) revert ETH_TRANSFER_FAIL();
     }
 
+    // External helper to compute fee and net amount for a given input
+    function computeFeeAndNet(uint256 amountIn) external view returns (uint256 fee, uint256 net) {
+        return _computeFeeAndNet(amountIn);
+    }
+
+    // ---- internal: shared fee calc ----
+    function _computeFeeAndNet(uint256 amountIn) internal view returns (uint256 fee, uint256 net) {
+        uint256 pctFee = (amountIn * feeBps) / _MAX_BPS;
+        uint256 absFloor = minFeeAbsolute;
+        fee = pctFee >= absFloor ? pctFee : absFloor;
+        if (fee >= amountIn) revert AMOUNT_LT_MIN_FEE();
+        net = amountIn - fee;
+    }
+
     // ---------------------------
     // Universal Router (v4 single-pool) lane
     // ---------------------------
@@ -167,7 +192,6 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         IERC20 usdc = USDC;
         IPermit2 permit2 = PERMIT2;
         address feeTo = feeCollector;
-        uint16 bps = feeBps;
 
         uint256 len = swaps.length;
         if (len == 0 || len > 500) revert BAD_BATCH_SIZE();
@@ -198,9 +222,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
             if (c0IsUSDC && !s.zeroForOne) revert PATH_IN_MISMATCH();
             if (c1IsUSDC && s.zeroForOne) revert PATH_IN_MISMATCH();
 
-            uint256 feeEst = (uint256(s.amountIn) * bps) / _MAX_BPS;
-            uint256 netEst = uint256(s.amountIn) - feeEst;
-            if (netEst == 0) revert NET_AMOUNT_ZERO();
+            (, uint256 netEst) = _computeFeeAndNet(uint256(s.amountIn));
 
             totalNet += netEst;
             if (s.deadline > maxDeadline) maxDeadline = s.deadline;
@@ -222,8 +244,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
             V4SingleSwap calldata s = swaps[i];
 
             usdc.safeTransferFrom(s.user, address(this), s.amountIn);
-            uint256 fee = (uint256(s.amountIn) * bps) / _MAX_BPS;
-            uint256 net = uint256(s.amountIn) - fee;
+            (uint256 fee, uint256 net) = _computeFeeAndNet(uint256(s.amountIn));
             totalFeeCollected += fee;
 
             if (net > type(uint128).max) revert INVALID_AMOUNTS();
@@ -297,7 +318,6 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         // cache hot storage
         IERC20 usdc = USDC;
         address feeTo = feeCollector;
-        uint16 bps = feeBps;
 
         uint256 len = swaps.length;
         if (len == 0 || len > 500) revert BAD_BATCH_SIZE();
@@ -318,8 +338,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
 
             // Pull USDC and compute fee from declared amountIn
             usdc.safeTransferFrom(s.user, address(this), s.amountIn);
-            uint256 fee = (uint256(s.amountIn) * bps) / _MAX_BPS;
-            uint256 net = uint256(s.amountIn) - fee;
+            (uint256 fee, uint256 net) = _computeFeeAndNet(uint256(s.amountIn));
             totalFeeCollected += fee;
 
             // Record balances for exact-input enforcement and FoT-safe out measurement

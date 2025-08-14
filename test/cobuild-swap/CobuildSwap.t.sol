@@ -91,60 +91,28 @@ contract CobuildSwapBaseFork_DeployProxy_Test is Test {
         return pct >= minFeeAbs ? pct : minFeeAbs;
     }
 
-    // -------- Helpers for building ICobuildSwap structs --------
-    function _makeAttributions(
-        address[] memory creators,
-        uint256[] memory amounts,
-        bytes[] memory dataArray
-    ) internal pure returns (ICobuildSwap.CreatorAttribution[] memory attributions) {
-        require(creators.length == amounts.length, "length mismatch");
-        if (dataArray.length != 0) {
-            require(dataArray.length == creators.length, "length mismatch");
-        }
-        attributions = new ICobuildSwap.CreatorAttribution[](creators.length);
-        for (uint256 i = 0; i < creators.length; i++) {
-            bytes memory dataItem = dataArray.length == 0 ? bytes("") : dataArray[i];
-            attributions[i] = ICobuildSwap.CreatorAttribution({
-                creator: creators[i],
-                amount: amounts[i],
-                data: dataItem
-            });
-        }
-    }
-
-    function _makePayee(
-        address user,
-        uint256 amountIn,
-        ICobuildSwap.CreatorAttribution[] memory attrs
-    ) internal pure returns (ICobuildSwap.Payee memory) {
-        return ICobuildSwap.Payee({ user: user, recipient: user, amountIn: amountIn, creatorAttributions: attrs });
+    function _makePayee(address user, uint256 amountIn) internal pure returns (ICobuildSwap.Payee memory) {
+        return ICobuildSwap.Payee({ user: user, recipient: user, amountIn: amountIn });
     }
 
     function _makePayeeWithRecipient(
         address user,
         address recipient,
-        uint256 amountIn,
-        ICobuildSwap.CreatorAttribution[] memory attrs
+        uint256 amountIn
     ) internal pure returns (ICobuildSwap.Payee memory) {
-        return ICobuildSwap.Payee({ user: user, recipient: recipient, amountIn: amountIn, creatorAttributions: attrs });
+        return ICobuildSwap.Payee({ user: user, recipient: recipient, amountIn: amountIn });
     }
 
     function _makePayees(
         address[] memory users,
         address[] memory recipients,
-        uint256[] memory amountIns,
-        ICobuildSwap.CreatorAttribution[][] memory attrsPerUser
+        uint256[] memory amountIns
     ) internal pure returns (ICobuildSwap.Payee[] memory payees) {
         uint256 n = users.length;
-        require(recipients.length == n && amountIns.length == n && attrsPerUser.length == n, "length mismatch");
+        require(recipients.length == n && amountIns.length == n, "length mismatch");
         payees = new ICobuildSwap.Payee[](n);
         for (uint256 i = 0; i < n; i++) {
-            payees[i] = ICobuildSwap.Payee({
-                user: users[i],
-                recipient: recipients[i],
-                amountIn: amountIns[i],
-                creatorAttributions: attrsPerUser[i]
-            });
+            payees[i] = ICobuildSwap.Payee({ user: users[i], recipient: recipients[i], amountIn: amountIns[i] });
         }
     }
 }

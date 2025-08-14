@@ -75,13 +75,6 @@ interface ICobuildSwap {
         address user; // token payer we pull from
         address recipient; // receives creator coin
         uint256 amountIn; // gross token (6d)
-        CreatorAttribution[] creatorAttributions; // at least 1
-    }
-
-    struct CreatorAttribution {
-        address creator;
-        uint256 amount;
-        bytes data;
     }
 
     struct ZoraCreatorCoinOneToMany {
@@ -101,15 +94,6 @@ interface ICobuildSwap {
         uint256 amountOut,
         uint256 fee,
         address router
-    );
-
-    event ReactionSwapExecuted(
-        address indexed user,
-        address indexed recipient,
-        address creator,
-        uint256 amountIn,
-        uint256 amountOut,
-        CreatorAttribution[] creatorAttributions
     );
 
     // --- NEW: one-swap-many-payouts entrypoint ---

@@ -466,6 +466,10 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         address zAddr = address(zora);
         if (zAddr == address(0)) revert ZERO_ADDR();
 
+        // cache hot values
+        address feeTo = feeCollector;
+        address self = address(this);
+
         uint256 _g0 = gasleft();
 
         uint256 len = s.payees.length;
@@ -491,7 +495,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
             if (p.user == address(0) || p.recipient == address(0)) revert INVALID_ADDRESS();
             if (p.amountIn == 0) revert INVALID_AMOUNTS();
 
-            usdc.transferFrom(p.user, address(this), p.amountIn);
+            usdc.transferFrom(p.user, self, p.amountIn);
             totalGross += p.amountIn;
 
             unchecked {
@@ -519,12 +523,12 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
                 s.key,
                 zIsC0,
                 s.minCreatorOut,
-                address(this)
+                self
             );
 
-            uint256 beforeOut = tokenOut.balanceOf(address(this));
+            uint256 beforeOut = tokenOut.balanceOf(self);
             IUniversalRouter(universalRouter).execute(commands, inputs, s.deadline);
-            uint256 afterOut = tokenOut.balanceOf(address(this));
+            uint256 afterOut = tokenOut.balanceOf(self);
             outAmt = afterOut > beforeOut ? (afterOut - beforeOut) : 0;
         } // commands/inputs out of scope here
 
@@ -549,9 +553,9 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         _g0 = gasleft();
 
         // --- Sweep rounding dust & transfer fee ---
-        uint256 rem = tokenOut.balanceOf(address(this));
-        if (rem != 0) tokenOut.safeTransfer(feeCollector, rem);
-        if (totalFee != 0) usdc.safeTransfer(feeCollector, totalFee);
+        uint256 rem = tokenOut.balanceOf(self);
+        if (rem != 0) tokenOut.safeTransfer(feeTo, rem);
+        if (totalFee != 0) usdc.safeTransfer(feeTo, totalFee);
 
         _g("final", _g0);
     }

@@ -462,8 +462,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         if (s.deadline < block.timestamp) revert EXPIRED_DEADLINE();
 
         IERC20 usdc = USDC;
-        IERC20 zora = ZORA;
-        address zAddr = address(zora);
+        address zAddr = address(ZORA);
         if (zAddr == address(0)) revert ZERO_ADDR();
 
         // cache hot values
@@ -479,8 +478,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         address c0 = Currency.unwrap(s.key.currency0);
         address c1 = Currency.unwrap(s.key.currency1);
         bool zIsC0 = (c0 == zAddr);
-        bool zIsC1 = (c1 == zAddr);
-        if (!(zIsC0 || zIsC1)) revert PATH_IN_MISMATCH();
+        if (!zIsC0 && c1 != zAddr) revert PATH_IN_MISMATCH();
 
         address tokenOutAddr = zIsC0 ? c1 : c0;
         if (tokenOutAddr == address(0) || tokenOutAddr == address(usdc) || tokenOutAddr == zAddr) {

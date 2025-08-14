@@ -153,14 +153,6 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
     function setRouterAllowed(address r, bool allowed) external onlyOwner {
         allowedRouters[r] = allowed;
         emit RouterAllowed(r, allowed);
-        _setPermit2ForRouter(r, allowed);
-    }
-
-    function _setPermit2ForRouter(address router, bool enabled) internal {
-        uint160 amt = enabled ? type(uint160).max : 0;
-        uint48 exp = enabled ? type(uint48).max : 0;
-        PERMIT2.approve(address(USDC), router, amt, exp);
-        PERMIT2.approve(address(ZORA), router, amt, exp);
     }
 
     // Manage 0x spender allowlist; allowances are now granted per-call in executeBatch0x
@@ -255,11 +247,9 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
             }
         }
 
-        // Best-effort cleanup: restore prior allowance
+        // Cleanup: always leave zero allowance (do not restore prior allowance)
         usdc.safeApprove(s.spender, 0);
-        if (prevAllowance != 0) {
-            usdc.safeApprove(s.spender, prevAllowance);
-        }
+        if (usdc.allowance(address(this), s.spender) != 0) revert INVALID_AMOUNTS();
 
         // Enforce exact-input (0x must not spend more than totalNet).
         uint256 usdcAfterSpend = usdc.balanceOf(address(this));

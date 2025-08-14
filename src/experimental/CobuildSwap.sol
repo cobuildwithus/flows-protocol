@@ -494,9 +494,9 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
             if (p.amountIn == 0) revert INVALID_AMOUNTS();
 
             usdc.transferFrom(p.user, self, p.amountIn);
-            totalGross += p.amountIn;
 
             unchecked {
+                totalGross += p.amountIn;
                 ++i;
             }
         }

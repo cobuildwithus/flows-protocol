@@ -155,14 +155,12 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         emit RouterAllowed(r, allowed);
     }
 
-    // Sticky approval pattern for 0x spenders (gas-saver)
+    // Manage 0x spender allowlist; allowances are now granted per-call in executeBatch0x
     function setSpenderAllowed(address s, bool allowed) external onlyOwner {
         allowedSpenders[s] = allowed;
         emit SpenderAllowed(s, allowed);
-        if (allowed) {
-            USDC.approve(s, 0);
-            USDC.approve(s, type(uint256).max);
-        } else {
+        if (!allowed) {
+            // Revoke any lingering allowance on disallow
             USDC.approve(s, 0);
         }
     }
@@ -342,12 +340,25 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         uint256 usdcBeforeSpend = usdc.balanceOf(address(this));
         uint256 beforeOut = out.balanceOf(address(this));
 
-        // Spender is pre-approved via setSpenderAllowed(); we just perform the call.
+        // Per-call bounded allowance for the active spender
+        uint256 prevAllowance = usdc.allowance(address(this), s.spender);
+        if (prevAllowance != 0) {
+            usdc.safeApprove(s.spender, 0);
+        }
+        usdc.safeApprove(s.spender, totalNet);
+
+        // Execute the 0x swap
         (bool ok, bytes memory ret) = s.callTarget.call{ value: s.value }(s.callData);
         if (!ok) {
             assembly {
                 revert(add(ret, 32), mload(ret))
             }
+        }
+
+        // Best-effort cleanup: restore prior allowance
+        usdc.safeApprove(s.spender, 0);
+        if (prevAllowance != 0) {
+            usdc.safeApprove(s.spender, prevAllowance);
         }
 
         // Enforce exact-input (0x must not spend more than totalNet). If it spends less,

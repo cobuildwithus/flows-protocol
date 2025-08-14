@@ -37,14 +37,15 @@ contract CobuildSwap_UniV4_Test is CobuildSwapBaseFork_DeployProxy_Test {
         payees = _makePayees(users, recipients, amountIns);
     }
 
-    function _poolKeyUSDCZora() internal view returns (PoolKey memory) {
+    function _poolKeyUSDCZora() internal pure returns (PoolKey memory) {
         return
             PoolKey({
-                currency0: Currency.wrap(USDC),
-                currency1: Currency.wrap(ZORA),
-                fee: 30000,
-                tickSpacing: 200,
-                hooks: IHooks(HOOKS_A)
+                // Sorted by address per v4 requirements: ZORA < USDC
+                currency0: Currency.wrap(USDC), // ZORA
+                currency1: Currency.wrap(ZORA), // USDC
+                fee: 3000, // 0.30%
+                tickSpacing: 60, // standard for 0.30%
+                hooks: IHooks(address(0))
             });
     }
 
@@ -92,7 +93,7 @@ contract CobuildSwap_UniV4_Test is CobuildSwapBaseFork_DeployProxy_Test {
         ICobuildSwap.V4SingleOneToMany memory s = ICobuildSwap.V4SingleOneToMany({
             creator: address(0xC0FFEE),
             key: _poolKeyUSDCZora(),
-            zeroForOne: true, // USDC (currency0) -> ZORA (currency1)
+            zeroForOne: true,
             minAmountOut: uint128(1),
             deadline: 175514485700,
             payees: payees

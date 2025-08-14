@@ -11,6 +11,107 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// @notice Base mainnet fork test that deploys a brand-new CobuildSwap proxy in setUp()
 ///         and exercises executeBatchZoraCreatorCoin via the *real* Uniswap Universal Router.
 contract CobuildSwapBaseFork_Zora_Test is CobuildSwapBaseFork_DeployProxy_Test {
+    // --- local helpers to reduce repetition ---
+    function _singleAttr(
+        address creator,
+        uint256 amount,
+        bytes memory data
+    ) internal pure returns (ICobuildSwap.CreatorAttribution[] memory a) {
+        a = new ICobuildSwap.CreatorAttribution[](1);
+        a[0] = ICobuildSwap.CreatorAttribution({ creator: creator, amount: amount, data: data });
+    }
+
+    function _genUsers(string memory prefix, uint256 n) internal returns (address[] memory users) {
+        users = new address[](n);
+        for (uint256 i = 0; i < n; i++) {
+            users[i] = makeAddr(string.concat(prefix, vm.toString(i)));
+        }
+    }
+
+    function _fundAndApproveUSDC(address[] memory users, uint256 amount) internal {
+        for (uint256 i = 0; i < users.length; i++) {
+            deal(USDC, users[i], amount);
+            vm.prank(users[i]);
+            IERC20(USDC).approve(address(cs), type(uint256).max);
+        }
+    }
+
+    function _buildUniformPayees(
+        address[] memory users,
+        uint256 amountInPerUser,
+        address attributionCreator
+    ) internal pure returns (ICobuildSwap.Payee[] memory payees) {
+        address[] memory recipients = new address[](users.length);
+        uint256[] memory amountIns = new uint256[](users.length);
+        ICobuildSwap.CreatorAttribution[][] memory attrsPerUser = new ICobuildSwap.CreatorAttribution[][](users.length);
+        for (uint256 i = 0; i < users.length; i++) {
+            recipients[i] = users[i];
+            amountIns[i] = amountInPerUser;
+            attrsPerUser[i] = _singleAttr(attributionCreator, 1, bytes(""));
+        }
+        payees = _makePayees(users, recipients, amountIns, attrsPerUser);
+    }
+
+    function _poolKeyZoraCreatorA() internal view returns (PoolKey memory) {
+        return
+            PoolKey({
+                currency0: Currency.wrap(ZORA),
+                currency1: Currency.wrap(CREATOR_A),
+                fee: 30000,
+                tickSpacing: 200,
+                hooks: IHooks(HOOKS_A)
+            });
+    }
+
+    function _buildS(
+        ICobuildSwap.Payee[] memory payees
+    ) internal view returns (ICobuildSwap.ZoraCreatorCoinOneToMany memory s) {
+        s = ICobuildSwap.ZoraCreatorCoinOneToMany({
+            creator: CREATOR_A,
+            key: _poolKeyZoraCreatorA(),
+            v3Fee: uint24(3000),
+            deadline: 175514485700,
+            minZoraOut: 1,
+            minCreatorOut: 1,
+            payees: payees
+        });
+    }
+
+    function _expectedTotalFee(
+        ICobuildSwap.Payee[] memory payees,
+        uint16 feeBps,
+        uint256 minFeeAbs
+    ) internal pure returns (uint256 total) {
+        for (uint256 i = 0; i < payees.length; i++) {
+            total += _feeFor(payees[i].amountIn, feeBps, minFeeAbs);
+        }
+    }
+
+    function _assertRecipientsReceived(address token, address[] memory recipients) internal view {
+        for (uint256 i = 0; i < recipients.length; i++) {
+            require(IERC20(token).balanceOf(recipients[i]) > 0, "recipient no out");
+        }
+    }
+
+    function _runUniformZoraOneToMany(uint256 n, uint256 amountPerUser) internal {
+        uint16 feeBps = cs.feeBps();
+        uint256 minFeeAbs = cs.minFeeAbsolute();
+
+        address[] memory users = _genUsers("user", n);
+        _fundAndApproveUSDC(users, amountPerUser);
+        ICobuildSwap.Payee[] memory payees = _buildUniformPayees(users, amountPerUser, CREATOR_A);
+        ICobuildSwap.ZoraCreatorCoinOneToMany memory s = _buildS(payees);
+
+        uint256 feeBefore = IERC20(USDC).balanceOf(FEE_COLLECTOR);
+        uint256 expectedFee = _expectedTotalFee(payees, feeBps, minFeeAbs);
+
+        vm.prank(EXECUTOR);
+        cs.executeZoraCreatorCoinOneToMany(UNIVERSAL_ROUTER, s);
+
+        uint256 feeAfter = IERC20(USDC).balanceOf(FEE_COLLECTOR);
+        assertEq(feeAfter - feeBefore, expectedFee, "fee mismatch");
+        _assertRecipientsReceived(CREATOR_A, users);
+    }
     // ---------- One-to-many with 3 users ----------
     function test_executeZoraCreatorCoinOneToMany_threeUsers() public {
         // Pull current fee config for expectation math
@@ -119,5 +220,15 @@ contract CobuildSwapBaseFork_Zora_Test is CobuildSwapBaseFork_DeployProxy_Test {
         assertGt(out1_after - out1_before, 0, "no creator token to user1");
         assertGt(out2_after - out2_before, 0, "no creator token to user2");
         assertGt(out3_after - out3_before, 0, "no creator token to user3");
+    }
+
+    // ---------- One-to-many with 100 users (each 0.1 USDC) ----------
+    function test_executeZoraCreatorCoinOneToMany_hundredUsers() public {
+        _runUniformZoraOneToMany(100, 100_000);
+    }
+
+    // ---------- One-to-many with 1000 users (each 0.1 USDC) ----------
+    function test_executeZoraCreatorCoinOneToMany_thousandUsers() public {
+        _runUniformZoraOneToMany(1000, 100_000);
     }
 }

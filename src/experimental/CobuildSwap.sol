@@ -530,14 +530,12 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         uint256 outAmt = tokenOut.balanceOf(address(this)) - outBefore;
 
         // ---- Pro-rata distribution by NET USDC (weights = nets[i]) ----
-        uint256 distributed;
         for (uint256 i; i < len; ) {
             address recipient = s.payees[i].recipient;
             address user = s.payees[i].user;
-            uint256 net = Math.mulDiv(totalNet, gross[i], totalGross); // floor
-            uint256 payout = Math.mulDiv(outAmt, net, totalNet); // floor; full-precision
+            uint256 payout = Math.mulDiv(outAmt, gross[i], totalGross);
+
             if (payout != 0) tokenOut.safeTransfer(recipient, payout);
-            distributed += payout;
 
             emit ReactionSwapExecuted(
                 user,

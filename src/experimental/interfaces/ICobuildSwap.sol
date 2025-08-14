@@ -39,18 +39,6 @@ interface ICobuildSwap {
     error ETH_TRANSFER_FAIL();
     error AMOUNT_LT_MIN_FEE();
 
-    struct V4SingleOneToMany {
-        address creator; // attribution / analytics only
-        PoolKey key; // v4 pool: USDC <-> tokenOut
-        bool zeroForOne; // must be USDC -> tokenOut
-        uint128 minAmountOut; // floor on TOTAL tokenOut delivered by the swap
-        uint256 deadline; // UR.execute deadline for the swap
-        Payee[] payees; // at least 1 {user, recipient, amountIn}
-    }
-
-    // REPLACE the old signature with this (note the new struct)
-    function executeBatchUniV4Single(address universalRouter, V4SingleOneToMany calldata s) external;
-
     // ---- 0x swap ----
     struct OxOneToMany {
         address creator; // attribution only (analytics)

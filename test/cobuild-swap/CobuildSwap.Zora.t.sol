@@ -89,7 +89,6 @@ contract CobuildSwapBaseFork_Zora_Test is CobuildSwapBaseFork_DeployProxy_Test {
             deadline: 175514485700,
             minZoraOut: 1,
             minCreatorOut: 1,
-            dustRecipient: address(0),
             payees: payees
         });
 

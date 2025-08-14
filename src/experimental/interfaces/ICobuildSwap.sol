@@ -91,7 +91,6 @@ interface ICobuildSwap {
         uint256 deadline; // applies to both legs
         uint256 minZoraOut; // USDC->ZORA leg floor (sum)
         uint128 minCreatorOut; // ZORA->creator leg floor (sum)
-        address dustRecipient; // where rounding dust goes (0 => feeCollector)
         Payee[] payees; // at least 1
     }
 

@@ -362,6 +362,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
 
             // Enforce exact-input (or refund if price improved)
             uint256 usdcAfterSpend = usdc.balanceOf(address(this));
+            if (usdcAfterSpend > usdcBeforeSpend) revert INVALID_AMOUNTS();
             uint256 spent = usdcBeforeSpend - usdcAfterSpend;
             if (spent > net) revert INVALID_AMOUNTS();
             if (spent < net) usdc.safeTransfer(s.user, net - spent);
@@ -442,6 +443,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         ZoraCreatorCoinOneToMany calldata s
     ) external override nonReentrant onlyExecutor {
         if (universalRouter == address(0) || !allowedRouters[universalRouter]) revert ROUTER_NOT_ALLOWED();
+        if (s.deadline < block.timestamp) revert EXPIRED_DEADLINE();
 
         IERC20 usdc = USDC;
         IERC20 zora = ZORA;
@@ -461,34 +463,30 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         address tokenOutAddr = zIsC0 ? c1 : c0;
         if (tokenOutAddr == address(0)) revert INVALID_TOKEN_OUT();
         if (tokenOutAddr == address(usdc) || tokenOutAddr == address(zora)) revert INVALID_TOKEN_OUT();
-
         IERC20 tokenOut = IERC20(tokenOutAddr);
 
-        // --- Pull USDC per user; compute fees & net shares ---
+        // --- Pull USDC per user; record gross; aggregate totals ---
         uint256 totalGross;
-        uint256 totalNet;
-        uint256 totalFee;
-        uint256[] memory nets = new uint256[](len);
-
+        uint256[] memory gross = new uint256[](len);
         for (uint256 i; i < len; ) {
             Payee calldata p = s.payees[i];
             if (p.user == address(0) || p.recipient == address(0)) revert INVALID_ADDRESS();
             if (p.amountIn == 0) revert INVALID_AMOUNTS();
 
-            // Pull gross and split into fee + net
-            usdc.safeTransferFrom(p.user, address(this), p.amountIn);
-            (uint256 fee, uint256 net) = _computeFeeAndNet(p.amountIn);
-            if (net == 0) revert NET_AMOUNT_ZERO();
+            uint256 g = uint256(p.amountIn);
+            usdc.safeTransferFrom(p.user, address(this), g);
 
-            totalGross += p.amountIn;
-            totalNet += net;
-            totalFee += fee;
-            nets[i] = net;
+            gross[i] = g;
+            totalGross += g;
 
             unchecked {
                 ++i;
             }
         }
+
+        // --- Apply fee ONCE per batch; pro-rate across payees by gross ---
+        // Use shared helper for consistency with other lanes
+        (uint256 totalFee, uint256 totalNet) = _computeFeeAndNet(totalGross);
 
         // --- Approve UR to pull NET USDC via Permit2 (scoped) ---
         uint48 expiry = s.deadline > type(uint48).max ? type(uint48).max : uint48(s.deadline);
@@ -503,10 +501,8 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         uint256 zoraBefore = zora.balanceOf(address(this));
         IUniversalRouter(universalRouter).execute(cmdV3, inV3, s.deadline);
         uint256 zoraIn = zora.balanceOf(address(this)) - zoraBefore;
-        if (zoraIn < s.minZoraOut) revert SLIPPAGE();
 
-        // --- Approve UR to pull the ZORA we actually received ---
-        if (zoraIn > type(uint160).max) revert INVALID_AMOUNTS();
+        // --- Approve UR to pull the ZORA actually received ---
         _approveBatch(PERMIT2, address(zora), universalRouter, zoraIn, expiry);
         if (zoraIn > type(uint128).max) revert INVALID_AMOUNTS(); // v4 param width
 
@@ -532,14 +528,14 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         uint256 outBefore = tokenOut.balanceOf(address(this));
         IUniversalRouter(universalRouter).execute(cmdV4, inV4, s.deadline);
         uint256 outAmt = tokenOut.balanceOf(address(this)) - outBefore;
-        if (outAmt < s.minCreatorOut) revert SLIPPAGE();
 
-        // ---- Pro-rata distribution by NET USDC ----
+        // ---- Pro-rata distribution by NET USDC (weights = nets[i]) ----
         uint256 distributed;
         for (uint256 i; i < len; ) {
             address recipient = s.payees[i].recipient;
             address user = s.payees[i].user;
-            uint256 payout = Math.mulDiv(outAmt, nets[i], totalNet); // floor; full-precision
+            uint256 net = Math.mulDiv(totalNet, gross[i], totalGross); // floor
+            uint256 payout = Math.mulDiv(outAmt, net, totalNet); // floor; full-precision
             if (payout != 0) tokenOut.safeTransfer(recipient, payout);
             distributed += payout;
 
@@ -557,12 +553,9 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
             }
         }
 
-        // Handle rounding dust
+        // Handle rounding dust (tokenOut)
         uint256 rem = tokenOut.balanceOf(address(this));
-        if (rem != 0) {
-            address dustTo = s.dustRecipient == address(0) ? feeCollector : s.dustRecipient;
-            tokenOut.safeTransfer(dustTo, rem);
-        }
+        if (rem != 0) tokenOut.safeTransfer(feeCollector, rem);
 
         // ---- Aggregate fee transfer & revoke scoped allowances ----
         if (totalFee != 0) usdc.safeTransfer(feeCollector, totalFee);

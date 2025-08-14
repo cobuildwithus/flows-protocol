@@ -1,0 +1,124 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import { ICobuildSwap } from "../../src/experimental/interfaces/ICobuildSwap.sol";
+import { CobuildSwapBaseFork_DeployProxy_Test } from "./CobuildSwap.t.sol";
+import { Currency } from "@uniswap/v4-core/src/types/Currency.sol";
+import { PoolKey } from "@uniswap/v4-core/src/types/PoolKey.sol";
+import { IHooks } from "@uniswap/v4-core/src/interfaces/IHooks.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+/// @notice Base mainnet fork test that deploys a brand-new CobuildSwap proxy in setUp()
+///         and exercises executeBatchZoraCreatorCoin via the *real* Uniswap Universal Router.
+contract CobuildSwapBaseFork_Zora_Test is CobuildSwapBaseFork_DeployProxy_Test {
+    // ---------- One-to-many with 3 users ----------
+    function test_executeZoraCreatorCoinOneToMany_threeUsers() public {
+        // Pull current fee config for expectation math
+        uint16 feeBps = cs.feeBps();
+        uint256 minFeeAbs = cs.minFeeAbsolute();
+
+        // Prepare three payees (USER from base + two fresh addresses)
+        address user1 = USER;
+        address user2 = makeAddr("user2");
+        address user3 = makeAddr("user3");
+
+        // Fund users with USDC and approve proxy
+        deal(USDC, user2, 1_000_000); // 1.0 USDC
+        deal(USDC, user3, 1_000_000); // 1.0 USDC
+        vm.prank(user2);
+        IERC20(USDC).approve(address(cs), type(uint256).max);
+        vm.prank(user3);
+        IERC20(USDC).approve(address(cs), type(uint256).max);
+
+        // Build one-to-many input targeting CREATOR_A pool using helpers
+        address[] memory creators1 = new address[](2);
+        creators1[0] = CREATOR_A;
+        creators1[1] = user1;
+        uint256[] memory amounts1 = new uint256[](2);
+        amounts1[0] = 100;
+        amounts1[1] = 50;
+        bytes[] memory data1 = new bytes[](2);
+        data1[0] = bytes("");
+        data1[1] = bytes("note-user1");
+        ICobuildSwap.CreatorAttribution[] memory attrs1 = _makeAttributions(creators1, amounts1, data1);
+
+        address[] memory creators2 = new address[](1);
+        creators2[0] = CREATOR_A;
+        uint256[] memory amounts2 = new uint256[](1);
+        amounts2[0] = 42;
+        bytes[] memory data2 = new bytes[](1);
+        data2[0] = bytes("note-user2");
+        ICobuildSwap.CreatorAttribution[] memory attrs2 = _makeAttributions(creators2, amounts2, data2);
+
+        address[] memory creators3 = new address[](1);
+        creators3[0] = CREATOR_A;
+        uint256[] memory amounts3 = new uint256[](1);
+        amounts3[0] = 7;
+        bytes[] memory data3 = new bytes[](1);
+        data3[0] = bytes("");
+        ICobuildSwap.CreatorAttribution[] memory attrs3 = _makeAttributions(creators3, amounts3, data3);
+
+        address[] memory users = new address[](3);
+        users[0] = user1;
+        users[1] = user2;
+        users[2] = user3;
+        address[] memory recipients = new address[](3);
+        recipients[0] = user1;
+        recipients[1] = user2;
+        recipients[2] = user3;
+        uint256[] memory amountIns = new uint256[](3);
+        amountIns[0] = 300_000; // 0.300000 USDC
+        amountIns[1] = 200_000; // 0.200000 USDC
+        amountIns[2] = 100_000; // 0.100000 USDC
+        ICobuildSwap.CreatorAttribution[][] memory attrsPerUser = new ICobuildSwap.CreatorAttribution[][](3);
+        attrsPerUser[0] = attrs1;
+        attrsPerUser[1] = attrs2;
+        attrsPerUser[2] = attrs3;
+        ICobuildSwap.Payee[] memory payees = _makePayees(users, recipients, amountIns, attrsPerUser);
+
+        ICobuildSwap.ZoraCreatorCoinOneToMany memory s = ICobuildSwap.ZoraCreatorCoinOneToMany({
+            creator: 0x2d1882304c9A6Fa7F987C1B41c9fD5E8CF0516e2,
+            key: PoolKey({
+                currency0: Currency.wrap(ZORA),
+                currency1: Currency.wrap(CREATOR_A),
+                fee: 30000,
+                tickSpacing: 200,
+                hooks: IHooks(HOOKS_A)
+            }),
+            v3Fee: uint24(3000),
+            deadline: 175514485700,
+            minZoraOut: 1,
+            minCreatorOut: 1,
+            dustRecipient: address(0),
+            payees: payees
+        });
+
+        // Snap balances for assertions
+        uint256 feeBefore = IERC20(USDC).balanceOf(FEE_COLLECTOR);
+        uint256 out1_before = IERC20(CREATOR_A).balanceOf(user1);
+        uint256 out2_before = IERC20(CREATOR_A).balanceOf(user2);
+        uint256 out3_before = IERC20(CREATOR_A).balanceOf(user3);
+
+        // Expected total fees across all payees
+        uint256 expectedFee = _feeFor(payees[0].amountIn, feeBps, minFeeAbs) +
+            _feeFor(payees[1].amountIn, feeBps, minFeeAbs) +
+            _feeFor(payees[2].amountIn, feeBps, minFeeAbs);
+
+        // Execute as the configured executor (CobuildSwap.onlyExecutor)
+        vm.prank(EXECUTOR);
+        cs.executeZoraCreatorCoinOneToMany(UNIVERSAL_ROUTER, s);
+
+        // --- Assertions ---
+        // 1) Fees were pulled and delivered to feeCollector in USDC
+        uint256 feeAfter = IERC20(USDC).balanceOf(FEE_COLLECTOR);
+        assertEq(feeAfter - feeBefore, expectedFee, "feeCollector did not receive expected USDC fee");
+
+        // 2) Each recipient received some creator token
+        uint256 out1_after = IERC20(CREATOR_A).balanceOf(user1);
+        uint256 out2_after = IERC20(CREATOR_A).balanceOf(user2);
+        uint256 out3_after = IERC20(CREATOR_A).balanceOf(user3);
+        assertGt(out1_after - out1_before, 0, "no creator token to user1");
+        assertGt(out2_after - out2_before, 0, "no creator token to user2");
+        assertGt(out3_after - out3_before, 0, "no creator token to user3");
+    }
+}

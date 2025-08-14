@@ -7,9 +7,11 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import { Currency } from "@uniswap/v4-core/src/types/Currency.sol";
 import { IV4Router } from "@uniswap/v4-periphery/src/interfaces/IV4Router.sol";
+import { PoolKey } from "@uniswap/v4-core/src/types/PoolKey.sol";
 
 import { ICobuildSwap } from "./interfaces/ICobuildSwap.sol";
 
@@ -36,6 +38,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
 
     // ---- config ----
     IERC20 public USDC; // base token
+    IERC20 public ZORA; // ZORA token
     IPermit2 public PERMIT2; // 0x000000000022D473030F116dDEE9F6B43aC78BA3
 
     address public executor;
@@ -50,11 +53,11 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
 
     // Universal Router: command & v4 action constants
     uint8 private constant CMD_V4_SWAP = 0x10;
+    uint8 private constant CMD_V3_SWAP_EXACT_IN = 0x00; // <— NEW (v3 hop)
     uint8 private constant ACT_SWAP_EXACT_IN_SINGLE = 0x06;
-    uint8 private constant ACT_SETTLE = 0x0b; // unused
     uint8 private constant ACT_SETTLE_ALL = 0x0c;
     uint8 private constant ACT_TAKE = 0x0e;
-    uint8 private constant ACT_TAKE_ALL = 0x0f; // unused here
+    uint256 private constant _OPEN_DELTA = 0; // v4 ActionConstants.OPEN_DELTA sentinel (take all)  // docs: OPEN_DELTA = 0
 
     // ---- allowlists ----
     mapping(address => bool) public allowedRouters; // e.g., Universal Router, 0x router
@@ -73,6 +76,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
 
     function initialize(
         address _usdc,
+        address _zora,
         address _universalRouter,
         address _executor,
         address _feeCollector,
@@ -81,6 +85,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
     ) external initializer {
         if (
             _usdc == address(0) ||
+            _zora == address(0) ||
             _universalRouter == address(0) ||
             _executor == address(0) ||
             _feeCollector == address(0)
@@ -94,6 +99,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         _transferOwnership(msg.sender);
 
         USDC = IERC20(_usdc);
+        ZORA = IERC20(_zora);
         executor = _executor;
         feeCollector = _feeCollector;
         feeBps = _feeBps;
@@ -103,6 +109,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
 
         // One-time infinite approval from THIS contract to Permit2
         USDC.safeApprove(address(PERMIT2), type(uint256).max);
+        ZORA.safeApprove(address(PERMIT2), type(uint256).max);
 
         // Allow Universal Router by default
         allowedRouters[_universalRouter] = true;
@@ -141,8 +148,6 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         allowedRouters[r] = allowed;
         emit RouterAllowed(r, allowed);
     }
-
-    event SpenderAllowed(address spender, bool allowed);
 
     // Sticky approval pattern for 0x spenders (gas-saver)
     function setSpenderAllowed(address s, bool allowed) external onlyOwner {
@@ -357,7 +362,6 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
 
             // Enforce exact-input (or refund if price improved)
             uint256 usdcAfterSpend = usdc.balanceOf(address(this));
-            if (usdcBeforeSpend < usdcAfterSpend) revert USDC_BALANCE_INCREASED();
             uint256 spent = usdcBeforeSpend - usdcAfterSpend;
             if (spent > net) revert INVALID_AMOUNTS();
             if (spent < net) usdc.safeTransfer(s.user, net - spent);
@@ -394,6 +398,179 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
 
         // Transfer aggregated fees once at the end
         if (totalFeeCollected != 0) usdc.safeTransfer(feeTo, totalFeeCollected);
+    }
+
+    // Pack the three v4 actions once.
+    function _v4Actions() internal pure returns (bytes memory) {
+        return abi.encodePacked(uint8(ACT_SWAP_EXACT_IN_SINGLE), uint8(ACT_SETTLE_ALL), uint8(ACT_TAKE));
+    }
+
+    // Encode a single v4 exact-in swap: SETTLE_ALL(ZORA, amount) -> TAKE(out, recipient, OPEN_DELTA)
+    function _encodeV4Single(
+        bytes memory actions,
+        PoolKey calldata key,
+        bool zIsC0,
+        uint128 zoraIn,
+        uint128 minOut,
+        Currency inCur, // ZORA
+        Currency outCur, // creator token
+        address recipient
+    ) internal pure returns (bytes memory) {
+        bytes[] memory params = new bytes[](3);
+        params[0] = abi.encode(
+            IV4Router.ExactInputSingleParams({
+                poolKey: key,
+                zeroForOne: zIsC0,
+                amountIn: zoraIn,
+                amountOutMinimum: minOut,
+                hookData: bytes("")
+            })
+        );
+        params[1] = abi.encode(inCur, uint256(zoraIn)); // SETTLE_ALL cap
+        params[2] = abi.encode(outCur, recipient, uint256(_OPEN_DELTA)); // TAKE all owed
+        return abi.encode(actions, params);
+    }
+
+    // Small helper to write a batch-scoped Permit2 approval (with uint160 guard)
+    function _approveBatch(IPermit2 permit2, address token, address spender, uint256 amount, uint48 expiry) internal {
+        if (amount > type(uint160).max) revert INVALID_AMOUNTS();
+        permit2.approve(token, spender, uint160(amount), expiry);
+    }
+
+    function executeZoraCreatorCoinOneToMany(
+        address universalRouter,
+        ZoraCreatorCoinOneToMany calldata s
+    ) external override nonReentrant onlyExecutor {
+        if (universalRouter == address(0) || !allowedRouters[universalRouter]) revert ROUTER_NOT_ALLOWED();
+
+        IERC20 usdc = USDC;
+        IERC20 zora = ZORA;
+        if (address(zora) == address(0)) revert ZERO_ADDR();
+
+        uint256 len = s.payees.length;
+        if (len == 0 || len > 500) revert BAD_BATCH_SIZE(); // keep within block gas
+
+        // --- Derive pool sides & tokenOut (creator coin) ---
+        address zAddr = address(zora);
+        address c0 = Currency.unwrap(s.key.currency0);
+        address c1 = Currency.unwrap(s.key.currency1);
+        bool zIsC0 = (c0 == zAddr);
+        bool zIsC1 = (c1 == zAddr);
+        if (!(zIsC0 || zIsC1)) revert PATH_IN_MISMATCH();
+
+        address tokenOutAddr = zIsC0 ? c1 : c0;
+        if (tokenOutAddr == address(0)) revert INVALID_TOKEN_OUT();
+        if (tokenOutAddr == address(usdc) || tokenOutAddr == address(zora)) revert INVALID_TOKEN_OUT();
+
+        IERC20 tokenOut = IERC20(tokenOutAddr);
+
+        // --- Pull USDC per user; compute fees & net shares ---
+        uint256 totalGross;
+        uint256 totalNet;
+        uint256 totalFee;
+        uint256[] memory nets = new uint256[](len);
+
+        for (uint256 i; i < len; ) {
+            Payee calldata p = s.payees[i];
+            if (p.user == address(0) || p.recipient == address(0)) revert INVALID_ADDRESS();
+            if (p.amountIn == 0) revert INVALID_AMOUNTS();
+
+            // Pull gross and split into fee + net
+            usdc.safeTransferFrom(p.user, address(this), p.amountIn);
+            (uint256 fee, uint256 net) = _computeFeeAndNet(p.amountIn);
+            if (net == 0) revert NET_AMOUNT_ZERO();
+
+            totalGross += p.amountIn;
+            totalNet += net;
+            totalFee += fee;
+            nets[i] = net;
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        // --- Approve UR to pull NET USDC via Permit2 (scoped) ---
+        uint48 expiry = s.deadline > type(uint48).max ? type(uint48).max : uint48(s.deadline);
+        _approveBatch(PERMIT2, address(usdc), universalRouter, totalNet, expiry);
+
+        // ---- Leg 1: V3 USDC -> ZORA (exact-in) ----
+        bytes memory cmdV3 = abi.encodePacked(uint8(CMD_V3_SWAP_EXACT_IN));
+        bytes[] memory inV3 = new bytes[](1);
+        bytes memory path = abi.encodePacked(address(usdc), s.v3Fee, address(zora));
+        inV3[0] = abi.encode(address(this), totalNet, s.minZoraOut, path, true);
+
+        uint256 zoraBefore = zora.balanceOf(address(this));
+        IUniversalRouter(universalRouter).execute(cmdV3, inV3, s.deadline);
+        uint256 zoraIn = zora.balanceOf(address(this)) - zoraBefore;
+        if (zoraIn < s.minZoraOut) revert SLIPPAGE();
+
+        // --- Approve UR to pull the ZORA we actually received ---
+        if (zoraIn > type(uint160).max) revert INVALID_AMOUNTS();
+        _approveBatch(PERMIT2, address(zora), universalRouter, zoraIn, expiry);
+        if (zoraIn > type(uint128).max) revert INVALID_AMOUNTS(); // v4 param width
+
+        // ---- Leg 2: V4 ZORA -> creator coin (exact-in), TAKE to this contract ----
+        bytes memory cmdV4 = abi.encodePacked(uint8(CMD_V4_SWAP));
+        bytes[] memory inV4 = new bytes[](1);
+
+        bytes memory actions = _v4Actions();
+        Currency inCur = zIsC0 ? s.key.currency0 : s.key.currency1; // ZORA
+        Currency outCur = zIsC0 ? s.key.currency1 : s.key.currency0; // creator coin
+
+        inV4[0] = _encodeV4Single(
+            actions,
+            s.key,
+            zIsC0,
+            uint128(zoraIn),
+            s.minCreatorOut,
+            inCur,
+            outCur,
+            address(this) // receive creator coin here, then fan out
+        );
+
+        uint256 outBefore = tokenOut.balanceOf(address(this));
+        IUniversalRouter(universalRouter).execute(cmdV4, inV4, s.deadline);
+        uint256 outAmt = tokenOut.balanceOf(address(this)) - outBefore;
+        if (outAmt < s.minCreatorOut) revert SLIPPAGE();
+
+        // ---- Pro-rata distribution by NET USDC ----
+        uint256 distributed;
+        for (uint256 i; i < len; ) {
+            address recipient = s.payees[i].recipient;
+            address user = s.payees[i].user;
+            uint256 payout = Math.mulDiv(outAmt, nets[i], totalNet); // floor; full-precision
+            if (payout != 0) tokenOut.safeTransfer(recipient, payout);
+            distributed += payout;
+
+            emit ReactionSwapExecuted(
+                user,
+                recipient,
+                s.creator,
+                s.payees[i].amountIn,
+                payout,
+                s.payees[i].creatorAttributions
+            );
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        // Handle rounding dust
+        uint256 rem = tokenOut.balanceOf(address(this));
+        if (rem != 0) {
+            address dustTo = s.dustRecipient == address(0) ? feeCollector : s.dustRecipient;
+            tokenOut.safeTransfer(dustTo, rem);
+        }
+
+        // ---- Aggregate fee transfer & revoke scoped allowances ----
+        if (totalFee != 0) usdc.safeTransfer(feeCollector, totalFee);
+
+        PERMIT2.approve(address(usdc), universalRouter, 0, 0);
+        PERMIT2.approve(address(zora), universalRouter, 0, 0);
+
+        emit BatchReactionSwap(address(usdc), tokenOutAddr, totalGross, outAmt, totalFee, universalRouter);
     }
 
     // ---- UUPS ----

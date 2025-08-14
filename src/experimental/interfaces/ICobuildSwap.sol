@@ -20,14 +20,13 @@ interface ICobuildSwap {
     event FeeParamsChanged(uint16 feeBps, address feeCollector);
     event RouterAllowed(address router, bool allowed);
     event MinFeeAbsoluteChanged(uint256 minFeeAbsolute);
+    event SpenderAllowed(address spender, bool allowed);
 
     // ---- errors ----
     error FEE_TOO_HIGH();
     error ZERO_ADDR();
     error NOT_EXECUTOR();
-    error BAD_PATH_LEN(); // reserved (v3-style)
     error PATH_IN_MISMATCH();
-    error PATH_OUT_MISMATCH(); // reserved (v3-style)
     error ROUTER_NOT_ALLOWED();
     error SPENDER_NOT_ALLOWED();
     error BAD_BATCH_SIZE();
@@ -38,7 +37,6 @@ interface ICobuildSwap {
     error NET_AMOUNT_ZERO();
     error SLIPPAGE();
     error ETH_TRANSFER_FAIL();
-    error USDC_BALANCE_INCREASED();
     error AMOUNT_LT_MIN_FEE();
 
     // ---- v4 single-pool swap ----
@@ -71,4 +69,50 @@ interface ICobuildSwap {
     }
 
     function executeBatch0x(address expectedRouter, OxSwap[] calldata swaps) external;
+
+    // --- compact inputs ---
+    struct Payee {
+        address user; // token payer we pull from
+        address recipient; // receives creator coin
+        uint256 amountIn; // gross token (6d)
+        CreatorAttribution[] creatorAttributions; // at least 1
+    }
+
+    struct CreatorAttribution {
+        address creator;
+        uint256 amount;
+        bytes data;
+    }
+
+    struct ZoraCreatorCoinOneToMany {
+        address creator; // attribution only (analytics)
+        PoolKey key; // v4 pool: ZORA <-> creator coin
+        uint24 v3Fee; // USDC<->ZORA fee tier
+        uint256 deadline; // applies to both legs
+        uint256 minZoraOut; // USDC->ZORA leg floor (sum)
+        uint128 minCreatorOut; // ZORA->creator leg floor (sum)
+        address dustRecipient; // where rounding dust goes (0 => feeCollector)
+        Payee[] payees; // at least 1
+    }
+
+    event BatchReactionSwap(
+        address indexed tokenIn,
+        address indexed tokenOut,
+        uint256 amountIn,
+        uint256 amountOut,
+        uint256 fee,
+        address router
+    );
+
+    event ReactionSwapExecuted(
+        address indexed user,
+        address indexed recipient,
+        address creator,
+        uint256 amountIn,
+        uint256 amountOut,
+        CreatorAttribution[] creatorAttributions
+    );
+
+    // --- NEW: one-swap-many-payouts entrypoint ---
+    function executeZoraCreatorCoinOneToMany(address universalRouter, ZoraCreatorCoinOneToMany calldata s) external;
 }

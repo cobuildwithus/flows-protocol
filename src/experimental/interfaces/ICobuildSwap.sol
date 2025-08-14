@@ -39,36 +39,33 @@ interface ICobuildSwap {
     error ETH_TRANSFER_FAIL();
     error AMOUNT_LT_MIN_FEE();
 
-    // ---- v4 single-pool swap ----
-    struct V4SingleSwap {
-        address user; // USDC owner we pull from
-        address recipient; // who receives tokenOut
-        address creator; // whoever's content triggered this swap
-        PoolKey key; // v4 pool id
-        bool zeroForOne; // true if currency0 -> currency1
-        uint128 amountIn; // USDC (6d)
-        uint128 minAmountOut; // slippage bound
-        uint256 deadline; // UR.execute deadline for THIS swap
+    struct V4SingleOneToMany {
+        address creator; // attribution / analytics only
+        PoolKey key; // v4 pool: USDC <-> tokenOut
+        bool zeroForOne; // must be USDC -> tokenOut
+        uint128 minAmountOut; // floor on TOTAL tokenOut delivered by the swap
+        uint256 deadline; // UR.execute deadline for the swap
+        Payee[] payees; // at least 1 {user, recipient, amountIn}
     }
 
-    function executeBatchUniV4Single(address universalRouter, V4SingleSwap[] calldata swaps) external;
+    // REPLACE the old signature with this (note the new struct)
+    function executeBatchUniV4Single(address universalRouter, V4SingleOneToMany calldata s) external;
 
     // ---- 0x swap ----
-    struct OxSwap {
-        address user; // pulls USDC from here
-        address recipient; // final holder of tokenOut
-        address creator; // whoever's content triggered this swap
-        address tokenOut; // expected output token (for checks/transfer)
-        uint256 amountIn; // gross USDC
-        uint256 minAmountOut; // slippage bound
+    struct OxOneToMany {
+        address creator; // attribution only (analytics)
+        address tokenOut; // token that 0x will deliver to THIS contract
+        uint256 minAmountOut; // total slippage floor (sum over payees)
         address spender; // 0x AllowanceTarget/Permit2 spender from quote
-        address callTarget; // 0x router "to" from quote
-        bytes callData; // 0x calldata
+        address callTarget; // 0x router "to" address from quote
+        bytes callData; // 0x calldata (set taker & recipient = this contract)
         uint256 value; // native value (usually 0)
-        uint256 deadline; // safety deadline
+        uint256 deadline; // safety deadline for this swap
+        Payee[] payees; // at least 1
     }
 
-    function executeBatch0x(address expectedRouter, OxSwap[] calldata swaps) external;
+    // --- REPLACES the old executeBatch0x signature ---
+    function executeBatch0x(address expectedRouter, OxOneToMany calldata s) external;
 
     // --- compact inputs ---
     struct Payee {

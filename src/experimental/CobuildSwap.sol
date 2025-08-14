@@ -314,6 +314,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
 
         IERC20 usdc = USDC;
         IERC20 out = IERC20(s.tokenOut);
+        if (s.tokenOut == address(usdc)) revert INVALID_TOKEN_OUT();
 
         uint256 len = s.payees.length;
         if (len == 0 || len > 500) revert BAD_BATCH_SIZE();
@@ -370,7 +371,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
 
         // --- Distribute tokenOut pro‑rata by gross amountIn (matches fee calc basis) ---
         uint256 distributed;
-        for (uint256 i; i + 1 < len; ) {
+        for (uint256 i; i < len; ) {
             Payee calldata p = s.payees[i];
             uint256 payout = Math.mulDiv(outAmt, p.amountIn, totalGross);
             if (payout != 0) {

@@ -38,10 +38,10 @@ interface ICobuildSwap {
     error SLIPPAGE();
     error ETH_TRANSFER_FAIL();
     error AMOUNT_LT_MIN_FEE();
+    error SPENDER_EQUALS_ROUTER();
 
     // ---- 0x swap ----
     struct OxOneToMany {
-        address creator; // attribution only (analytics)
         address tokenOut; // token that 0x will deliver to THIS contract
         uint256 minAmountOut; // total slippage floor (sum over payees)
         address spender; // 0x AllowanceTarget/Permit2 spender from quote
@@ -63,7 +63,6 @@ interface ICobuildSwap {
     }
 
     struct ZoraCreatorCoinOneToMany {
-        address creator; // attribution only (analytics)
         PoolKey key; // v4 pool: ZORA <-> creator coin
         uint24 v3Fee; // USDC<->ZORA fee tier
         uint256 deadline; // applies to both legs

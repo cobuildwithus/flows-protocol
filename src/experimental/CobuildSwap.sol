@@ -116,10 +116,6 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         // Allow Universal Router by default
         allowedRouters[_universalRouter] = true;
         emit RouterAllowed(_universalRouter, true);
-
-        // Sticky Permit2 allowances for the Universal Router (saves per-batch approve/revoke)
-        PERMIT2.approve(address(USDC), _universalRouter, type(uint160).max, type(uint48).max);
-        PERMIT2.approve(address(ZORA), _universalRouter, type(uint160).max, type(uint48).max);
     }
 
     // accept stray ETH (e.g., if a router unwraps WETH->ETH to us by mistake)
@@ -201,6 +197,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         if (s.value != 0) revert INVALID_AMOUNTS();
         if (s.callTarget != expectedRouter) revert ROUTER_NOT_ALLOWED();
         if (!allowedSpenders[s.spender]) revert SPENDER_NOT_ALLOWED();
+        if (s.spender == s.callTarget) revert SPENDER_EQUALS_ROUTER();
 
         IERC20 usdc = USDC;
         IERC20 out = IERC20(s.tokenOut);
@@ -411,14 +408,22 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
             );
 
             // Execute and measure FoT-safe out amount; assert exact USDC spend == totalNet
+            // --- Before calling Universal Router ---
+            if (totalNet > type(uint160).max) revert INVALID_AMOUNTS(); // Permit2 amount is uint160
+            uint48 exp = uint48(block.timestamp + 10 minutes);
+            PERMIT2.approve(address(usdc), universalRouter, uint160(totalNet), exp);
+
             uint256 usdcBefore = usdc.balanceOf(self);
             uint256 beforeOut = tokenOut.balanceOf(self);
             IUniversalRouter(universalRouter).execute(commands, inputs, s.deadline);
+            // --- Always revoke after ---
+            PERMIT2.approve(address(usdc), universalRouter, 0, 0);
             uint256 usdcAfter = usdc.balanceOf(self);
             if (usdcBefore < usdcAfter) revert INVALID_AMOUNTS();
             if (usdcBefore - usdcAfter != totalNet) revert INVALID_AMOUNTS();
             uint256 afterOut = tokenOut.balanceOf(self);
             outAmt = afterOut > beforeOut ? (afterOut - beforeOut) : 0;
+            if (outAmt < s.minCreatorOut) revert SLIPPAGE();
         } // commands/inputs out of scope here
 
         emit BatchReactionSwap(address(usdc), tokenOutAddr, totalGross, outAmt, totalFee, universalRouter);

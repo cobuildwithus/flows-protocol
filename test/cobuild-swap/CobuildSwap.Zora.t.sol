@@ -55,7 +55,6 @@ contract CobuildSwapBaseFork_Zora_Test is CobuildSwapBaseFork_DeployProxy_Test {
         ICobuildSwap.Payee[] memory payees
     ) internal view returns (ICobuildSwap.ZoraCreatorCoinOneToMany memory s) {
         s = ICobuildSwap.ZoraCreatorCoinOneToMany({
-            creator: CREATOR_A,
             key: _poolKeyZoraCreatorA(),
             v3Fee: uint24(3000),
             deadline: 175514485700,
@@ -167,7 +166,6 @@ contract CobuildSwapBaseFork_Zora_Test is CobuildSwapBaseFork_DeployProxy_Test {
         ICobuildSwap.Payee[] memory payees = _makePayees(users, recipients, amountIns);
 
         ICobuildSwap.ZoraCreatorCoinOneToMany memory s = ICobuildSwap.ZoraCreatorCoinOneToMany({
-            creator: 0x2d1882304c9A6Fa7F987C1B41c9fD5E8CF0516e2,
             key: PoolKey({
                 currency0: Currency.wrap(ZORA),
                 currency1: Currency.wrap(CREATOR_A),

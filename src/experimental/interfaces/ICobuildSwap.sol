@@ -28,6 +28,8 @@ interface ICobuildSwap {
     error AMOUNT_LT_MIN_FEE();
     error NO_ETH_TERMINAL();
     error JB_TOKEN_UNAVAILABLE();
+    error INVALID_MIN_OUT();
+    error INVALID_V3_FEE();
 
     // ---- 0x swap ----
     struct OxOneToMany {
@@ -79,7 +81,7 @@ interface ICobuildSwap {
         uint256 projectId; // JB project to pay
         uint256 minEthOut; // floor for ETH we must receive from UR
         string memo;
-        bytes metadata; // include preferClaimedTokens=true for your JB version
+        bytes metadata;
         // recipients
         Payee[] payees; // pro-rata by gross USDC
     }

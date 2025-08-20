@@ -487,7 +487,6 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
 
     /// @notice USDC (many) -> ETH via Universal Router -> single JB pay -> ERC20 fan-out to many recipients.
     /// @dev Assumes the UR route UNWRAPS to native ETH and sends it to THIS contract.
-    ///      Pass JB `metadata` that sets preferClaimedTokens=true so tokens mint as ERC-20.
     ///      Reverts if project ERC-20 is unavailable (not issued or preferClaimed was false).
     function executeJuiceboxPayMany(JuiceboxPayMany calldata s) external override nonReentrant onlyExecutor {
         // --- Basic checks ---
@@ -498,6 +497,8 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         }
         uint256 n = s.payees.length;
         if (n == 0 || n > 500) revert BAD_BATCH_SIZE();
+        if (s.v3Fee > 3000) revert INVALID_V3_FEE();
+        if (s.minEthOut == 0) revert INVALID_MIN_OUT();
 
         IERC20 usdc = USDC;
 
@@ -537,12 +538,11 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         IUniversalRouter(s.universalRouter).execute(commands, inputs, s.deadline);
         PERMIT2.approve(address(usdc), s.universalRouter, 0, 0);
 
-        // Enforce spend <= net and compute ETH out
+        // Enforce exact spend for V3 exact-in swap
         uint256 usdcAfter = usdc.balanceOf(address(this));
         if (usdcAfter > usdcBefore) revert INVALID_AMOUNTS();
         uint256 spent = usdcBefore - usdcAfter;
-        if (spent > totalNetUSDC) revert INVALID_AMOUNTS();
-        if (spent < totalNetUSDC) usdc.transfer(feeCollector, totalNetUSDC - spent);
+        if (spent != totalNetUSDC) revert INVALID_AMOUNTS();
 
         uint256 ethAfter = address(this).balance;
         if (ethAfter < ethBefore) revert INVALID_AMOUNTS();
@@ -571,11 +571,13 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         uint256 bal = t.balanceOf(address(this));
         if (bal == 0) revert JB_TOKEN_UNAVAILABLE();
 
+        emit BatchJuicePay(s.projectId, totalGross, ethOut, feeUSDC, n, s.universalRouter, s.v3Fee);
+
         for (uint256 i; i < n; ) {
             Payee calldata p = s.payees[i];
-            uint256 out_i = Math.mulDiv(bal, p.amountIn, totalGross);
-            if (out_i != 0) {
-                t.safeTransfer(p.recipient, out_i);
+            uint256 outAmount = Math.mulDiv(bal, p.amountIn, totalGross);
+            if (outAmount != 0) {
+                t.safeTransfer(p.recipient, outAmount);
             }
             unchecked {
                 ++i;

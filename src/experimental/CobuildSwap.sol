@@ -214,6 +214,8 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         if (s.value != 0) revert INVALID_AMOUNTS();
         if (s.callTarget != expectedRouter) revert ROUTER_NOT_ALLOWED();
         if (!allowedSpenders[s.spender]) revert SPENDER_NOT_ALLOWED();
+        // AllowanceHolder flow invariant: spender == entry point
+        if (s.spender != s.callTarget) revert SPENDER_NOT_ALLOWED();
 
         IERC20 usdc = USDC;
         IERC20 out = IERC20(s.tokenOut);

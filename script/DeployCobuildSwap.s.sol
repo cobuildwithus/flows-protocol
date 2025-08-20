@@ -20,6 +20,9 @@ contract DeployCobuildSwap is DeployScript {
         uint16 feeBps = uint16(vm.envUint("FEE_BPS"));
         uint256 minFeeAbs = vm.envUint("MIN_FEE_ABS");
         address zora = vm.envAddress("ZORA_BASE");
+        address jbDirectory = vm.envAddress("JB_DIRECTORY");
+        address jbTokens = vm.envAddress("JB_TOKENS");
+        address weth9 = vm.envAddress("WETH9");
 
         contractName = "CobuildSwap";
 
@@ -27,7 +30,7 @@ contract DeployCobuildSwap is DeployScript {
 
         bytes memory initData = abi.encodeCall(
             CobuildSwap.initialize,
-            (usdc, zora, universalRouter, executor, feeCollector, feeBps, minFeeAbs)
+            (usdc, zora, universalRouter, jbDirectory, jbTokens, weth9, executor, feeCollector, feeBps, minFeeAbs)
         );
 
         cobuildSwap = address(new ERC1967Proxy(cobuildSwapImpl, initData));

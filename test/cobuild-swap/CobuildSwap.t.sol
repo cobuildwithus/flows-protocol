@@ -59,9 +59,23 @@ contract CobuildSwapBaseFork_DeployProxy_Test is Test {
         CobuildSwap impl = new CobuildSwap();
 
         // prepare initializer calldata, mirroring your DeployScript
+        address JB_DIRECTORY = address(0x0bC9F153DEe4d3D474ce0903775b9b2AAae9AA41);
+        address JB_TOKEN_STORE = address(0xA59e9F424901fB9DBD8913a9A32A081F9425bf36);
+        address WETH9 = address(0x4200000000000000000000000000000000000006);
         bytes memory initData = abi.encodeCall(
             CobuildSwap.initialize,
-            (USDC, ZORA, UNIVERSAL_ROUTER, EXECUTOR, FEE_COLLECTOR, feeBps, minFeeAbs)
+            (
+                USDC,
+                ZORA,
+                UNIVERSAL_ROUTER,
+                JB_DIRECTORY,
+                JB_TOKEN_STORE,
+                WETH9,
+                EXECUTOR,
+                FEE_COLLECTOR,
+                feeBps,
+                minFeeAbs
+            )
         );
 
         // deploy proxy initialized with initData (owner becomes this test contract)

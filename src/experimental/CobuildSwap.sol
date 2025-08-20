@@ -11,7 +11,7 @@ import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { IJBTerminal } from "../interfaces/external/juicebox/IJBTerminal.sol";
 import { IJBDirectory } from "../interfaces/external/juicebox/IJBDirectory.sol";
 import { JBConstants } from "../interfaces/external/juicebox/library/JBConstants.sol";
-import { IJBTokenStore } from "../interfaces/external/juicebox/IJBTokenStore.sol";
+import { IJBTokens } from "../interfaces/external/juicebox/IJBTokens.sol";
 
 import { Currency } from "@uniswap/v4-core/src/types/Currency.sol";
 import { IV4Router } from "@uniswap/v4-periphery/src/interfaces/IV4Router.sol";
@@ -44,8 +44,9 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
     IERC20 public USDC; // base token
     IERC20 public ZORA; // ZORA token
     IPermit2 public PERMIT2; // 0x000000000022D473030F116dDEE9F6B43aC78BA3
-    IJBDirectory public DIRECTORY;
-    IJBTokenStore public TOKEN_STORE;
+    IJBDirectory public JB_DIRECTORY;
+    IJBTokens public JB_TOKENS;
+    address public WETH9; // WETH9 address for UR v3 path building
 
     address public executor;
     address public feeCollector;
@@ -60,6 +61,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
     // Universal Router: command & v4 action constants
     uint8 private constant CMD_V4_SWAP = 0x10;
     uint8 private constant CMD_V3_SWAP_EXACT_IN = 0x00; // <— NEW (v3 hop)
+    uint8 private constant CMD_UNWRAP_WETH = 0x0c; // Universal Router Payments.unwrapWETH9(recipient, amountMin)
     uint8 private constant ACT_SWAP_EXACT_IN_SINGLE = 0x06;
     uint8 private constant ACT_SETTLE = 0x0b;
     uint8 private constant ACT_SETTLE_ALL = 0x0c;
@@ -86,6 +88,9 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         address _usdc,
         address _zora,
         address _universalRouter,
+        address _jbDirectory,
+        address _jbTokenStore,
+        address _weth9,
         address _executor,
         address _feeCollector,
         uint16 _feeBps,
@@ -95,6 +100,9 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
             _usdc == address(0) ||
             _zora == address(0) ||
             _universalRouter == address(0) ||
+            _jbDirectory == address(0) ||
+            _jbTokenStore == address(0) ||
+            _weth9 == address(0) ||
             _executor == address(0) ||
             _feeCollector == address(0)
         ) revert ZERO_ADDR();
@@ -108,6 +116,9 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
 
         USDC = IERC20(_usdc);
         ZORA = IERC20(_zora);
+        JB_DIRECTORY = IJBDirectory(_jbDirectory);
+        JB_TOKENS = IJBTokens(_jbTokenStore);
+        WETH9 = _weth9;
         executor = _executor;
         feeCollector = _feeCollector;
         feeBps = _feeBps;
@@ -348,6 +359,29 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         inputs[1] = _encodeSettleSwapTakeV4(key, zIsC0, minCreatorOut, inCur, outCur, recipient);
     }
 
+    // Build Universal Router commands/inputs for USDC -> WETH(v3) -> UNWRAP -> ETH to this contract
+    function _buildUSDCtoETH_UR(
+        address universalRouter,
+        uint256 amountIn,
+        uint256 minEthOut,
+        uint24 v3Fee
+    ) internal view returns (bytes memory commands, bytes[] memory inputs) {
+        if (WETH9 == address(0)) revert ZERO_ADDR();
+        // commands: V3_SWAP_EXACT_IN then UNWRAP_WETH
+        commands = abi.encodePacked(bytes1(CMD_V3_SWAP_EXACT_IN), bytes1(CMD_UNWRAP_WETH));
+
+        inputs = new bytes[](2);
+
+        // v3 path USDC -> WETH9
+        bytes memory path = abi.encodePacked(address(USDC), v3Fee, WETH9);
+
+        // [0] V3_SWAP_EXACT_IN(recipient = UR, amountIn, amountOutMin, path, payerIsUser=true)
+        inputs[0] = abi.encode(universalRouter, amountIn, minEthOut, path, true);
+
+        // [1] UNWRAP_WETH(recipient = this, amountMin = minEthOut)
+        inputs[1] = abi.encode(address(this), minEthOut);
+    }
+
     function executeZoraCreatorCoinOneToMany(
         address universalRouter,
         ZoraCreatorCoinOneToMany calldata s
@@ -459,6 +493,9 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         // --- Basic checks ---
         if (s.universalRouter == address(0) || !allowedRouters[s.universalRouter]) revert ROUTER_NOT_ALLOWED();
         if (s.deadline < block.timestamp) revert EXPIRED_DEADLINE();
+        if (WETH9 == address(0) || address(JB_DIRECTORY) == address(0) || address(JB_TOKENS) == address(0)) {
+            revert ZERO_ADDR();
+        }
         uint256 n = s.payees.length;
         if (n == 0 || n > 500) revert BAD_BATCH_SIZE();
 
@@ -481,24 +518,30 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         (uint256 feeUSDC, uint256 totalNetUSDC) = _computeFeeAndNet(totalGross);
         if (totalNetUSDC == 0) revert NET_AMOUNT_ZERO();
 
-        // --- 3) UR swap: USDC -> ETH (UR must unwrap internally and send ETH here) ---
-        // Give bounded Permit2 approval to UR and revoke after.
+        // --- 3) Build UR program on-chain: USDC -> WETH(v3) -> UNWRAP -> ETH to this ---
+        (bytes memory commands, bytes[] memory inputs) = _buildUSDCtoETH_UR(
+            s.universalRouter,
+            totalNetUSDC,
+            s.minEthOut,
+            s.v3Fee
+        );
+
+        // Permit2 bounded approval and execute
         if (totalNetUSDC > type(uint160).max) revert INVALID_AMOUNTS();
-        uint48 exp = uint48(block.timestamp + 10 seconds);
+        uint48 exp = uint48(block.timestamp + 10 minutes);
 
         uint256 usdcBefore = usdc.balanceOf(address(this));
         uint256 ethBefore = address(this).balance;
 
         PERMIT2.approve(address(usdc), s.universalRouter, uint160(totalNetUSDC), exp);
-        IUniversalRouter(s.universalRouter).execute{ value: s.value }(s.commands, s.inputs, s.deadline);
+        IUniversalRouter(s.universalRouter).execute(commands, inputs, s.deadline);
         PERMIT2.approve(address(usdc), s.universalRouter, 0, 0);
 
-        // Enforce exact/<= spend & compute ETH delta
+        // Enforce spend <= net and compute ETH out
         uint256 usdcAfter = usdc.balanceOf(address(this));
         if (usdcAfter > usdcBefore) revert INVALID_AMOUNTS();
         uint256 spent = usdcBefore - usdcAfter;
         if (spent > totalNetUSDC) revert INVALID_AMOUNTS();
-        // Push any unspent net to the feeCollector to sweep dust consistently with your 0x lane
         if (spent < totalNetUSDC) usdc.transfer(feeCollector, totalNetUSDC - spent);
 
         uint256 ethAfter = address(this).balance;
@@ -507,57 +550,49 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         if (ethOut < s.minEthOut) revert SLIPPAGE();
 
         // --- 4) JB pay (beneficiary = this contract) ---
-        IJBTerminal terminal = DIRECTORY.primaryTerminalOf(s.projectId, JBConstants.NATIVE_TOKEN);
+        IJBTerminal terminal = JB_DIRECTORY.primaryTerminalOf(s.projectId, JBConstants.NATIVE_TOKEN);
         if (address(terminal) == address(0)) revert NO_ETH_TERMINAL();
 
-        uint256 minted = terminal.pay{ value: ethOut }(
+        terminal.pay{ value: ethOut }(
             s.projectId,
             JBConstants.NATIVE_TOKEN,
             ethOut,
             address(this),
-            0, // minReturnedTokens; keep 0 unless coordinating with buyback hooks
+            0,
             s.memo,
-            s.metadata // should encode preferClaimedTokens=true for ERC-20 mint
+            s.metadata
         );
 
         // --- 5) ERC-20 fan-out (requires ERC-20 issued + preferClaimed honored) ---
-        if (minted != 0) {
-            address projectToken = _getProjectTokenAddress(s.projectId);
-            if (projectToken == address(0)) revert JB_TOKEN_UNAVAILABLE();
+        address projectToken = _getProjectTokenAddress(s.projectId);
+        if (projectToken == address(0)) revert JB_TOKEN_UNAVAILABLE();
 
-            IERC20 t = IERC20(projectToken);
-            uint256 bal = t.balanceOf(address(this));
-            // If preferClaimedTokens=false, bal likely 0; treat as unavailable.
-            if (bal == 0) revert JB_TOKEN_UNAVAILABLE();
+        IERC20 t = IERC20(projectToken);
+        uint256 bal = t.balanceOf(address(this));
+        if (bal == 0) revert JB_TOKEN_UNAVAILABLE();
 
-            // Pro-rata distribution by gross USDC (aligns with fee basis)
-            uint256 distributed;
-            for (uint256 i; i < n; ) {
-                Payee calldata p = s.payees[i];
-                uint256 out_i = Math.mulDiv(bal, p.amountIn, totalGross);
-                if (out_i != 0) {
-                    t.safeTransfer(p.recipient, out_i);
-                    distributed += out_i;
-                }
-                unchecked {
-                    ++i;
-                }
+        for (uint256 i; i < n; ) {
+            Payee calldata p = s.payees[i];
+            uint256 out_i = Math.mulDiv(bal, p.amountIn, totalGross);
+            if (out_i != 0) {
+                t.safeTransfer(p.recipient, out_i);
             }
-            // Sweep any rounding dust to feeCollector
-            uint256 dust = t.balanceOf(address(this));
-            if (dust != 0) t.safeTransfer(feeCollector, dust);
+            unchecked {
+                ++i;
+            }
         }
-
-        // --- 6) Transfer USDC fee & emit ---
+        // Sweep rounding dust & transfer USDC fee
+        uint256 dust = t.balanceOf(address(this));
+        if (dust != 0) t.safeTransfer(feeCollector, dust);
         if (feeUSDC != 0) usdc.transfer(feeCollector, feeUSDC);
     }
 
     // ---- Juicebox token discovery (version-specific) ----
     function _getProjectTokenAddress(uint256 projectId) internal view returns (address) {
-        // Works with JB versions where TOKEN_STORE.tokenOf(projectId) returns a token contract address.
+        // Works with JB versions where JB_TOKENS.tokenOf(projectId) returns a token contract address.
         // If your repo exposes a different accessor, redirect here.
-        if (address(TOKEN_STORE) == address(0)) return address(0);
-        return address(TOKEN_STORE.tokenOf(projectId));
+        if (address(JB_TOKENS) == address(0)) return address(0);
+        return address(JB_TOKENS.tokenOf(projectId));
     }
 
     // ---- UUPS ----

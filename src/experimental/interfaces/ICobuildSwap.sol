@@ -71,17 +71,15 @@ interface ICobuildSwap {
 
     // ---- Universal Router USDC -> ETH -> JB pay -> fan-out ----
     struct JuiceboxPayMany {
-        // Universal Router call (UR must unwrap WETH to ETH and send ETH to THIS contract)
-        address universalRouter;
-        bytes commands;
-        bytes[] inputs;
-        uint256 value; // usually 0
-        uint256 deadline;
+        // Router and swap controls (built on-chain as USDC -> WETH(v3) -> UNWRAP -> ETH to this)
+        address universalRouter; // must be allow-listed
+        uint24 v3Fee; // USDC/WETH fee tier (e.g., 500, 3000, 10000)
+        uint256 deadline; // UR deadline
         // Juicebox pay
-        uint256 projectId;
-        uint256 minEthOut; // min ETH this contract must receive from UR
+        uint256 projectId; // JB project to pay
+        uint256 minEthOut; // floor for ETH we must receive from UR
         string memo;
-        bytes metadata; // include preferClaimedTokens=true (JB-version-specific)
+        bytes metadata; // include preferClaimedTokens=true for your JB version
         // recipients
         Payee[] payees; // pro-rata by gross USDC
     }

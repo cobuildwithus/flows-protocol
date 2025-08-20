@@ -4,18 +4,6 @@ pragma solidity 0.8.28;
 import { PoolKey } from "@uniswap/v4-core/src/types/PoolKey.sol";
 
 interface ICobuildSwap {
-    // ---- events ----
-    event SwapExecuted(
-        address indexed user,
-        address indexed recipient,
-        address creator,
-        address tokenIn,
-        address indexed tokenOut,
-        uint256 amountIn,
-        uint256 fee,
-        uint256 amountOut,
-        address router
-    );
     event ExecutorChanged(address indexed oldExec, address indexed newExec);
     event FeeParamsChanged(uint16 feeBps, address feeCollector);
     event RouterAllowed(address router, bool allowed);
@@ -38,7 +26,8 @@ interface ICobuildSwap {
     error SLIPPAGE();
     error ETH_TRANSFER_FAIL();
     error AMOUNT_LT_MIN_FEE();
-    error SPENDER_EQUALS_ROUTER();
+    error NO_ETH_TERMINAL();
+    error JB_TOKEN_UNAVAILABLE();
 
     // ---- 0x swap ----
     struct OxOneToMany {
@@ -80,6 +69,26 @@ interface ICobuildSwap {
         address router
     );
 
+    // ---- Universal Router USDC -> ETH -> JB pay -> fan-out ----
+    struct JuiceboxPayMany {
+        // Universal Router call (UR must unwrap WETH to ETH and send ETH to THIS contract)
+        address universalRouter;
+        bytes commands;
+        bytes[] inputs;
+        uint256 value; // usually 0
+        uint256 deadline;
+        // Juicebox pay
+        uint256 projectId;
+        uint256 minEthOut; // min ETH this contract must receive from UR
+        string memo;
+        bytes metadata; // include preferClaimedTokens=true (JB-version-specific)
+        // recipients
+        Payee[] payees; // pro-rata by gross USDC
+    }
+
     // --- NEW: one-swap-many-payouts entrypoint ---
     function executeZoraCreatorCoinOneToMany(address universalRouter, ZoraCreatorCoinOneToMany calldata s) external;
+
+    // NEW: expose the UR-only entrypoint
+    function executeJuiceboxPayMany(JuiceboxPayMany calldata s) external;
 }

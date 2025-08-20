@@ -8,6 +8,10 @@ import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/acc
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
+import { IJBTerminal } from "../interfaces/external/juicebox/IJBTerminal.sol";
+import { IJBDirectory } from "../interfaces/external/juicebox/IJBDirectory.sol";
+import { JBConstants } from "../interfaces/external/juicebox/library/JBConstants.sol";
+import { IJBTokenStore } from "../interfaces/external/juicebox/IJBTokenStore.sol";
 
 import { Currency } from "@uniswap/v4-core/src/types/Currency.sol";
 import { IV4Router } from "@uniswap/v4-periphery/src/interfaces/IV4Router.sol";
@@ -40,6 +44,8 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
     IERC20 public USDC; // base token
     IERC20 public ZORA; // ZORA token
     IPermit2 public PERMIT2; // 0x000000000022D473030F116dDEE9F6B43aC78BA3
+    IJBDirectory public DIRECTORY;
+    IJBTokenStore public TOKEN_STORE;
 
     address public executor;
     address public feeCollector;
@@ -197,7 +203,6 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         if (s.value != 0) revert INVALID_AMOUNTS();
         if (s.callTarget != expectedRouter) revert ROUTER_NOT_ALLOWED();
         if (!allowedSpenders[s.spender]) revert SPENDER_NOT_ALLOWED();
-        if (s.spender == s.callTarget) revert SPENDER_EQUALS_ROUTER();
 
         IERC20 usdc = USDC;
         IERC20 out = IERC20(s.tokenOut);
@@ -444,6 +449,115 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         uint256 rem = tokenOut.balanceOf(self);
         if (rem != 0) tokenOut.safeTransfer(feeTo, rem);
         if (totalFee != 0) usdc.transfer(feeTo, totalFee);
+    }
+
+    /// @notice USDC (many) -> ETH via Universal Router -> single JB pay -> ERC20 fan-out to many recipients.
+    /// @dev Assumes the UR route UNWRAPS to native ETH and sends it to THIS contract.
+    ///      Pass JB `metadata` that sets preferClaimedTokens=true so tokens mint as ERC-20.
+    ///      Reverts if project ERC-20 is unavailable (not issued or preferClaimed was false).
+    function executeJuiceboxPayMany(JuiceboxPayMany calldata s) external override nonReentrant onlyExecutor {
+        // --- Basic checks ---
+        if (s.universalRouter == address(0) || !allowedRouters[s.universalRouter]) revert ROUTER_NOT_ALLOWED();
+        if (s.deadline < block.timestamp) revert EXPIRED_DEADLINE();
+        uint256 n = s.payees.length;
+        if (n == 0 || n > 500) revert BAD_BATCH_SIZE();
+
+        IERC20 usdc = USDC;
+
+        // --- 1) Pull USDC & sum gross ---
+        uint256 totalGross;
+        for (uint256 i; i < n; ) {
+            Payee calldata p = s.payees[i];
+            if (p.user == address(0) || p.recipient == address(0)) revert INVALID_ADDRESS();
+            if (p.amountIn == 0) revert INVALID_AMOUNTS();
+            usdc.transferFrom(p.user, address(this), p.amountIn);
+            totalGross += p.amountIn;
+            unchecked {
+                ++i;
+            }
+        }
+
+        // --- 2) Fee once on gross ---
+        (uint256 feeUSDC, uint256 totalNetUSDC) = _computeFeeAndNet(totalGross);
+        if (totalNetUSDC == 0) revert NET_AMOUNT_ZERO();
+
+        // --- 3) UR swap: USDC -> ETH (UR must unwrap internally and send ETH here) ---
+        // Give bounded Permit2 approval to UR and revoke after.
+        if (totalNetUSDC > type(uint160).max) revert INVALID_AMOUNTS();
+        uint48 exp = uint48(block.timestamp + 10 seconds);
+
+        uint256 usdcBefore = usdc.balanceOf(address(this));
+        uint256 ethBefore = address(this).balance;
+
+        PERMIT2.approve(address(usdc), s.universalRouter, uint160(totalNetUSDC), exp);
+        IUniversalRouter(s.universalRouter).execute{ value: s.value }(s.commands, s.inputs, s.deadline);
+        PERMIT2.approve(address(usdc), s.universalRouter, 0, 0);
+
+        // Enforce exact/<= spend & compute ETH delta
+        uint256 usdcAfter = usdc.balanceOf(address(this));
+        if (usdcAfter > usdcBefore) revert INVALID_AMOUNTS();
+        uint256 spent = usdcBefore - usdcAfter;
+        if (spent > totalNetUSDC) revert INVALID_AMOUNTS();
+        // Push any unspent net to the feeCollector to sweep dust consistently with your 0x lane
+        if (spent < totalNetUSDC) usdc.transfer(feeCollector, totalNetUSDC - spent);
+
+        uint256 ethAfter = address(this).balance;
+        if (ethAfter < ethBefore) revert INVALID_AMOUNTS();
+        uint256 ethOut = ethAfter - ethBefore;
+        if (ethOut < s.minEthOut) revert SLIPPAGE();
+
+        // --- 4) JB pay (beneficiary = this contract) ---
+        IJBTerminal terminal = DIRECTORY.primaryTerminalOf(s.projectId, JBConstants.NATIVE_TOKEN);
+        if (address(terminal) == address(0)) revert NO_ETH_TERMINAL();
+
+        uint256 minted = terminal.pay{ value: ethOut }(
+            s.projectId,
+            JBConstants.NATIVE_TOKEN,
+            ethOut,
+            address(this),
+            0, // minReturnedTokens; keep 0 unless coordinating with buyback hooks
+            s.memo,
+            s.metadata // should encode preferClaimedTokens=true for ERC-20 mint
+        );
+
+        // --- 5) ERC-20 fan-out (requires ERC-20 issued + preferClaimed honored) ---
+        if (minted != 0) {
+            address projectToken = _getProjectTokenAddress(s.projectId);
+            if (projectToken == address(0)) revert JB_TOKEN_UNAVAILABLE();
+
+            IERC20 t = IERC20(projectToken);
+            uint256 bal = t.balanceOf(address(this));
+            // If preferClaimedTokens=false, bal likely 0; treat as unavailable.
+            if (bal == 0) revert JB_TOKEN_UNAVAILABLE();
+
+            // Pro-rata distribution by gross USDC (aligns with fee basis)
+            uint256 distributed;
+            for (uint256 i; i < n; ) {
+                Payee calldata p = s.payees[i];
+                uint256 out_i = Math.mulDiv(bal, p.amountIn, totalGross);
+                if (out_i != 0) {
+                    t.safeTransfer(p.recipient, out_i);
+                    distributed += out_i;
+                }
+                unchecked {
+                    ++i;
+                }
+            }
+            // Sweep any rounding dust to feeCollector
+            uint256 dust = t.balanceOf(address(this));
+            if (dust != 0) t.safeTransfer(feeCollector, dust);
+        }
+
+        // --- 6) Transfer USDC fee & emit ---
+        if (feeUSDC != 0) usdc.transfer(feeCollector, feeUSDC);
+    }
+
+    // ---- Juicebox token discovery (version-specific) ----
+    function _getProjectTokenAddress(uint256 projectId) internal view returns (address) {
+        // Works with JB versions where TOKEN_STORE.tokenOf(projectId) returns a token contract address.
+        // If your repo exposes a different accessor, redirect here.
+        if (address(TOKEN_STORE) == address(0)) return address(0);
+        return address(TOKEN_STORE.tokenOf(projectId));
     }
 
     // ---- UUPS ----

@@ -28,6 +28,7 @@ interface ICobuildSwap {
     error AMOUNT_LT_MIN_FEE();
     error NO_ETH_TERMINAL();
     error JB_TOKEN_UNAVAILABLE();
+    error ZERO_MINT_TO_BENEFICIARY();
     error INVALID_MIN_OUT();
     error INVALID_V3_FEE();
 

@@ -57,6 +57,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
 
     // ---- constants ----
     uint256 private constant _MAX_BPS = 10_000;
+    uint256 private constant _MAX_PAYEES = 500;
 
     // Universal Router: command & v4 action constants
     uint8 private constant CMD_V4_SWAP = 0x10;
@@ -64,7 +65,6 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
     uint8 private constant CMD_UNWRAP_WETH = 0x0c; // Universal Router Payments.unwrapWETH9(recipient, amountMin)
     uint8 private constant ACT_SWAP_EXACT_IN_SINGLE = 0x06;
     uint8 private constant ACT_SETTLE = 0x0b;
-    uint8 private constant ACT_SETTLE_ALL = 0x0c;
     uint8 private constant ACT_TAKE = 0x0e;
     uint256 private constant _OPEN_DELTA = 0; // v4 ActionConstants.OPEN_DELTA sentinel (take all)  // docs: OPEN_DELTA = 0
     uint256 private constant _CONTRACT_BALANCE = 1 << 255; // v4 ActionConstants.CONTRACT_BALANCE
@@ -89,7 +89,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         address _zora,
         address _universalRouter,
         address _jbDirectory,
-        address _jbTokenStore,
+        address _jbTokens,
         address _weth9,
         address _executor,
         address _feeCollector,
@@ -101,7 +101,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
             _zora == address(0) ||
             _universalRouter == address(0) ||
             _jbDirectory == address(0) ||
-            _jbTokenStore == address(0) ||
+            _jbTokens == address(0) ||
             _weth9 == address(0) ||
             _executor == address(0) ||
             _feeCollector == address(0)
@@ -117,7 +117,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         USDC = IERC20(_usdc);
         ZORA = IERC20(_zora);
         JB_DIRECTORY = IJBDirectory(_jbDirectory);
-        JB_TOKENS = IJBTokens(_jbTokenStore);
+        JB_TOKENS = IJBTokens(_jbTokens);
         WETH9 = _weth9;
         executor = _executor;
         feeCollector = _feeCollector;
@@ -220,7 +220,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         if (s.tokenOut == address(usdc)) revert INVALID_TOKEN_OUT();
 
         uint256 len = s.payees.length;
-        if (len == 0 || len > 500) revert BAD_BATCH_SIZE();
+        if (len == 0 || len > _MAX_PAYEES) revert BAD_BATCH_SIZE();
 
         // --- Pull USDC from all payees; sum gross ---
         uint256 totalGross;
@@ -246,10 +246,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         uint256 beforeOut = out.balanceOf(address(this));
 
         // Per-call bounded allowance for the active spender
-        uint256 prevAllowance = usdc.allowance(address(this), s.spender);
-        if (prevAllowance != 0) {
-            usdc.safeApprove(s.spender, 0);
-        }
+        usdc.safeApprove(s.spender, 0);
         usdc.safeApprove(s.spender, totalNet);
 
         // Execute the 0x swap
@@ -260,7 +257,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
             }
         }
 
-        // Cleanup: always leave zero allowance (do not restore prior allowance)
+        // Cleanup: always leave zero allowance
         usdc.safeApprove(s.spender, 0);
         if (usdc.allowance(address(this), s.spender) != 0) revert INVALID_AMOUNTS();
 
@@ -397,7 +394,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         address self = address(this);
 
         uint256 len = s.payees.length;
-        if (len == 0 || len > 500) revert BAD_BATCH_SIZE();
+        if (len == 0 || len > _MAX_PAYEES) revert BAD_BATCH_SIZE();
 
         // --- Derive pool sides & tokenOut (creator coin) ---
         address c0 = Currency.unwrap(s.key.currency0);
@@ -472,7 +469,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
             Payee calldata p = s.payees[i];
             uint256 payout = Math.mulDiv(outAmt, p.amountIn, totalGross);
 
-            if (payout != 0) tokenOut.transfer(p.recipient, payout);
+            if (payout != 0) tokenOut.safeTransfer(p.recipient, payout);
 
             unchecked {
                 ++i;
@@ -496,8 +493,8 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
             revert ZERO_ADDR();
         }
         uint256 n = s.payees.length;
-        if (n == 0 || n > 500) revert BAD_BATCH_SIZE();
-        if (s.v3Fee > 3000) revert INVALID_V3_FEE();
+        if (n == 0 || n > _MAX_PAYEES) revert BAD_BATCH_SIZE();
+        if (s.v3Fee != 100 && s.v3Fee != 500 && s.v3Fee != 3000 && s.v3Fee != 10000) revert INVALID_V3_FEE();
         if (s.minEthOut == 0) revert INVALID_MIN_OUT();
 
         IERC20 usdc = USDC;
@@ -553,6 +550,10 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         IJBTerminal terminal = JB_DIRECTORY.primaryTerminalOf(s.projectId, JBConstants.NATIVE_TOKEN);
         if (address(terminal) == address(0)) revert NO_ETH_TERMINAL();
 
+        // Capture token address and balance before pay to compute minted delta
+        address projectToken = _getProjectTokenAddress(s.projectId);
+        uint256 beforeBal = IERC20(projectToken).balanceOf(address(this));
+
         terminal.pay{ value: ethOut }(
             s.projectId,
             JBConstants.NATIVE_TOKEN,
@@ -564,37 +565,43 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         );
 
         // --- 5) ERC-20 fan-out (requires ERC-20 issued + preferClaimed honored) ---
-        address projectToken = _getProjectTokenAddress(s.projectId);
-        if (projectToken == address(0)) revert JB_TOKEN_UNAVAILABLE();
 
         IERC20 t = IERC20(projectToken);
-        uint256 bal = t.balanceOf(address(this));
-        if (bal == 0) revert JB_TOKEN_UNAVAILABLE();
+        uint256 afterBal = t.balanceOf(address(this));
+        uint256 minted;
+        if (afterBal < beforeBal) revert INVALID_AMOUNTS();
+        minted = afterBal - beforeBal;
 
-        emit BatchJuicePay(s.projectId, totalGross, ethOut, feeUSDC, n, s.universalRouter, s.v3Fee);
+        if (minted == 0) revert ZERO_MINT_TO_BENEFICIARY();
 
+        emit BatchReactionSwap(address(usdc), projectToken, totalNetUSDC, minted, feeUSDC, s.universalRouter);
+
+        uint256 distributed;
         for (uint256 i; i < n; ) {
             Payee calldata p = s.payees[i];
-            uint256 outAmount = Math.mulDiv(bal, p.amountIn, totalGross);
+            uint256 outAmount = Math.mulDiv(minted, p.amountIn, totalGross);
             if (outAmount != 0) {
                 t.safeTransfer(p.recipient, outAmount);
+                distributed += outAmount;
             }
             unchecked {
                 ++i;
             }
         }
-        // Sweep rounding dust & transfer USDC fee
-        uint256 dust = t.balanceOf(address(this));
-        if (dust != 0) t.safeTransfer(feeCollector, dust);
+        // Sweep rounding remainder from minted amount only & transfer USDC fee
+        uint256 remainder = minted - distributed;
+        if (remainder != 0) t.safeTransfer(feeCollector, remainder);
         if (feeUSDC != 0) usdc.transfer(feeCollector, feeUSDC);
     }
 
     // ---- Juicebox token discovery (version-specific) ----
-    function _getProjectTokenAddress(uint256 projectId) internal view returns (address) {
+    function _getProjectTokenAddress(uint256 projectId) internal view returns (address token) {
         // Works with JB versions where JB_TOKENS.tokenOf(projectId) returns a token contract address.
         // If your repo exposes a different accessor, redirect here.
-        if (address(JB_TOKENS) == address(0)) return address(0);
-        return address(JB_TOKENS.tokenOf(projectId));
+        if (address(JB_TOKENS) == address(0)) revert ZERO_ADDR();
+        token = address(JB_TOKENS.tokenOf(projectId));
+        if (token == address(0)) revert JB_TOKEN_UNAVAILABLE();
+        return token;
     }
 
     // ---- UUPS ----

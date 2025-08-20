@@ -8,6 +8,13 @@ import { IJBTokens } from "../../src/interfaces/external/juicebox/IJBTokens.sol"
 
 /// @notice Success-path tests for executeJuiceboxPayMany using the real Universal Router.
 contract CobuildSwapBaseFork_Juicebox_Success_Test is CobuildSwapBaseFork_DeployProxy_Test {
+    address internal PROJECT_TOKEN;
+
+    function setUp() public override {
+        super.setUp();
+        PROJECT_TOKEN = address(IJBTokens(address(cs.JB_TOKENS())).tokenOf(99));
+        require(PROJECT_TOKEN != address(0), "project token addr 0");
+    }
     function _fundAndApproveUSDC(address[] memory users, uint256 amountPerUser) internal {
         for (uint256 i = 0; i < users.length; i++) {
             deal(USDC, users[i], amountPerUser);
@@ -42,7 +49,7 @@ contract CobuildSwapBaseFork_Juicebox_Success_Test is CobuildSwapBaseFork_Deploy
             universalRouter: UNIVERSAL_ROUTER,
             v3Fee: uint24(500),
             deadline: 175514485700,
-            projectId: 99,
+            projectToken: PROJECT_TOKEN,
             minEthOut: 1,
             memo: "jb route test",
             metadata: bytes(""),
@@ -50,19 +57,16 @@ contract CobuildSwapBaseFork_Juicebox_Success_Test is CobuildSwapBaseFork_Deploy
         });
 
         // Discover project token and snapshot pre-balances
-        address projectToken = address(IJBTokens(address(cs.JB_TOKENS())).tokenOf(s.projectId));
-        require(projectToken != address(0), "project token addr 0");
-
-        uint256 bal1Before = IERC20(projectToken).balanceOf(user1);
-        uint256 bal2Before = IERC20(projectToken).balanceOf(user2);
+        uint256 bal1Before = IERC20(PROJECT_TOKEN).balanceOf(user1);
+        uint256 bal2Before = IERC20(PROJECT_TOKEN).balanceOf(user2);
 
         // Execute as configured executor
         vm.prank(EXECUTOR);
         cs.executeJuiceboxPayMany(s);
 
         // Assert recipients received project tokens
-        uint256 bal1After = IERC20(projectToken).balanceOf(user1);
-        uint256 bal2After = IERC20(projectToken).balanceOf(user2);
+        uint256 bal1After = IERC20(PROJECT_TOKEN).balanceOf(user1);
+        uint256 bal2After = IERC20(PROJECT_TOKEN).balanceOf(user2);
         assertGt(bal1After - bal1Before, 0, "user1 no JB token");
         assertGt(bal2After - bal2Before, 0, "user2 no JB token");
     }
@@ -88,7 +92,7 @@ contract CobuildSwapBaseFork_Juicebox_Success_Test is CobuildSwapBaseFork_Deploy
             universalRouter: UNIVERSAL_ROUTER,
             v3Fee: uint24(500),
             deadline: 175514485700,
-            projectId: 99,
+            projectToken: PROJECT_TOKEN,
             minEthOut: 1,
             memo: "jb fee test",
             metadata: bytes(""),

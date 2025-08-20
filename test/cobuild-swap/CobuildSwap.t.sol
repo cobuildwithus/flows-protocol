@@ -15,7 +15,7 @@ import { IHooks } from "@uniswap/v4-core/src/interfaces/IHooks.sol";
 ///         and exercises executeBatchZoraCreatorCoin via the *real* Uniswap Universal Router.
 contract CobuildSwapBaseFork_DeployProxy_Test is Test {
     // ---------- Chain fork ----------
-    function setUp() public {
+    function setUp() public virtual {
         // Configure an RPC endpoint named "base" in foundry.toml:
         // [rpc_endpoints]
         // base = "${BASE_RPC_URL}"

@@ -79,7 +79,7 @@ interface ICobuildSwap {
         uint24 v3Fee; // USDC/WETH fee tier (e.g., 500, 3000, 10000)
         uint256 deadline; // UR deadline
         // Juicebox pay
-        uint256 projectId; // JB project to pay
+        address projectToken; // JB project token; projectId is derived via IJBTokens.projectIdOf
         uint256 minEthOut; // floor for ETH we must receive from UR
         string memo;
         bytes metadata;

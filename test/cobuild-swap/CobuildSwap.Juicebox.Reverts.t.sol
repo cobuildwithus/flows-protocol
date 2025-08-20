@@ -4,9 +4,17 @@ pragma solidity ^0.8.28;
 import { ICobuildSwap } from "../../src/experimental/interfaces/ICobuildSwap.sol";
 import { CobuildSwapBaseFork_DeployProxy_Test } from "./CobuildSwap.t.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IJBTokens } from "../../src/interfaces/external/juicebox/IJBTokens.sol";
 
 /// @notice Validation and revert-path tests for executeJuiceboxPayMany.
 contract CobuildSwapBaseFork_Juicebox_Reverts_Test is CobuildSwapBaseFork_DeployProxy_Test {
+    address internal PROJECT_TOKEN;
+
+    function setUp() public override {
+        super.setUp();
+        PROJECT_TOKEN = address(IJBTokens(address(cs.JB_TOKENS())).tokenOf(99));
+        require(PROJECT_TOKEN != address(0), "project token addr 0");
+    }
     function _fundAndApproveUSDC(address[] memory users, uint256 amountPerUser) internal {
         for (uint256 i = 0; i < users.length; i++) {
             deal(USDC, users[i], amountPerUser);
@@ -35,7 +43,7 @@ contract CobuildSwapBaseFork_Juicebox_Reverts_Test is CobuildSwapBaseFork_Deploy
             universalRouter: UNIVERSAL_ROUTER,
             v3Fee: uint24(23232),
             deadline: 175514485700,
-            projectId: 99,
+            projectToken: PROJECT_TOKEN,
             minEthOut: 1,
             memo: "bad v3 fee",
             metadata: bytes(""),
@@ -69,7 +77,7 @@ contract CobuildSwapBaseFork_Juicebox_Reverts_Test is CobuildSwapBaseFork_Deploy
             universalRouter: badRouter,
             v3Fee: uint24(500),
             deadline: 175514485700,
-            projectId: 99,
+            projectToken: PROJECT_TOKEN,
             minEthOut: 1,
             memo: "bad router",
             metadata: bytes(""),
@@ -101,7 +109,7 @@ contract CobuildSwapBaseFork_Juicebox_Reverts_Test is CobuildSwapBaseFork_Deploy
             universalRouter: UNIVERSAL_ROUTER,
             v3Fee: uint24(500),
             deadline: 175514485700,
-            projectId: 99,
+            projectToken: PROJECT_TOKEN,
             minEthOut: 0, // invalid
             memo: "minOut zero",
             metadata: bytes(""),
@@ -133,7 +141,7 @@ contract CobuildSwapBaseFork_Juicebox_Reverts_Test is CobuildSwapBaseFork_Deploy
             universalRouter: UNIVERSAL_ROUTER,
             v3Fee: uint24(500),
             deadline: block.timestamp - 1, // expired
-            projectId: 99,
+            projectToken: PROJECT_TOKEN,
             minEthOut: 1,
             memo: "expired",
             metadata: bytes(""),
@@ -165,7 +173,7 @@ contract CobuildSwapBaseFork_Juicebox_Reverts_Test is CobuildSwapBaseFork_Deploy
             universalRouter: UNIVERSAL_ROUTER,
             v3Fee: uint24(500),
             deadline: 175514485700,
-            projectId: 99,
+            projectToken: PROJECT_TOKEN,
             minEthOut: 1,
             memo: "bad recip",
             metadata: bytes(""),

@@ -12,6 +12,7 @@ import { IJBTerminal } from "../interfaces/external/juicebox/IJBTerminal.sol";
 import { IJBDirectory } from "../interfaces/external/juicebox/IJBDirectory.sol";
 import { JBConstants } from "../interfaces/external/juicebox/library/JBConstants.sol";
 import { IJBTokens } from "../interfaces/external/juicebox/IJBTokens.sol";
+import { IJBToken } from "../interfaces/external/juicebox/IJBToken.sol";
 
 import { Currency } from "@uniswap/v4-core/src/types/Currency.sol";
 import { IV4Router } from "@uniswap/v4-periphery/src/interfaces/IV4Router.sol";
@@ -498,6 +499,16 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         if (n == 0 || n > _MAX_PAYEES) revert BAD_BATCH_SIZE();
         if (s.v3Fee != 100 && s.v3Fee != 500 && s.v3Fee != 3000 && s.v3Fee != 10000) revert INVALID_V3_FEE();
         if (s.minEthOut == 0) revert INVALID_MIN_OUT();
+        // Guard against zero address before calling projectIdOf
+        if (s.projectToken == address(0)) revert INVALID_ADDRESS();
+
+        // Derive projectId from projectToken via IJBTokens
+        uint256 projectId = JB_TOKENS.projectIdOf(IJBToken(s.projectToken));
+        if (projectId == 0) revert JB_TOKEN_UNAVAILABLE();
+
+        // Early check: ensure project has a primary ETH terminal before swapping
+        IJBTerminal terminal = JB_DIRECTORY.primaryTerminalOf(projectId, JBConstants.NATIVE_TOKEN);
+        if (address(terminal) == address(0)) revert NO_ETH_TERMINAL();
 
         IERC20 usdc = USDC;
 
@@ -549,15 +560,12 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         if (ethOut < s.minEthOut) revert SLIPPAGE();
 
         // --- 4) JB pay (beneficiary = this contract) ---
-        IJBTerminal terminal = JB_DIRECTORY.primaryTerminalOf(s.projectId, JBConstants.NATIVE_TOKEN);
-        if (address(terminal) == address(0)) revert NO_ETH_TERMINAL();
 
         // Capture token address and balance before pay to compute minted delta
-        address projectToken = _getProjectTokenAddress(s.projectId);
-        uint256 beforeBal = IERC20(projectToken).balanceOf(address(this));
+        uint256 beforeBal = IERC20(s.projectToken).balanceOf(address(this));
 
         terminal.pay{ value: ethOut }(
-            s.projectId,
+            projectId,
             JBConstants.NATIVE_TOKEN,
             ethOut,
             address(this),
@@ -568,7 +576,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
 
         // --- 5) ERC-20 fan-out (requires ERC-20 issued + preferClaimed honored) ---
 
-        IERC20 t = IERC20(projectToken);
+        IERC20 t = IERC20(s.projectToken);
         uint256 afterBal = t.balanceOf(address(this));
         uint256 minted;
         if (afterBal < beforeBal) revert INVALID_AMOUNTS();
@@ -576,7 +584,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
 
         if (minted == 0) revert ZERO_MINT_TO_BENEFICIARY();
 
-        emit BatchReactionSwap(address(usdc), projectToken, totalNetUSDC, minted, feeUSDC, s.universalRouter);
+        emit BatchReactionSwap(address(usdc), s.projectToken, totalNetUSDC, minted, feeUSDC, s.universalRouter);
 
         uint256 distributed;
         for (uint256 i; i < n; ) {
@@ -594,16 +602,6 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         uint256 remainder = minted - distributed;
         if (remainder != 0) t.safeTransfer(feeCollector, remainder);
         if (feeUSDC != 0) usdc.transfer(feeCollector, feeUSDC);
-    }
-
-    // ---- Juicebox token discovery (version-specific) ----
-    function _getProjectTokenAddress(uint256 projectId) internal view returns (address token) {
-        // Works with JB versions where JB_TOKENS.tokenOf(projectId) returns a token contract address.
-        // If your repo exposes a different accessor, redirect here.
-        if (address(JB_TOKENS) == address(0)) revert ZERO_ADDR();
-        token = address(JB_TOKENS.tokenOf(projectId));
-        if (token == address(0)) revert JB_TOKEN_UNAVAILABLE();
-        return token;
     }
 
     // ---- UUPS ----

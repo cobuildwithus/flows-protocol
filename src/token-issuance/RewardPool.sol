@@ -8,6 +8,7 @@ import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { SuperTokenV1Library } from "@superfluid-finance/ethereum-contracts/contracts/apps/SuperTokenV1Library.sol";
 import { PoolConfig } from "@superfluid-finance/ethereum-contracts/contracts/apps/SuperTokenV1Library.sol";
+import { ISuperfluidPool } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/agreements/gdav1/ISuperfluidPool.sol";
 
 /**
  * @title RewardPool
@@ -83,7 +84,7 @@ contract RewardPool is UUPSUpgradeable, Ownable2StepUpgradeable, ReentrancyGuard
      * @dev Ensure _member is not address(0)
      */
     function updateMemberUnits(address _member, uint128 _units) public onlyManagerOrOwner nonReentrant {
-        bool success = superToken.updateMemberUnits(rewardPool, _member, _units);
+        bool success = ISuperfluidPool(rewardPool).updateMemberUnits(_member, _units);
         if (!success) revert UNITS_UPDATE_FAILED();
     }
 
@@ -99,7 +100,7 @@ contract RewardPool is UUPSUpgradeable, Ownable2StepUpgradeable, ReentrancyGuard
 
         // if total member units are 0, ensure there is at least 1 unit in the pool to prevent flow rate from resetting to 0
         if (rewardPool.getTotalUnits() == 0) {
-            bool success = superToken.updateMemberUnits(rewardPool, address(this), 1);
+            bool success = ISuperfluidPool(rewardPool).updateMemberUnits(address(this), 1);
             if (!success) revert UNITS_UPDATE_FAILED();
         }
 

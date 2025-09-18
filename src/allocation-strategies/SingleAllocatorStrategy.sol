@@ -16,7 +16,9 @@ contract SingleAllocatorStrategy is IAllocationStrategy, UUPSUpgradeable, Ownabl
 
     event AllocatorChanged(address indexed oldAllocator, address indexed newAllocator);
 
-    constructor() {}
+    constructor() {
+        _disableInitializers();
+    }
 
     function initialize(address _initialOwner, address _allocator) external initializer {
         if (_allocator == address(0)) revert ADDRESS_ZERO();

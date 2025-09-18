@@ -584,7 +584,7 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
 
         if (minted == 0) revert ZERO_MINT_TO_BENEFICIARY();
 
-        emit BatchReactionSwap(address(usdc), s.projectToken, totalNetUSDC, minted, feeUSDC, s.universalRouter);
+        emit BatchReactionSwap(address(usdc), s.projectToken, totalGross, minted, feeUSDC, s.universalRouter);
 
         uint256 distributed;
         for (uint256 i; i < n; ) {

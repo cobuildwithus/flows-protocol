@@ -3,12 +3,15 @@ pragma solidity ^0.8.28;
 
 import { FlowTypes } from "../storage/FlowStorage.sol";
 import { IFlow } from "../interfaces/IFlow.sol";
+import { IAllocationStrategy } from "../interfaces/IAllocationStrategy.sol";
+import { IChainalysisSanctionsList } from "../interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
 import { PoolConfig, SuperTokenV1Library } from "@superfluid-finance/ethereum-contracts/contracts/apps/SuperTokenV1Library.sol";
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
 
 library FlowInitialization {
     using SuperTokenV1Library for ISuperToken;
+    uint32 public constant PERCENTAGE_SCALE = 1e6;
 
     /**
      * @notice Checks the initialization parameters for the Flow contract
@@ -19,9 +22,12 @@ library FlowInitialization {
      * @param _superToken The address of the SuperToken to be used for the pool
      * @param _managerRewardPool The address of the manager reward pool (optional)
      * @param _parent The address of the parent flow contract (optional)
+     * @param _connectPoolAdmin The address of the admin that can connect the pool
      * @param _flowAddress The address of the flow contract
      * @param _flowParams The parameters for the flow contract
      * @param _metadata The metadata for the flow contract
+     * @param _sanctionsOracle The address of the sanctions oracle
+     * @param _strategies The allocation strategies to use.
      */
     function checkAndSetInitializationParams(
         FlowTypes.Storage storage fs,
@@ -32,38 +38,59 @@ library FlowInitialization {
         address _managerRewardPool,
         address _parent,
         address _flowAddress,
+        address _connectPoolAdmin,
         IFlow.FlowParams memory _flowParams,
         FlowTypes.RecipientMetadata memory _metadata,
-        uint256 percentageScale
+        IChainalysisSanctionsList _sanctionsOracle,
+        IAllocationStrategy[] calldata _strategies
     ) public {
         if (_initialOwner == address(0)) revert IFlow.ADDRESS_ZERO();
         if (_flowImpl == address(0)) revert IFlow.ADDRESS_ZERO();
         if (_manager == address(0)) revert IFlow.ADDRESS_ZERO();
         if (_superToken == address(0)) revert IFlow.ADDRESS_ZERO();
-        if (_flowParams.tokenVoteWeight == 0) revert IFlow.INVALID_VOTE_WEIGHT();
         if (bytes(_metadata.title).length == 0) revert IFlow.INVALID_METADATA();
         if (bytes(_metadata.description).length == 0) revert IFlow.INVALID_METADATA();
         if (bytes(_metadata.image).length == 0) revert IFlow.INVALID_METADATA();
-        if (_flowParams.baselinePoolFlowRatePercent > percentageScale) revert IFlow.INVALID_RATE_PERCENT();
-        if (_flowParams.managerRewardPoolFlowRatePercent > percentageScale) revert IFlow.INVALID_RATE_PERCENT();
+        if (_flowParams.baselinePoolFlowRatePercent > PERCENTAGE_SCALE) revert IFlow.INVALID_RATE_PERCENT();
+        if (_flowParams.managerRewardPoolFlowRatePercent > PERCENTAGE_SCALE) revert IFlow.INVALID_RATE_PERCENT();
+        if (_flowParams.managerRewardPoolFlowRatePercent + _flowParams.baselinePoolFlowRatePercent > PERCENTAGE_SCALE)
+            revert IFlow.INVALID_RATE_PERCENT();
+        if (_strategies.length == 0) revert IFlow.INVALID_STRATEGIES();
+        for (uint256 i = 0; i < _strategies.length; i++) {
+            if (address(_strategies[i]) == address(0)) revert IFlow.ADDRESS_ZERO();
+
+            // Check for duplicate strategies
+            for (uint256 j = i + 1; j < _strategies.length; j++) {
+                if (address(_strategies[i]) == address(_strategies[j])) {
+                    revert IFlow.INVALID_STRATEGIES();
+                }
+            }
+        }
+
+        fs.sanctionsOracle = _sanctionsOracle;
 
         // Set the voting power info
-        fs.tokenVoteWeight = _flowParams.tokenVoteWeight; // scaled by 1e18
         fs.baselinePoolFlowRatePercent = _flowParams.baselinePoolFlowRatePercent;
         fs.managerRewardPoolFlowRatePercent = _flowParams.managerRewardPoolFlowRatePercent;
         fs.flowImpl = _flowImpl;
         fs.manager = _manager;
         fs.parent = _parent;
         fs.managerRewardPool = _managerRewardPool;
+        fs.strategies = _strategies;
 
         PoolConfig memory poolConfig = PoolConfig({
             transferabilityForUnitsOwner: false,
-            distributionFromAnyAddress: false
+            distributionFromAnyAddress: true
         });
 
         fs.superToken = ISuperToken(_superToken);
         fs.bonusPool = fs.superToken.createPool(_flowAddress, poolConfig);
         fs.baselinePool = fs.superToken.createPool(_flowAddress, poolConfig);
+
+        fs.defaultBufferMultiplier = 3;
+        fs.outflowCapPct = 999e3; // 99.9% on 1e6
+        fs.PERCENTAGE_SCALE = PERCENTAGE_SCALE;
+        fs.connectPoolAdmin = _connectPoolAdmin;
 
         // Set the metadata
         fs.metadata = _metadata;

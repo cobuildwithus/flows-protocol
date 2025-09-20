@@ -2,6 +2,7 @@
 pragma solidity ^0.8.28;
 
 import { FlowTypes } from "../storage/FlowStorage.sol";
+import { IAllocationStrategy } from "./IAllocationStrategy.sol";
 import { ISuperfluidPool } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
 
 interface IManagedFlow {
@@ -25,6 +26,7 @@ interface IManagedFlow {
      * @param metadata The metadata of the recipient
      * @param flowManager The address of the flow manager for the new contract
      * @param managerRewardPool The address of the manager reward pool for the new contract
+     * @param strategies The strategies for the new contract
      * @return recipientId The ID of the recipient
      * @return recipientAddress The address of the newly created flow contract
      */
@@ -32,7 +34,8 @@ interface IManagedFlow {
         bytes32 newRecipientId,
         FlowTypes.RecipientMetadata memory metadata,
         address flowManager,
-        address managerRewardPool
+        address managerRewardPool,
+        IAllocationStrategy[] calldata strategies
     ) external returns (bytes32 recipientId, address recipientAddress);
 
     /**
@@ -81,6 +84,12 @@ interface IManagedFlow {
      * @return The address of the flow parent
      */
     function parent() external view returns (address);
+
+    /**
+     * @notice Returns the flow strategies
+     * @return The flow strategies
+     */
+    function strategies() external view returns (IAllocationStrategy[] memory);
 
     /**
      * @notice Returns the flow manager reward pool flow rate percent

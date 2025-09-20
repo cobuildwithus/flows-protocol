@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 import { ERC721FlowTest } from "./ERC721Flow.t.sol";
 import { IFlow } from "../../src/interfaces/IFlow.sol";
 import { Flow } from "../../src/Flow.sol";
-import { ERC721Flow } from "../../src/ERC721Flow.sol";
+import { CustomFlow } from "../../src/flows/CustomFlow.sol";
 import { FlowTypes } from "../../src/storage/FlowStorage.sol";
 
 contract OwnerFlowTest is ERC721FlowTest {
@@ -43,7 +43,7 @@ contract OwnerFlowTest is ERC721FlowTest {
     }
 
     function testUpgrade() public {
-        address newImplementation = address(new ERC721Flow());
+        address newImplementation = address(new CustomFlow());
         vm.prank(address(1)); // Non-owner address
         vm.expectRevert();
         Flow(flow).upgradeTo(newImplementation);
@@ -82,17 +82,17 @@ contract OwnerFlowTest is ERC721FlowTest {
     function testUpdateFlowRateAndManagerRewardPercentage() public {
         uint32 initialManagerRewardPercent = flow.managerRewardPoolFlowRatePercent();
         // vm.prank(manager);
-        // ERC721Flow(flow).setManagerRewardFlowRatePercent(initialManagerRewardPercent);
+        // CustomFlow(flow).setManagerRewardFlowRatePercent(initialManagerRewardPercent);
 
         // Update flow rate and manager reward percentage
-        int96 newFlowRate = ERC721Flow(flow).getTotalFlowRate();
+        int96 newFlowRate = CustomFlow(flow).getTotalFlowRate();
         uint32 newManagerRewardPercent = 200000; // 20%
         vm.prank(manager);
-        ERC721Flow(flow).setManagerRewardFlowRatePercent(newManagerRewardPercent);
+        CustomFlow(flow).setManagerRewardFlowRatePercent(newManagerRewardPercent);
 
         // Check updated values
-        assertEq(ERC721Flow(flow).getTotalFlowRate(), newFlowRate);
-        assertEq(ERC721Flow(flow).managerRewardPoolFlowRatePercent(), newManagerRewardPercent);
+        assertEq(CustomFlow(flow).getTotalFlowRate(), newFlowRate);
+        assertEq(CustomFlow(flow).managerRewardPoolFlowRatePercent(), newManagerRewardPercent);
 
         // Mint token to owner and vote
         address tokenOwner = address(0x123);
@@ -113,14 +113,14 @@ contract OwnerFlowTest is ERC721FlowTest {
         vm.prank(tokenOwner);
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = tokenId;
-        ERC721Flow(flow).castVotes(tokenIds, recipientIds, bps);
+        CustomFlow(flow).allocate(_prepTokens(tokenIds), recipientIds, bps);
 
         // Check updated flow rates
         int96 expectedManagerRewardFlowRate = int96(
             uint96((uint256(uint96(newFlowRate)) * newManagerRewardPercent) / flow.PERCENTAGE_SCALE())
         );
         assertEq(
-            ERC721Flow(flow).getManagerRewardPoolFlowRate(),
+            CustomFlow(flow).getManagerRewardPoolFlowRate(),
             expectedManagerRewardFlowRate,
             "Manager reward flow rate is not expected"
         );
@@ -149,7 +149,7 @@ contract OwnerFlowTest is ERC721FlowTest {
             newBps[0] = flow.PERCENTAGE_SCALE(); // 100%
 
             vm.prank(tokenOwner);
-            ERC721Flow(flow).castVotes(tokenIds, newRecipientIds, newBps);
+            CustomFlow(flow).allocate(_prepTokens(tokenIds), newRecipientIds, newBps);
 
             // Remove the recipient
             vm.prank(manager);
@@ -162,7 +162,7 @@ contract OwnerFlowTest is ERC721FlowTest {
 
         // check that manager reward flow rate is expected
         assertApproxEqAbs(
-            ERC721Flow(flow).getManagerRewardPoolFlowRate(),
+            CustomFlow(flow).getManagerRewardPoolFlowRate(),
             expectedManagerRewardFlowRate,
             1e9, // Allow for a small difference due to potential rounding
             "Manager reward flow rate is not approximately equal after removing recipient"
@@ -170,18 +170,23 @@ contract OwnerFlowTest is ERC721FlowTest {
     }
 
     function testMaxFlowRateAndManagerRewardPercentage() public {
+        // set baseline to 0
+        uint32 baselinePercent = 0;
+        vm.prank(manager);
+        CustomFlow(flow).setBaselineFlowRatePercent(baselinePercent);
+
         // Set max manager reward percentage
         uint32 maxManagerRewardPercent = flow.PERCENTAGE_SCALE(); // 100%
         vm.prank(manager);
-        ERC721Flow(flow).setManagerRewardFlowRatePercent(maxManagerRewardPercent);
+        CustomFlow(flow).setManagerRewardFlowRatePercent(maxManagerRewardPercent);
 
         // Check updated values
-        assertEq(ERC721Flow(flow).managerRewardPoolFlowRatePercent(), maxManagerRewardPercent);
-        assertEq(ERC721Flow(flow).getManagerRewardPoolFlowRate(), ERC721Flow(flow).getTotalFlowRate());
+        assertEq(CustomFlow(flow).managerRewardPoolFlowRatePercent(), maxManagerRewardPercent);
+        assertEq(CustomFlow(flow).getManagerRewardPoolFlowRate(), CustomFlow(flow).getTotalFlowRate());
 
         // ensure bonus and baseline pool take up entire flow rate
-        int96 baselinePoolFlowRate = ERC721Flow(flow).baselinePool().getTotalFlowRate();
-        int96 bonusPoolFlowRate = ERC721Flow(flow).bonusPool().getTotalFlowRate();
+        int96 baselinePoolFlowRate = CustomFlow(flow).baselinePool().getTotalFlowRate();
+        int96 bonusPoolFlowRate = CustomFlow(flow).bonusPool().getTotalFlowRate();
         assertEq(baselinePoolFlowRate + bonusPoolFlowRate, 0);
 
         // Mint token to owner and vote
@@ -203,30 +208,30 @@ contract OwnerFlowTest is ERC721FlowTest {
         vm.prank(tokenOwner);
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = tokenId;
-        ERC721Flow(flow).castVotes(tokenIds, recipientIds, bps);
+        CustomFlow(flow).allocate(_prepTokens(tokenIds), recipientIds, bps);
 
         // Check that manager reward flow rate is equal to total flow rate
-        assertEq(ERC721Flow(flow).getManagerRewardPoolFlowRate(), ERC721Flow(flow).getTotalFlowRate());
+        assertEq(CustomFlow(flow).getManagerRewardPoolFlowRate(), CustomFlow(flow).getTotalFlowRate());
     }
 
     function testZeroFlowRateAndManagerRewardPercentage() public {
         // Set zero flow rate
         int96 zeroFlowRate = 0;
         vm.prank(manager);
-        ERC721Flow(flow).setFlowRate(zeroFlowRate);
+        CustomFlow(flow).setFlowRate(zeroFlowRate);
 
         // Set zero manager reward percentage
         uint32 zeroManagerRewardPercent = 0; // 0%
         vm.prank(manager);
-        ERC721Flow(flow).setManagerRewardFlowRatePercent(zeroManagerRewardPercent);
+        CustomFlow(flow).setManagerRewardFlowRatePercent(zeroManagerRewardPercent);
 
         // Check updated values
-        assertEq(ERC721Flow(flow).getTotalFlowRate(), zeroFlowRate);
-        assertEq(ERC721Flow(flow).managerRewardPoolFlowRatePercent(), zeroManagerRewardPercent);
+        assertEq(CustomFlow(flow).getTotalFlowRate(), zeroFlowRate);
+        assertEq(CustomFlow(flow).managerRewardPoolFlowRatePercent(), zeroManagerRewardPercent);
         // ensure bonus and baseline pool take up entire flow rate
-        int96 totalFlowRate = ERC721Flow(flow).getTotalFlowRate();
-        int96 baselinePoolFlowRate = ERC721Flow(flow).baselinePool().getTotalFlowRate();
-        int96 bonusPoolFlowRate = ERC721Flow(flow).bonusPool().getTotalFlowRate();
+        int96 totalFlowRate = CustomFlow(flow).getTotalFlowRate();
+        int96 baselinePoolFlowRate = CustomFlow(flow).baselinePool().getTotalFlowRate();
+        int96 bonusPoolFlowRate = CustomFlow(flow).bonusPool().getTotalFlowRate();
         assertEq(baselinePoolFlowRate + bonusPoolFlowRate, totalFlowRate);
 
         // Mint token to owner and vote
@@ -248,17 +253,17 @@ contract OwnerFlowTest is ERC721FlowTest {
         vm.prank(tokenOwner);
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = tokenId;
-        ERC721Flow(flow).castVotes(tokenIds, recipientIds, bps);
+        CustomFlow(flow).allocate(_prepTokens(tokenIds), recipientIds, bps);
 
         // Check that manager reward flow rate is zero
-        assertEq(ERC721Flow(flow).getManagerRewardPoolFlowRate(), 0);
+        assertEq(CustomFlow(flow).getManagerRewardPoolFlowRate(), 0);
     }
 
     function testZeroManagerRewardAndRemoveRecipient() public {
         // Set initial flow rate
         int96 initialFlowRate = 1000000; // A non-zero flow rate
         vm.prank(manager);
-        ERC721Flow(flow).setFlowRate(initialFlowRate);
+        CustomFlow(flow).setFlowRate(initialFlowRate);
 
         // Add recipient
         address recipient = address(0x123);
@@ -280,22 +285,22 @@ contract OwnerFlowTest is ERC721FlowTest {
         vm.prank(tokenOwner);
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = tokenId;
-        ERC721Flow(flow).castVotes(tokenIds, recipientIds, bps);
+        CustomFlow(flow).allocate(_prepTokens(tokenIds), recipientIds, bps);
 
         // Set manager reward percentage to zero
         uint32 zeroManagerRewardPercent = 0; // 0%
         vm.prank(manager);
-        ERC721Flow(flow).setManagerRewardFlowRatePercent(zeroManagerRewardPercent);
+        CustomFlow(flow).setManagerRewardFlowRatePercent(zeroManagerRewardPercent);
 
         // Check that manager reward flow rate is zero
-        assertEq(ERC721Flow(flow).getManagerRewardPoolFlowRate(), 0);
+        assertEq(CustomFlow(flow).getManagerRewardPoolFlowRate(), 0);
 
         // Remove recipient
         vm.prank(manager);
         flow.removeRecipient(recipientId);
 
         // ensure that the manager reward pool flow rate is still zero
-        assertEq(ERC721Flow(flow).getManagerRewardPoolFlowRate(), 0);
+        assertEq(CustomFlow(flow).getManagerRewardPoolFlowRate(), 0);
 
         // Verify recipient was removed
         FlowTypes.FlowRecipient memory removedRecipient = flow.getRecipientById(recipientId);

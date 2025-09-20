@@ -5,7 +5,7 @@ import { IERC20VotesArbitrator } from "./interfaces/IERC20VotesArbitrator.sol";
 import { IArbitrable } from "./interfaces/IArbitrable.sol";
 import { ArbitratorStorageV1 } from "./storage/ArbitratorStorageV1.sol";
 
-import { ERC20VotesMintable } from "../ERC20VotesMintable.sol";
+import { ERC20VotesMintable } from "../base/erc20/ERC20VotesMintable.sol";
 import { ITCRFactory } from "./interfaces/ITCRFactory.sol";
 
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";

@@ -2,19 +2,19 @@
 pragma solidity ^0.8.28;
 
 import { Test } from "forge-std/Test.sol";
-import { TokenEmitter } from "../../src/TokenEmitter.sol";
-import { ERC20VotesMintable } from "../../src/ERC20VotesMintable.sol";
+import { TokenEmitter } from "../../src/token-issuance/TokenEmitter.sol";
+import { ERC20VotesMintable } from "../../src/base/erc20/ERC20VotesMintable.sol";
 import { ITokenEmitter } from "../../src/interfaces/ITokenEmitter.sol";
 import { ProtocolRewards } from "../../src/protocol-rewards/ProtocolRewards.sol";
 import { IWETH } from "../../src/interfaces/IWETH.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import { RewardPool } from "../../src/RewardPool.sol";
+import { RewardPool } from "../../src/token-issuance/RewardPool.sol";
 import { BondingSCurve } from "../../src/token-issuance/BondingSCurve.sol";
 import { MockWETH } from "../mocks/MockWETH.sol";
 
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperToken.sol";
 import { ERC1820RegistryCompiled } from "@superfluid-finance/ethereum-contracts/contracts/libs/ERC1820RegistryCompiled.sol";
-import { SuperfluidFrameworkDeployer } from "@superfluid-finance/ethereum-contracts/contracts/utils/SuperfluidFrameworkDeployer.sol";
+import { SuperfluidFrameworkDeployer } from "@superfluid-finance/ethereum-contracts/contracts/utils/SuperfluidFrameworkDeployer.t.sol";
 import { TestToken } from "@superfluid-finance/ethereum-contracts/contracts/utils/TestToken.sol";
 import { SuperToken } from "@superfluid-finance/ethereum-contracts/contracts/superfluid/SuperToken.sol";
 

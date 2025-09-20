@@ -3,11 +3,16 @@ pragma solidity ^0.8.28;
 
 import { FlowTypes } from "../storage/FlowStorage.sol";
 import { IFlow } from "../interfaces/IFlow.sol";
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 library FlowRecipients {
+    using EnumerableSet for EnumerableSet.AddressSet;
+
     /**
      * @notice Removes a recipient for receiving funds
      * @param fs The storage of the Flow contract
+     * @param _childFlows The set of child flows
+     * @param _childFlowsToUpdateFlowRate The set of child flows to update flow rate
      * @param recipientId The ID of the recipient to be approved
      * @dev Only callable by the manager of the contract
      * @dev Emits a RecipientRemoved event if the recipient is successfully removed
@@ -15,6 +20,8 @@ library FlowRecipients {
      */
     function removeRecipient(
         FlowTypes.Storage storage fs,
+        EnumerableSet.AddressSet storage _childFlows,
+        EnumerableSet.AddressSet storage _childFlowsToUpdateFlowRate,
         bytes32 recipientId
     ) external returns (address, FlowTypes.RecipientType) {
         if (fs.recipients[recipientId].recipient == address(0)) revert IFlow.INVALID_RECIPIENT_ID();
@@ -26,6 +33,11 @@ library FlowRecipients {
 
         fs.recipients[recipientId].removed = true;
         fs.activeRecipientCount--;
+
+        if (recipientType == FlowTypes.RecipientType.FlowContract) {
+            _childFlows.remove(recipientAddress);
+            _childFlowsToUpdateFlowRate.remove(recipientAddress);
+        }
 
         return (recipientAddress, recipientType);
     }

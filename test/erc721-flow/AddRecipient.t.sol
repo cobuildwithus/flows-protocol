@@ -2,7 +2,6 @@
 pragma solidity ^0.8.27;
 
 import { IFlowEvents, IFlow } from "../../src/interfaces/IFlow.sol";
-import { Flow } from "../../src/Flow.sol";
 import { FlowTypes } from "../../src/storage/FlowStorage.sol";
 import { ERC721FlowTest } from "./ERC721Flow.t.sol";
 
@@ -153,7 +152,7 @@ contract AddRecipientsTest is ERC721FlowTest {
         bytes32 flowRecipientId = keccak256(abi.encodePacked(flow.owner()));
 
         // Add flow recipient
-        vm.prank(flow.owner());
+        vm.startPrank(flow.owner());
         (, address flowRecipient) = flow.addFlowRecipient(
             flowRecipientId,
             FlowTypes.RecipientMetadata(
@@ -164,8 +163,10 @@ contract AddRecipientsTest is ERC721FlowTest {
                 "https://flow.com"
             ),
             address(0x456), // flowManager address
-            address(0)
+            address(0),
+            strategies
         );
+        vm.stopPrank();
 
         // Check baseline member units for external recipient
         uint128 externalRecipientUnits = flow.baselinePool().getUnits(externalRecipient);

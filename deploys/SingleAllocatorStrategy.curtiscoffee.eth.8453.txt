@@ -1,0 +1,3 @@
+SingleAllocatorStrategy.curtiscoffee.eth: 0xb9d3bcc9d5107ca0febd05123bd4b484e5163cfa
+Implementation: 0x785daf3ddf565c652e3489d33ff7d57b81554dfc
+Allocator: 0xa5dd97000e0f5311b4ddc71f3a1e6a5b0c74ace3

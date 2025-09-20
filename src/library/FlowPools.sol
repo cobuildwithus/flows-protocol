@@ -4,10 +4,10 @@ pragma solidity ^0.8.28;
 import { FlowTypes } from "../storage/FlowStorage.sol";
 import { IFlow } from "../interfaces/IFlow.sol";
 import { Flow } from "../Flow.sol";
-import { IRewardPool } from "../interfaces/IRewardPool.sol";
 
 import { SuperTokenV1Library } from "@superfluid-finance/ethereum-contracts/contracts/apps/SuperTokenV1Library.sol";
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
+import { ISuperfluidPool } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/agreements/gdav1/ISuperfluidPool.sol";
 
 library FlowPools {
     using SuperTokenV1Library for ISuperToken;
@@ -80,7 +80,7 @@ library FlowPools {
      * @dev Reverts with UNITS_UPDATE_FAILED if the update fails
      */
     function updateBonusMemberUnits(FlowTypes.Storage storage fs, address member, uint128 units) public {
-        bool success = fs.superToken.updateMemberUnits(fs.bonusPool, member, units);
+        bool success = ISuperfluidPool(fs.bonusPool).updateMemberUnits(member, units);
 
         if (!success) revert IFlow.UNITS_UPDATE_FAILED();
     }
@@ -93,7 +93,7 @@ library FlowPools {
      * @dev Reverts with UNITS_UPDATE_FAILED if the update fails
      */
     function updateBaselineMemberUnits(FlowTypes.Storage storage fs, address member, uint128 units) public {
-        bool success = fs.superToken.updateMemberUnits(fs.baselinePool, member, units);
+        bool success = ISuperfluidPool(fs.baselinePool).updateMemberUnits(member, units);
 
         if (!success) revert IFlow.UNITS_UPDATE_FAILED();
     }

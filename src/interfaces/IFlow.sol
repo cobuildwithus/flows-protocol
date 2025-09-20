@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import { FlowTypes } from "../storage/FlowStorage.sol";
 import { IManagedFlow } from "./IManagedFlow.sol";
+import { IAllocationStrategy } from "./IAllocationStrategy.sol";
 import { IChainalysisSanctionsList } from "./external/chainalysis/IChainalysisSanctionsList.sol";
 
 /**
@@ -13,14 +14,16 @@ interface IFlowEvents {
     /**
      * @dev Emitted when a vote is cast for a grant application.
      * @param recipientId Id of the recipient of the grant.
-     * @param tokenId TokenId owned by the voter.
-     * @param memberUnits New member units as a result of the vote.
-     * @param bps Basis points of the vote. Proportion of the voters weight that is allocated to the recipient.
-     * @param totalWeight Total weight of the vote
+     * @param strategy The strategy that is allocating.
+     * @param allocationKey The allocation key.
+     * @param memberUnits New member units as a result of the allocation.
+     * @param bps Basis points of the allocation. Proportion of the allocation weight that is allocated to the recipient.
+     * @param totalWeight Total weight of the allocation
      */
-    event VoteCast(
+    event AllocationSet(
         bytes32 indexed recipientId,
-        uint256 indexed tokenId,
+        address indexed strategy,
+        uint256 indexed allocationKey,
         uint256 memberUnits,
         uint256 bps,
         uint256 totalWeight
@@ -60,8 +63,12 @@ interface IFlowEvents {
         address baselinePool,
         address bonusPool,
         uint32 baselinePoolFlowRatePercent,
-        uint32 managerRewardPoolFlowRatePercent
+        uint32 managerRewardPoolFlowRatePercent,
+        IAllocationStrategy[] strategies
     );
+
+    /// @notice Emitted when an allocation strategy is registered
+    event AllocationStrategyRegistered(address indexed flow, address indexed strategy, string strategyKey);
 
     /// @notice Emitted when the manager reward pool is updated
     event ManagerRewardPoolUpdated(address indexed oldManagerRewardPool, address indexed newManagerRewardPool);
@@ -81,11 +88,41 @@ interface IFlowEvents {
     /// @notice Emitted when the manager is updated
     event ManagerUpdated(address indexed oldManager, address indexed newManager);
 
+    /// @notice Emitted when the connect pool admin is updated
+    event ConnectPoolAdminUpdated(address indexed oldConnectPoolAdmin, address indexed newConnectPoolAdmin);
+
     /// @notice Emitted when the bonus pool quorum is updated
     event BonusPoolQuorumUpdated(uint32 oldBonusPoolQuorum, uint32 newBonusPoolQuorum);
 
     /// @notice Emitted when the sanctions oracle is set
     event SanctionsOracleSet(address indexed newSanctionsOracle);
+
+    /// @notice Emitted when the flow rate is balanced out
+    event FlowRateDecreased(address indexed caller, int96 oldRate, int96 newRate);
+
+    /// @notice Emitted when the flow rate is increased
+    event FlowRateIncreased(address indexed caller, int96 oldRate, int96 newRate, uint256 amountPulled);
+
+    /// @notice Emitted when the flow buffer multiplier is updated
+    event BufferMultiplierUpdated(uint256 oldBufferMultiplier, uint256 newBufferMultiplier);
+}
+
+/**
+ * @title IERC20FlowEvents
+ * @dev This interface defines the events for ERC20-related functionality in the Flow contract.
+ */
+interface IERC20FlowEvents {
+    /// @dev Emitted when the ERC20 voting token is changed
+    event ERC20VotingTokenChanged(address indexed erc20Token);
+}
+
+/**
+ * @title IFlowERC721Events
+ * @dev This interface defines the events for ERC721-related functionality in the Flow contract.
+ */
+interface ICustomFlowEvents {
+    /// @dev Emitted when the ERC721 voting token is changed
+    event ERC721VotingTokenChanged(address indexed erc721Token);
 }
 
 /**
@@ -133,6 +170,9 @@ interface IFlow is IFlowEvents, IManagedFlow {
     /// @dev Reverts if the caller is not the owner or the parent
     error NOT_OWNER_OR_PARENT();
 
+    /// @dev Reverts if the caller cannot connect a pool
+    error NOT_ALLOWED_TO_CONNECT_POOL();
+
     /// @dev Reverts if the baseline flow rate percentage is invalid
     error INVALID_PERCENTAGE();
 
@@ -147,6 +187,18 @@ interface IFlow is IFlowEvents, IManagedFlow {
 
     /// @dev Reverts if voting allocation casts will overflow
     error OVERFLOW();
+
+    /// @dev Reverts if the strategies are invalid
+    error INVALID_STRATEGIES();
+
+    /// @dev Reverts if the allocator is not the owner
+    error ALLOCATION_LENGTH_MISMATCH();
+
+    /// @dev Reverts if the flow rate is not an increase
+    error NOT_AN_INCREASE();
+
+    /// @dev Reverts if the buffer multiplier is invalid
+    error INVALID_BUFFER_MULTIPLIER();
 
     /// @dev Reverts if the ERC721 voting token weight is invalid (i.e., 0).
     error INVALID_ERC721_VOTING_WEIGHT();
@@ -178,8 +230,8 @@ interface IFlow is IFlowEvents, IManagedFlow {
     /// @dev Reverts if recipient is already approved
     error RECIPIENT_ALREADY_REMOVED();
 
-    /// @dev Reverts if msg.sender is not able to vote with the token
-    error NOT_ABLE_TO_VOTE_WITH_TOKEN();
+    /// @dev Reverts if msg.sender is not able to allocate with the strategy
+    error NOT_ABLE_TO_ALLOCATE();
 
     /// @dev Array lengths of recipients & percentAllocations don't match (`recipientsLength` != `allocationsLength`)
     /// @param recipientsLength Length of recipients array
@@ -191,6 +243,9 @@ interface IFlow is IFlowEvents, IManagedFlow {
 
     /// @dev Reverts if voting allocation is not positive
     error ALLOCATION_MUST_BE_POSITIVE();
+
+    /// @dev Reverts if duplicate recipient IDs are passed within a single allocation
+    error DUPLICATE_RECIPIENT_ID();
 
     /// @dev Reverts if pool connection fails
     error POOL_CONNECTION_FAILED();
@@ -210,13 +265,11 @@ interface IFlow is IFlowEvents, IManagedFlow {
 
     /**
      * @notice Structure to hold the parameters for initializing a Flow contract.
-     * @param tokenVoteWeight The voting weight of the individual ERC721 tokens.
      * @param baselinePoolFlowRatePercent The proportion of the total flow rate that is allocated to the baseline salary pool in BPS
      * @param managerRewardPoolFlowRatePercent The proportion of the total flow rate that is allocated to the rewards pool in BPS
      * @param bonusPoolQuorumBps The quorum for the bonus pool in BPS
      */
     struct FlowParams {
-        uint256 tokenVoteWeight; // scaled by 1e18
         uint32 baselinePoolFlowRatePercent;
         uint32 managerRewardPoolFlowRatePercent;
         uint32 bonusPoolQuorumBps;
@@ -242,39 +295,41 @@ interface IFlow is IFlowEvents, IManagedFlow {
     function getActualFlowRate() external view returns (int96);
 
     /**
+     * @notice Checks if the flow rate is too high
+     * @return True if the flow rate is too high, false otherwise
+     */
+    function isFlowRateTooHigh() external view returns (bool);
+
+    /**
+     * @notice Decreases the flow rate for the Superfluid pool
+     */
+    function decreaseFlowRate() external;
+
+    /**
+     * @notice Gets the max safe flow rate for the Superfluid pool
+     * @return The max safe flow rate for the Superfluid pool
+     */
+    function getMaxSafeFlowRate() external view returns (int96);
+
+    /**
+     * @notice Gets the required buffer amount for a given flow rate
+     * @param amount The flow rate to get the required buffer amount for
+     * @return The required buffer amount
+     */
+    function getRequiredBufferAmount(int96 amount) external view returns (uint256);
+
+    /**
+     * @notice Raises the flow rate for the Superfluid pool
+     * @param desiredRate The desired flow rate
+     */
+    function increaseFlowRate(int96 desiredRate) external;
+
+    /**
      * @notice Sets the manager reward pool for the flow contract
      * @param _managerRewardPool The address of the manager reward pool
      * @dev Only callable by the owner
      */
     function setManagerRewardPool(address _managerRewardPool) external;
-}
-
-interface IERC721Flow is IFlow {
-    /**
-     * @notice Initializes an ERC721Flow contract
-     * @param initialOwner The address of the initial owner
-     * @param nounsToken The address of the ERC721 token used for voting
-     * @param superToken The address of the SuperToken to be used for the pool
-     * @param flowImpl The address of the flow implementation contract
-     * @param manager The address of the flow manager
-     * @param managerRewardPool The address of the manager reward pool
-     * @param parent The address of the parent flow contract (optional)
-     * @param flowParams The parameters for the flow contract
-     * @param metadata The metadata for the flow contract
-     * @param sanctionsOracle The address of the sanctions oracle
-     */
-    function initialize(
-        address initialOwner,
-        address nounsToken,
-        address superToken,
-        address flowImpl,
-        address manager,
-        address managerRewardPool,
-        address parent,
-        FlowParams memory flowParams,
-        FlowTypes.RecipientMetadata memory metadata,
-        IChainalysisSanctionsList sanctionsOracle
-    ) external;
 }
 
 interface INounsFlow is IFlow {
@@ -305,5 +360,35 @@ interface INounsFlow is IFlow {
         FlowParams memory flowParams,
         FlowTypes.RecipientMetadata memory metadata,
         IChainalysisSanctionsList sanctionsOracle
+    ) external;
+}
+
+interface ICustomFlow is IFlow {
+    /**
+     * @notice Initializes an CustomFlow contract
+     * @param initialOwner The address of the initial owner
+     * @param superToken The address of the SuperToken to be used for the pool
+     * @param flowImpl The address of the flow implementation contract
+     * @param manager The address of the flow manager
+     * @param managerRewardPool The address of the manager reward pool
+     * @param parent The address of the parent flow contract (optional)
+     * @param connectPoolAdmin The address of the admin that can connect the pool
+     * @param flowParams The parameters for the flow contract
+     * @param metadata The metadata for the flow contract
+     * @param sanctionsOracle The address of the sanctions oracle
+     * @param strategies The allocation strategies to use.
+     */
+    function initialize(
+        address initialOwner,
+        address superToken,
+        address flowImpl,
+        address manager,
+        address managerRewardPool,
+        address parent,
+        address connectPoolAdmin,
+        FlowParams memory flowParams,
+        FlowTypes.RecipientMetadata memory metadata,
+        IChainalysisSanctionsList sanctionsOracle,
+        IAllocationStrategy[] calldata strategies
     ) external;
 }

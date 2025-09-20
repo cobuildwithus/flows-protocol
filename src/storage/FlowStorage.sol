@@ -1,21 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.28;
 
-import { IERC721Checkpointable } from "../interfaces/IERC721Checkpointable.sol";
-
 import { ISuperToken } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperToken.sol";
 import { ISuperfluidPool } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/agreements/gdav1/ISuperfluidPool.sol";
-import { PoolConfig } from "@superfluid-finance/ethereum-contracts/contracts/apps/SuperTokenV1Library.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import { IChainalysisSanctionsList } from "../interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
+import { IAllocationStrategy } from "../interfaces/IAllocationStrategy.sol";
 
 interface FlowTypes {
     // Struct to hold the recipientId and their corresponding BPS for a vote
-    struct VoteAllocation {
+    struct Allocation {
         bytes32 recipientId;
         uint32 bps;
         uint128 memberUnits;
+        uint256 allocationWeight;
     }
 
     // Enum to handle type of grant recipient, either address or flow contract
@@ -74,27 +73,37 @@ interface FlowTypes {
         ISuperfluidPool bonusPool;
         // The Superfluid pool used to distribute the baseline salary in the SuperToken
         ISuperfluidPool baselinePool;
-        /// The mapping of a tokenId to the member units assigned to each recipient they voted for
-        mapping(uint256 => mapping(address => uint256)) tokenIdToRecipientMemberUnits;
-        // The weight of each individual 721 voting token
-        uint256 tokenVoteWeight;
-        // The mapping of a token to a list of votes allocations (recipient, BPS)
-        mapping(uint256 => VoteAllocation[]) votes;
-        // The mapping of a token to the address that voted with it
-        mapping(uint256 => address) voters;
+        // The mapping of a strategy to a allocation key to a list of allocations (recipient, BPS)
+        mapping(address => mapping(uint256 => Allocation[])) allocations;
+        // The mapping of a strategy to a allocation key to the address that allocated it
+        mapping(address => mapping(uint256 => address)) allocators;
         // The cached flow rate
         int96 cachedFlowRate;
         /*
          * Flow Rate Quorum
          */
-        // The total active voting weight cast across all tokens that have voting power
-        // If in the future we let people clear their votes, or we support erc20 voting,
-        // ensure that the total active vote weight is decremented correctly
-        uint256 totalActiveVoteWeight;
-        // The quorum parameters to scale up the bonus pool based on vote weight
+        // The total active allocation weight cast across all allocations
+        uint256 totalActiveAllocationWeight;
+        // The quorum parameters to scale up the bonus pool based on allocation weight
         uint32 bonusPoolQuorumBps;
         // The sanctions oracle
         IChainalysisSanctionsList sanctionsOracle;
+        // The allocation strategies
+        IAllocationStrategy[] strategies;
+        // The flow buffer multiplier
+        // Set to 1 if no children
+        uint256 defaultBufferMultiplier;
+        // mapping of child flow contract address to previous flow rate
+        mapping(address => int96) oldChildFlowRate;
+        // mapping of child flow contracts to whether we've stored the previous flow rate
+        mapping(address => bool) rateSnapshotTaken;
+        // The outflow cap percentage
+        uint32 outflowCapPct;
+        // The percentage scale
+        /// @notice constant to scale uints into percentages (1e6 == 100%)
+        uint32 PERCENTAGE_SCALE;
+        // The address of the address that can connect the pool
+        address connectPoolAdmin;
     }
 }
 
@@ -108,10 +117,6 @@ contract FlowStorageV1 is FlowTypes {
 
     // gap so that we can use the same storage layout
     uint256[100] private __gap;
-
-    /// @notice constant to scale uints into percentages (1e6 == 100%)
-    /// @dev Heed warning above
-    uint32 public constant PERCENTAGE_SCALE = 1e6;
 
     /// The member units to assign to each recipient of the baseline salary pool
     /// @dev Heed warning above

@@ -150,7 +150,7 @@ contract RemoveRecipientsTest is ERC721FlowTest {
         nounsToken.mint(address(this), tokenId);
 
         vm.prank(address(this));
-        flow.castVotes(tokenIds, recipientIds, percentAllocations);
+        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
 
         // Check initial member units
         uint128 initialUnits = flow.bonusPool().getUnits(recipient);
@@ -190,10 +190,10 @@ contract RemoveRecipientsTest is ERC721FlowTest {
         nounsToken.mint(address(this), tokenId);
 
         vm.expectRevert(IFlow.NOT_APPROVED_RECIPIENT.selector);
-        flow.castVotes(tokenIds, recipientIds, percentAllocations);
+        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
 
         // Verify that no votes were cast
-        FlowTypes.VoteAllocation[] memory votes = flow.getVotesForTokenId(tokenId);
+        FlowTypes.Allocation[] memory votes = getAllocationForTokenId(tokenId);
         assertEq(votes.length, 0);
 
         // Verify that member units remain at 0
@@ -226,10 +226,10 @@ contract RemoveRecipientsTest is ERC721FlowTest {
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = tokenId;
 
-        flow.castVotes(tokenIds, recipientIds, percentAllocations);
+        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
 
         // Verify the vote was cast
-        FlowTypes.VoteAllocation[] memory votes = flow.getVotesForTokenId(tokenId);
+        FlowTypes.Allocation[] memory votes = getAllocationForTokenId(tokenId);
         assertEq(votes.length, 1);
         assertEq(votes[0].recipientId, recipientId1);
         assertEq(votes[0].bps, 1e6);
@@ -240,10 +240,10 @@ contract RemoveRecipientsTest is ERC721FlowTest {
 
         // Vote for the second recipient
         recipientIds[0] = recipientId2;
-        flow.castVotes(tokenIds, recipientIds, percentAllocations);
+        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
 
         // Verify the new vote was cast
-        votes = flow.getVotesForTokenId(tokenId);
+        votes = getAllocationForTokenId(tokenId);
         assertEq(votes.length, 1);
         assertEq(votes[0].recipientId, recipientId2);
         assertEq(votes[0].bps, 1e6);
@@ -374,8 +374,20 @@ contract RemoveRecipientsTest is ERC721FlowTest {
         vm.startPrank(flow.owner());
         bytes32 recipientId1 = keccak256(abi.encodePacked(flowManager1));
         bytes32 recipientId2 = keccak256(abi.encodePacked(flowManager2));
-        (, address flowRecipient1) = flow.addFlowRecipient(recipientId1, metadata1, flowManager1, address(0));
-        (, address flowRecipient2) = flow.addFlowRecipient(recipientId2, metadata2, flowManager2, address(0));
+        (, address flowRecipient1) = flow.addFlowRecipient(
+            recipientId1,
+            metadata1,
+            flowManager1,
+            address(0),
+            strategies
+        );
+        (, address flowRecipient2) = flow.addFlowRecipient(
+            recipientId2,
+            metadata2,
+            flowManager2,
+            address(0),
+            strategies
+        );
         vm.stopPrank();
 
         // Check initial state
@@ -435,7 +447,13 @@ contract RemoveRecipientsTest is ERC721FlowTest {
         );
         vm.prank(flow.owner());
         bytes32 recipientId3 = keccak256(abi.encodePacked(flowManager3));
-        (, address flowRecipient3) = flow.addFlowRecipient(recipientId3, metadata3, flowManager3, address(0));
+        (, address flowRecipient3) = flow.addFlowRecipient(
+            recipientId3,
+            metadata3,
+            flowManager3,
+            address(0),
+            strategies
+        );
 
         assertEq(
             flow.baselinePool().getTotalUnits(),
@@ -476,7 +494,13 @@ contract RemoveRecipientsTest is ERC721FlowTest {
             );
             vm.prank(flow.owner());
             recipientIds[i] = keccak256(abi.encodePacked(flowManager));
-            (, flowRecipients[i]) = flow.addFlowRecipient(recipientIds[i], metadata, flowManager, address(0));
+            (, flowRecipients[i]) = flow.addFlowRecipient(
+                recipientIds[i],
+                metadata,
+                flowManager,
+                address(0),
+                strategies
+            );
         }
 
         // Verify all recipients were added correctly

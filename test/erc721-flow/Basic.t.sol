@@ -2,23 +2,21 @@
 pragma solidity ^0.8.28;
 
 import { ERC721FlowTest } from "./ERC721Flow.t.sol";
-import { IFlowEvents, IFlow, IERC721Flow } from "../../src/interfaces/IFlow.sol";
-import { ERC721Flow } from "../../src/ERC721Flow.sol";
+import { IFlowEvents, IFlow, ICustomFlow, ICustomFlow } from "../../src/interfaces/IFlow.sol";
+import { IAllocationStrategy } from "../../src/interfaces/IAllocationStrategy.sol";
+import { CustomFlow } from "../../src/flows/CustomFlow.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { FlowTypes } from "../../src/storage/FlowStorage.sol";
 import { ISuperfluidPool } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/agreements/gdav1/ISuperfluidPool.sol";
 import { IChainalysisSanctionsList } from "../../src/interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
-contract BasicERC721FlowTest is ERC721FlowTest {
+contract BasicCustomFlowTest is ERC721FlowTest {
     function setUp() public override {
         super.setUp();
     }
 
     function testInitializeBasicParameters() public view {
         // Ensure the Flow contract is initialized correctly
-        assertEq(address(flow.erc721Votes()), address(nounsToken));
-        assertEq(flow.tokenVoteWeight(), 1e18 * 1000);
-
         // Check if the total member units is set to 1 if it was initially 0
         assertEq(ISuperfluidPool(flow.baselinePool()).getTotalUnits(), 1);
         assertEq(ISuperfluidPool(flow.bonusPool()).getTotalUnits(), 1);
@@ -54,24 +52,26 @@ contract BasicERC721FlowTest is ERC721FlowTest {
             address(0),
             address(0),
             0,
-            0
+            0,
+            strategies
         );
 
         // Re-deploy the contract to emit the event
         address flowProxy = address(new ERC1967Proxy(flowImpl, ""));
 
         vm.prank(address(manager));
-        IERC721Flow(flowProxy).initialize({
+        ICustomFlow(flowProxy).initialize({
             initialOwner: address(manager),
-            nounsToken: address(nounsToken),
             superToken: address(superToken),
             flowImpl: flowImpl,
             manager: manager,
             managerRewardPool: address(dummyRewardPool),
             parent: address(0),
+            connectPoolAdmin: address(0),
             flowParams: flowParams,
             metadata: flowMetadata,
-            sanctionsOracle: IChainalysisSanctionsList(address(0))
+            sanctionsOracle: IChainalysisSanctionsList(address(0)),
+            strategies: strategies
         });
     }
 
@@ -80,14 +80,14 @@ contract BasicERC721FlowTest is ERC721FlowTest {
         address flowProxy = address(new ERC1967Proxy(flowImpl, ""));
         vm.prank(address(manager));
         vm.expectRevert(IFlow.ADDRESS_ZERO.selector);
-        IERC721Flow(flowProxy).initialize({
+        ICustomFlow(flowProxy).initialize({
             initialOwner: address(manager),
-            nounsToken: address(0),
             superToken: address(superToken),
             flowImpl: flowImpl,
             manager: manager,
             managerRewardPool: address(dummyRewardPool),
             parent: address(0),
+            connectPoolAdmin: address(0),
             flowParams: flowParams,
             metadata: FlowTypes.RecipientMetadata(
                 "Test Flow",
@@ -96,7 +96,8 @@ contract BasicERC721FlowTest is ERC721FlowTest {
                 "Test Tagline",
                 "https://example.com"
             ),
-            sanctionsOracle: IChainalysisSanctionsList(address(0))
+            sanctionsOracle: IChainalysisSanctionsList(address(0)),
+            strategies: new IAllocationStrategy[](1)
         });
 
         // Test initialization with zero address for _flowImpl
@@ -104,14 +105,15 @@ contract BasicERC721FlowTest is ERC721FlowTest {
         flowProxy = address(new ERC1967Proxy(flowImpl, ""));
         vm.prank(address(manager));
         vm.expectRevert(IFlow.ADDRESS_ZERO.selector);
-        IERC721Flow(flowProxy).initialize({
+        ICustomFlow(flowProxy).initialize({
             initialOwner: address(manager),
-            nounsToken: address(0x1),
+            strategies: strategies,
             superToken: address(superToken),
             flowImpl: address(0),
             manager: manager,
             managerRewardPool: address(dummyRewardPool),
             parent: address(0),
+            connectPoolAdmin: address(0),
             flowParams: flowParams,
             metadata: FlowTypes.RecipientMetadata(
                 "Test Flow",
@@ -125,13 +127,13 @@ contract BasicERC721FlowTest is ERC721FlowTest {
         flowImpl = originalFlowImpl;
 
         // Test double initialization (should revert)
-        IERC721Flow(payable(flowProxy)).initialize(
+        ICustomFlow(payable(flowProxy)).initialize(
             address(manager),
-            address(0x1),
             address(superToken),
             address(flowImpl),
             manager,
             address(dummyRewardPool),
+            address(0),
             address(0),
             flowParams,
             FlowTypes.RecipientMetadata(
@@ -141,18 +143,19 @@ contract BasicERC721FlowTest is ERC721FlowTest {
                 "Test Tagline",
                 "https://example.com"
             ),
-            IChainalysisSanctionsList(address(0))
+            IChainalysisSanctionsList(address(0)),
+            strategies
         );
 
         // Test double initialization (should revert)
         vm.expectRevert("Initializable: contract is already initialized");
-        IERC721Flow(payable(flowProxy)).initialize(
+        ICustomFlow(payable(flowProxy)).initialize(
             address(manager),
-            address(0x1),
             address(superToken),
             address(flowImpl),
             manager,
             address(dummyRewardPool),
+            address(0),
             address(0),
             flowParams,
             FlowTypes.RecipientMetadata(
@@ -162,7 +165,8 @@ contract BasicERC721FlowTest is ERC721FlowTest {
                 "Test Tagline",
                 "https://example.com"
             ),
-            IChainalysisSanctionsList(address(0))
+            IChainalysisSanctionsList(address(0)),
+            strategies
         );
     }
 
@@ -178,20 +182,25 @@ contract BasicERC721FlowTest is ERC721FlowTest {
 
         vm.prank(manager);
         bytes32 recipientId = keccak256(abi.encodePacked(flowManager));
-        (, address newFlowRecipient) = flow.addFlowRecipient(recipientId, metadata, flowManager, address(0));
+        (, address newFlowRecipient) = flow.addFlowRecipient(
+            recipientId,
+            metadata,
+            flowManager,
+            address(0),
+            strategies
+        );
 
         assertNotEq(newFlowRecipient, address(0));
 
         address parent = address(flow);
 
         // Check if the new flow recipient is properly initialized
-        ERC721Flow newFlow = ERC721Flow(newFlowRecipient);
-        assertEq(address(newFlow.erc721Votes()), address(nounsToken));
+        CustomFlow newFlow = CustomFlow(newFlowRecipient);
         assertEq(address(newFlow.superToken()), address(superToken));
         assertEq(newFlow.flowImpl(), flowImpl);
         assertEq(newFlow.manager(), flowManager);
         assertEq(newFlow.parent(), parent);
-        assertEq(newFlow.tokenVoteWeight(), flow.tokenVoteWeight());
+        _checkStrategies(strategies, newFlow.strategies());
 
         // Check if the recipient is added to the main flow contract
         FlowTypes.FlowRecipient memory recipient = flow.getRecipientById(recipientId);
@@ -207,12 +216,28 @@ contract BasicERC721FlowTest is ERC721FlowTest {
         // Test adding with zero address flowManager (should revert)
         vm.expectRevert(IFlow.ADDRESS_ZERO.selector);
         vm.prank(manager);
-        flow.addFlowRecipient(keccak256(abi.encodePacked(address(0))), metadata, address(0), address(dummyRewardPool));
+        flow.addFlowRecipient(
+            keccak256(abi.encodePacked(address(0))),
+            metadata,
+            address(0),
+            address(dummyRewardPool),
+            strategies
+        );
 
         // Test adding with non-manager address (should revert)
         vm.prank(address(0xdead));
         vm.expectRevert(IFlow.SENDER_NOT_MANAGER.selector);
-        flow.addFlowRecipient(keccak256(abi.encodePacked(flowManager)), metadata, flowManager, address(0));
+        flow.addFlowRecipient(keccak256(abi.encodePacked(flowManager)), metadata, flowManager, address(0), strategies);
+    }
+
+    function _checkStrategies(
+        IAllocationStrategy[] memory strategies,
+        IAllocationStrategy[] memory newStrategies
+    ) internal {
+        assertEq(strategies.length, newStrategies.length);
+        for (uint256 i = 0; i < strategies.length; i++) {
+            assertEq(address(strategies[i]), address(newStrategies[i]));
+        }
     }
 
     function testSetFlowRateAccessControl() public {
@@ -281,7 +306,7 @@ contract BasicERC721FlowTest is ERC721FlowTest {
         address flowManager = address(0x789);
         vm.prank(manager);
         bytes32 flowRecipientId = keccak256(abi.encodePacked(flowManager));
-        flow.addFlowRecipient(flowRecipientId, metadata, flowManager, address(0));
+        flow.addFlowRecipient(flowRecipientId, metadata, flowManager, address(0), strategies);
         assertEq(flow.activeRecipientCount(), 1, "Active recipient count should be 1 after adding flow recipient");
 
         // Verify total recipient count
@@ -326,6 +351,10 @@ contract BasicERC721FlowTest is ERC721FlowTest {
             initialFlowRateMinusRewardPool - baselineFlowRate,
             "Bonus flow rate should be the remainder"
         );
+
+        // set manager to 0 first
+        vm.prank(flow.owner());
+        flow.setManagerRewardFlowRatePercent(0);
 
         // Test setting percentage to 100%
         uint32 percent = flow.PERCENTAGE_SCALE();
@@ -388,19 +417,19 @@ contract BasicERC721FlowTest is ERC721FlowTest {
         assertEq(flow.manager(), newManager, "Manager should not be changed to zero address");
     }
 
-    function testTotalTokenSupplyVoteWeight() public {
+    function testtotalAllocationWeight() public {
         // Mint some tokens to simulate total supply
         nounsToken.mint(address(0x1), 1);
         nounsToken.mint(address(0x2), 2);
         nounsToken.mint(address(0x3), 3);
 
         uint256 expectedTotalSupply = nounsToken.totalSupply();
-        uint256 tokenVoteWeight = flow.tokenVoteWeight();
+        uint256 expectedTotalVoteWeight = expectedTotalSupply * 1e18 * 1000;
 
-        uint256 expectedTotalVoteWeight = expectedTotalSupply * tokenVoteWeight;
+        _checkStrategies(strategies, flow.strategies());
 
         assertEq(
-            flow.totalTokenSupplyVoteWeight(),
+            flow.totalAllocationWeight(),
             expectedTotalVoteWeight,
             "Total token supply vote weight should match expected calculation"
         );

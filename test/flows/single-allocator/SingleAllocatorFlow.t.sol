@@ -10,6 +10,7 @@ import { FlowTypes } from "../../../src/storage/FlowStorage.sol";
 import { RewardPool } from "../../../src/token-issuance/RewardPool.sol";
 import { IRewardPool } from "../../../src/interfaces/IRewardPool.sol";
 import { IAllocationStrategy } from "../../../src/interfaces/IAllocationStrategy.sol";
+import { WitnessCacheHelper } from "../../helpers/WitnessCacheHelper.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 // Superfluid helpers
@@ -21,7 +22,7 @@ import { SuperToken } from "@superfluid-finance/ethereum-contracts/contracts/sup
 
 import { IChainalysisSanctionsList } from "../../../src/interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
-contract SingleAllocatorFlowTestBase is Test {
+contract SingleAllocatorFlowTestBase is Test, WitnessCacheHelper {
     // ────────────── Addresses ──────────────
     address internal constant _manager = address(0x1998);
     address internal constant _allocator = address(0xA11C08);
@@ -184,83 +185,16 @@ contract SingleAllocatorFlowTestBase is Test {
         arr[0][0] = bytes("");
     }
 
-    // =========================
-    // Witness caching for tests
-    // =========================
-
-    struct PrevWitnessCacheItem {
-        bool exists;
-        uint256 prevWeight;
-        bytes32[] recipientIds;
-        uint32[] bps;
-    }
-
-    // strategy => allocationKey => cached previous allocation witness
-    mapping(address => mapping(uint256 => PrevWitnessCacheItem)) internal _prevWitness;
-
-    function _encodePrevWitness(address strategyAddr, uint256 allocationKey) internal view returns (bytes memory) {
-        PrevWitnessCacheItem storage item = _prevWitness[strategyAddr][allocationKey];
-        if (!item.exists) return "";
-        return abi.encode(item.prevWeight, item.recipientIds, item.bps);
-    }
-
-    function _buildWitnesses(
-        address allocator,
-        bytes[][] memory allocationData
-    ) internal view returns (bytes[][] memory) {
-        bytes[][] memory witnesses = new bytes[][](allocationData.length);
-        for (uint256 i = 0; i < allocationData.length; i++) {
-            witnesses[i] = new bytes[](allocationData[i].length);
-            for (uint256 j = 0; j < allocationData[i].length; j++) {
-                uint256 key = IAllocationStrategy(_strategyProxy).allocationKey(allocator, allocationData[i][j]);
-                witnesses[i][j] = _encodePrevWitness(_strategyProxy, key);
-            }
-        }
-        return witnesses;
-    }
-
-    function _buildEmptyWitnesses(bytes[][] memory allocationData) internal pure returns (bytes[][] memory) {
-        bytes[][] memory witnesses = new bytes[][](allocationData.length);
-        for (uint256 i = 0; i < allocationData.length; i++) {
-            witnesses[i] = new bytes[](allocationData[i].length);
-            for (uint256 j = 0; j < allocationData[i].length; j++) {
-                witnesses[i][j] = "";
-            }
-        }
-        return witnesses;
-    }
-
-    function _updateWitnessCache(
-        address allocator,
-        bytes[][] memory allocationData,
-        bytes32[] memory recipientIds,
-        uint32[] memory percentAllocations
-    ) internal {
-        address strategyAddr = _strategyProxy;
-        for (uint256 i = 0; i < allocationData.length; i++) {
-            for (uint256 j = 0; j < allocationData[i].length; j++) {
-                uint256 key = IAllocationStrategy(strategyAddr).allocationKey(allocator, allocationData[i][j]);
-                uint256 weightUsed = IAllocationStrategy(strategyAddr).currentWeight(key);
-
-                PrevWitnessCacheItem storage item = _prevWitness[strategyAddr][key];
-                item.exists = true;
-                item.prevWeight = weightUsed;
-                item.recipientIds = recipientIds;
-                item.bps = percentAllocations;
-            }
-        }
-    }
-
     function allocateWithWitnessHelper(
         address allocator,
         bytes[][] memory allocationData,
         bytes32[] memory recipientIds,
         uint32[] memory percentAllocations
     ) internal {
-        bytes[][] memory witnesses = _buildWitnesses(allocator, allocationData);
+        bytes[][] memory witnesses = _buildWitnessesForStrategy(allocator, allocationData, _strategyProxy);
         vm.prank(allocator);
         _flow.allocateWithWitness(allocationData, witnesses, recipientIds, percentAllocations);
-        _updateWitnessCache(allocator, allocationData, recipientIds, percentAllocations);
+        _updateWitnessCacheForStrategy(allocator, allocationData, _strategyProxy, recipientIds, percentAllocations);
     }
 
     function allocateWithWitnessHelper(
@@ -272,10 +206,10 @@ contract SingleAllocatorFlowTestBase is Test {
     ) internal {
         bytes[][] memory witnesses = allocationData.length == 0
             ? _buildEmptyWitnesses(allocationData)
-            : _buildWitnesses(allocator, allocationData);
+            : _buildWitnessesForStrategy(allocator, allocationData, _strategyProxy);
         if (expectedRevert.length > 0) vm.expectRevert(expectedRevert);
         vm.prank(allocator);
         _flow.allocateWithWitness(allocationData, witnesses, recipientIds, percentAllocations);
-        _updateWitnessCache(allocator, allocationData, recipientIds, percentAllocations);
+        _updateWitnessCacheForStrategy(allocator, allocationData, _strategyProxy, recipientIds, percentAllocations);
     }
 }

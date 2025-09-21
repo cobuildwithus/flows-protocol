@@ -38,7 +38,8 @@ contract GasAllocate170Test is ERC721FlowTest {
 
         // First allocation (establishes previous allocations for the key)
         bytes[][] memory allocationData = _prepTokens(tokenIds);
-        flow.allocate(allocationData, recipientIds, percentAllocations);
+        bytes[][] memory witnesses = _buildWitnesses(voter, allocationData);
+        flow.allocateWithWitness(allocationData, witnesses, recipientIds, percentAllocations);
 
         // Second allocation to the SAME key (tweak the split slightly)
         uint32[] memory percentAllocations2 = new uint32[](170);
@@ -48,38 +49,18 @@ contract GasAllocate170Test is ERC721FlowTest {
             percentAllocations2[1] += 1;
         }
 
-        // Test regular allocate gas
         vm.pauseGasMetering();
         allocationData = _prepTokens(tokenIds);
+        witnesses = _buildWitnesses(voter, allocationData);
         vm.resumeGasMetering();
 
         uint256 gasBefore = gasleft();
-        flow.allocate(allocationData, recipientIds, percentAllocations2);
-        uint256 regularGasUsed = gasBefore - gasleft();
-
-        // Test witness-based allocate gas
-        // Tweak allocation again for third call
-        uint32[] memory percentAllocations3 = new uint32[](170);
-        for (uint256 i = 0; i < 170; i++) percentAllocations3[i] = percentAllocations2[i];
-        if (percentAllocations3[1] > 0) {
-            percentAllocations3[1] -= 1;
-            percentAllocations3[2] += 1;
-        }
-
-        vm.pauseGasMetering();
-        allocationData = _prepTokens(tokenIds);
-        bytes[][] memory witnesses = _buildWitnesses(voter, allocationData);
-        vm.resumeGasMetering();
-
-        gasBefore = gasleft();
-        flow.allocateWithWitness(allocationData, witnesses, recipientIds, percentAllocations3);
+        flow.allocateWithWitness(allocationData, witnesses, recipientIds, percentAllocations2);
         uint256 witnessGasUsed = gasBefore - gasleft();
 
         vm.pauseGasMetering();
         vm.stopPrank();
 
-        emit log_named_uint("Regular allocate(170 recipients) gas", regularGasUsed);
         emit log_named_uint("Witness allocate(170 recipients) gas", witnessGasUsed);
-        emit log_named_uint("Gas savings with witness", regularGasUsed - witnessGasUsed);
     }
 }

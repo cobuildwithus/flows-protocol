@@ -85,9 +85,6 @@ contract CustomFlow is ICustomFlow, Flow {
         _afterAllocationSet(recipientIds, totalFlowsToUpdate, shouldUpdateFlowRate);
     }
 
-    /// ===========================
-    /// Option C entrypoint (new)
-    /// ===========================
     /**
      * @notice Cast a vote for a set of grant addresses, using commitment + witness.
      * @param allocationData Per-strategy opaque data used to derive allocation keys (same shape as before).

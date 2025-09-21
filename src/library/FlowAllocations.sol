@@ -116,37 +116,37 @@ library FlowAllocations {
         // --- copy new arrays once (reuse for hashing & computation) ---
         bytes32[] memory newIdsMem = new bytes32[](newRecipientIds.length);
         uint32[] memory newBpsMem = new uint32[](newBps.length);
-        for (uint256 x; x < newRecipientIds.length; ) {
-            newIdsMem[x] = newRecipientIds[x];
+        for (uint256 idIndex; idIndex < newRecipientIds.length; ) {
+            newIdsMem[idIndex] = newRecipientIds[idIndex];
             unchecked {
-                ++x;
+                ++idIndex;
             }
         }
-        for (uint256 y; y < newBps.length; ) {
-            newBpsMem[y] = newBps[y];
+        for (uint256 bpsIndex; bpsIndex < newBps.length; ) {
+            newBpsMem[bpsIndex] = newBps[bpsIndex];
             unchecked {
-                ++y;
+                ++bpsIndex;
             }
         }
 
         // --- assemble old & new unit pairs; compute sum-of-floors for quorum accounting ---
-        _PairUnits[] memory A; // old side (units, bps for event)
+        _PairUnits[] memory oldPairs; // old side (units, bps for event)
         uint256 oldSumFloors;
         if (migratingFromLegacy) {
-            (A, oldSumFloors) = _pairsUnitsFromLegacy(legacy); // exact legacy units + legacy sum-of-floors
+            (oldPairs, oldSumFloors) = _pairsUnitsFromLegacy(legacy); // exact legacy units + legacy sum-of-floors
         } else if (oldCommit != bytes32(0)) {
             // recompute from commit
-            (A, oldSumFloors) = _pairsUnitsFromComputed(prevRecipientIds, prevBps, prevWeight, scale);
+            (oldPairs, oldSumFloors) = _pairsUnitsFromComputed(prevRecipientIds, prevBps, prevWeight, scale);
         } else {
-            A = new _PairUnits[](0);
+            oldPairs = new _PairUnits[](0);
             oldSumFloors = 0; // truly new
         }
         // new units + new sum-of-floors (not stored)
-        (_PairUnits[] memory B, uint256 newSumFloors) = _pairsUnitsFromComputed(newIdsMem, newBpsMem, newWeight, scale);
+        (_PairUnits[] memory newPairs, ) = _pairsUnitsFromComputed(newIdsMem, newBpsMem, newWeight, scale);
 
         // --- sorting for O(n log n) + O(n) merge ---
-        _sortUnits(A);
-        _sortUnits(B);
+        _sortUnits(oldPairs);
+        _sortUnits(newPairs);
 
         // --- new-key behavior (mirrors legacy: when there were previously no allocations for this key) ---
         if (isBrandNewKey && newIdsMem.length > 0) {
@@ -156,62 +156,72 @@ library FlowAllocations {
                 shouldUpdateFlowRate = true;
             }
         }
-        // Effective active-weight changed (legacy semantics):
-        // compare previous sum-of-floors vs new strategy weight to decide quorum-sensitive recompute.
-        // This handles both legacy-migration and commit->commit paths correctly and avoids
-        // missing updates when rounding changes sum-of-floors even if prevWeight == newWeight.
-        if (oldSumFloors != newWeight && fs.bonusPoolQuorumBps > 0) {
+        // weight changed => quorum-sensitive recompute (matches original logic)
+        if (prevWeight != newWeight && fs.bonusPoolQuorumBps > 0) {
             shouldUpdateFlowRate = true;
         }
 
         // --- merge/deltas ---
-        uint256 i = 0;
-        uint256 j = 0;
-        while (i < A.length || j < B.length) {
-            bytes32 rid;
+        uint256 oldIndex = 0;
+        uint256 newIndex = 0;
+        while (oldIndex < oldPairs.length || newIndex < newPairs.length) {
+            bytes32 recipientIdCurrent;
             uint128 oldUnits;
             uint128 newUnits;
-            uint32 curBps;
+            uint32 currentBps;
 
-            if (j >= B.length || (i < A.length && A[i].id < B[j].id)) {
-                rid = A[i].id;
-                oldUnits = A[i].units;
+            if (
+                newIndex >= newPairs.length ||
+                (oldIndex < oldPairs.length && oldPairs[oldIndex].id < newPairs[newIndex].id)
+            ) {
+                recipientIdCurrent = oldPairs[oldIndex].id;
+                oldUnits = oldPairs[oldIndex].units;
                 newUnits = 0;
-                curBps = 0;
+                currentBps = 0;
                 unchecked {
-                    ++i;
+                    ++oldIndex;
                 }
-            } else if (i >= A.length || (j < B.length && B[j].id < A[i].id)) {
-                rid = B[j].id;
+            } else if (
+                oldIndex >= oldPairs.length ||
+                (newIndex < newPairs.length && newPairs[newIndex].id < oldPairs[oldIndex].id)
+            ) {
+                recipientIdCurrent = newPairs[newIndex].id;
                 oldUnits = 0;
-                newUnits = B[j].units;
-                curBps = B[j].bps;
+                newUnits = newPairs[newIndex].units;
+                currentBps = newPairs[newIndex].bps;
                 unchecked {
-                    ++j;
+                    ++newIndex;
                 }
             } else {
-                rid = A[i].id;
-                oldUnits = A[i].units;
-                newUnits = B[j].units;
-                curBps = B[j].bps;
+                recipientIdCurrent = oldPairs[oldIndex].id;
+                oldUnits = oldPairs[oldIndex].units;
+                newUnits = newPairs[newIndex].units;
+                currentBps = newPairs[newIndex].bps;
                 unchecked {
-                    ++i;
-                    ++j;
+                    ++oldIndex;
+                    ++newIndex;
                 }
             }
 
             // Skip recipients that are invalid/removed now.
-            FlowTypes.FlowRecipient storage rec = fs.recipients[rid];
-            address recipientAddress = rec.recipient;
-            if (recipientAddress == address(0) || rec.removed) {
+            FlowTypes.FlowRecipient storage recipient = fs.recipients[recipientIdCurrent];
+            address recipientAddress = recipient.recipient;
+            if (recipientAddress == address(0) || recipient.removed) {
                 continue;
             }
 
             int256 delta = int256(uint256(newUnits)) - int256(uint256(oldUnits));
             if (delta == 0) {
                 // Emit for visibility (parity with legacy behavior)
-                if (curBps > 0) {
-                    emit IFlowEvents.AllocationSet(rid, strategy, allocationKey, newUnits, curBps, newWeight);
+                if (currentBps > 0) {
+                    emit IFlowEvents.AllocationSet(
+                        recipientIdCurrent,
+                        strategy,
+                        allocationKey,
+                        newUnits,
+                        currentBps,
+                        newWeight
+                    );
                 }
                 continue;
             }
@@ -235,7 +245,7 @@ library FlowAllocations {
 
             // Queue child flow update if needed
             if (
-                rec.recipientType == FlowTypes.RecipientType.FlowContract &&
+                recipient.recipientType == FlowTypes.RecipientType.FlowContract &&
                 !_childFlowsToUpdateFlowRate.contains(recipientAddress)
             ) {
                 _childFlowsToUpdateFlowRate.add(recipientAddress);
@@ -245,8 +255,15 @@ library FlowAllocations {
             }
 
             // Emit event for recipients present in new set
-            if (curBps > 0) {
-                emit IFlowEvents.AllocationSet(rid, strategy, allocationKey, newUnits, curBps, newWeight);
+            if (currentBps > 0) {
+                emit IFlowEvents.AllocationSet(
+                    recipientIdCurrent,
+                    strategy,
+                    allocationKey,
+                    newUnits,
+                    currentBps,
+                    newWeight
+                );
             }
         }
 
@@ -273,11 +290,11 @@ library FlowAllocations {
         uint32 bps; // kept for event emission
     }
 
-    function _pairsBps(bytes32[] memory ids, uint32[] memory bps) internal pure returns (_PairBps[] memory P) {
+    function _pairsBps(bytes32[] memory ids, uint32[] memory bps) internal pure returns (_PairBps[] memory pairs) {
         require(ids.length == bps.length, "ids/bps mismatch");
-        P = new _PairBps[](ids.length);
+        pairs = new _PairBps[](ids.length);
         for (uint256 i; i < ids.length; ) {
-            P[i] = _PairBps({ id: ids[i], bps: bps[i] });
+            pairs[i] = _PairBps({ id: ids[i], bps: bps[i] });
             unchecked {
                 ++i;
             }
@@ -289,15 +306,15 @@ library FlowAllocations {
         uint32[] memory bps,
         uint256 weight,
         uint256 scale
-    ) internal pure returns (_PairUnits[] memory P, uint256 sumFloors) {
+    ) internal pure returns (_PairUnits[] memory pairs, uint256 sumFloors) {
         require(ids.length == bps.length, "ids/bps mismatch");
-        P = new _PairUnits[](ids.length);
+        pairs = new _PairUnits[](ids.length);
         for (uint256 i; i < ids.length; ) {
             uint256 w = Math.mulDiv(weight, bps[i], scale);
             sumFloors += w;
             uint256 u = w / 1e15;
             if (u > type(uint128).max) revert IFlow.OVERFLOW();
-            P[i] = _PairUnits({ id: ids[i], units: uint128(u), bps: bps[i] });
+            pairs[i] = _PairUnits({ id: ids[i], units: uint128(u), bps: bps[i] });
             unchecked {
                 ++i;
             }
@@ -306,10 +323,10 @@ library FlowAllocations {
 
     function _pairsUnitsFromLegacy(
         FlowTypes.Allocation[] memory legacy
-    ) internal pure returns (_PairUnits[] memory P, uint256 sumFloors) {
-        P = new _PairUnits[](legacy.length);
+    ) internal pure returns (_PairUnits[] memory pairs, uint256 sumFloors) {
+        pairs = new _PairUnits[](legacy.length);
         for (uint256 i; i < legacy.length; ) {
-            P[i] = _PairUnits({ id: legacy[i].recipientId, units: legacy[i].memberUnits, bps: legacy[i].bps });
+            pairs[i] = _PairUnits({ id: legacy[i].recipientId, units: legacy[i].memberUnits, bps: legacy[i].bps });
             sumFloors += legacy[i].allocationWeight;
             unchecked {
                 ++i;
@@ -390,13 +407,13 @@ library FlowAllocations {
         bytes32[] memory ids,
         uint32[] memory bps
     ) internal pure returns (bytes32) {
-        _PairBps[] memory P = _pairsBps(ids, bps);
-        _sortBps(P);
-        bytes32[] memory ids2 = new bytes32[](P.length);
-        uint32[] memory bps2 = new uint32[](P.length);
-        for (uint256 k; k < P.length; ) {
-            ids2[k] = P[k].id;
-            bps2[k] = P[k].bps;
+        _PairBps[] memory pairsBps = _pairsBps(ids, bps);
+        _sortBps(pairsBps);
+        bytes32[] memory ids2 = new bytes32[](pairsBps.length);
+        uint32[] memory bps2 = new uint32[](pairsBps.length);
+        for (uint256 k; k < pairsBps.length; ) {
+            ids2[k] = pairsBps[k].id;
+            bps2[k] = pairsBps[k].bps;
             unchecked {
                 ++k;
             }

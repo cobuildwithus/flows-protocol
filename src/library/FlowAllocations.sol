@@ -274,8 +274,10 @@ library FlowAllocations {
         uint256 prevComponent = migratingFromLegacy ? oldSumFloors : (oldCommit != bytes32(0) ? prevWeight : 0);
         fs.totalActiveAllocationWeight = fs.totalActiveAllocationWeight - prevComponent + newWeight;
 
-        // Store canonical commitment for the new state
-        fs.allocCommit[strategy][allocationKey] = _hashAllocCanonical(newWeight, newIdsMem, newBpsMem);
+        // Store canonical commitment for the new state and emit commit-level event
+        bytes32 commit = _hashAllocCanonical(newWeight, newIdsMem, newBpsMem);
+        fs.allocCommit[strategy][allocationKey] = commit;
+        emit IFlowEvents.AllocationCommitted(strategy, allocationKey, commit, newWeight);
     }
 
     // ============ Internal helpers ============

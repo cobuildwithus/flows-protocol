@@ -156,8 +156,11 @@ library FlowAllocations {
                 shouldUpdateFlowRate = true;
             }
         }
-        // weight changed => quorum-sensitive recompute (matches original logic)
-        if (prevWeight != newWeight && fs.bonusPoolQuorumBps > 0) {
+        // Effective active-weight changed (legacy semantics):
+        // compare previous sum-of-floors vs new strategy weight to decide quorum-sensitive recompute.
+        // This handles both legacy-migration and commit->commit paths correctly and avoids
+        // missing updates when rounding changes sum-of-floors even if prevWeight == newWeight.
+        if (oldSumFloors != newWeight && fs.bonusPoolQuorumBps > 0) {
             shouldUpdateFlowRate = true;
         }
 
@@ -263,6 +266,7 @@ library FlowAllocations {
         bytes32 id;
         uint32 bps;
     }
+
     struct _PairUnits {
         bytes32 id;
         uint128 units;
@@ -279,6 +283,7 @@ library FlowAllocations {
             }
         }
     }
+
     function _pairsUnitsFromComputed(
         bytes32[] memory ids,
         uint32[] memory bps,
@@ -298,6 +303,7 @@ library FlowAllocations {
             }
         }
     }
+
     function _pairsUnitsFromLegacy(
         FlowTypes.Allocation[] memory legacy
     ) internal pure returns (_PairUnits[] memory P, uint256 sumFloors) {
@@ -310,10 +316,12 @@ library FlowAllocations {
             }
         }
     }
+
     function _sortUnits(_PairUnits[] memory arr) internal pure {
         if (arr.length < 2) return;
         _qsu(arr, int256(0), int256(arr.length - 1));
     }
+
     function _qsu(_PairUnits[] memory a, int256 lo, int256 hi) private pure {
         int256 i = lo;
         int256 j = hi;
@@ -342,52 +350,48 @@ library FlowAllocations {
         if (lo < j) _qsu(a, lo, j);
         if (i < hi) _qsu(a, i, hi);
     }
+
+    function _sortBps(_PairBps[] memory arr) internal pure {
+        if (arr.length < 2) return;
+        _qsb(arr, int256(0), int256(arr.length - 1));
+    }
+
+    function _qsb(_PairBps[] memory a, int256 lo, int256 hi) private pure {
+        int256 i = lo;
+        int256 j = hi;
+        _PairBps memory p = a[uint256(lo + (hi - lo) / 2)];
+        while (i <= j) {
+            while (a[uint256(i)].id < p.id) {
+                unchecked {
+                    ++i;
+                }
+            }
+            while (a[uint256(j)].id > p.id) {
+                unchecked {
+                    --j;
+                }
+            }
+            if (i <= j) {
+                (_PairBps memory ai, _PairBps memory aj) = (a[uint256(i)], a[uint256(j)]);
+                a[uint256(i)] = aj;
+                a[uint256(j)] = ai;
+                unchecked {
+                    ++i;
+                    --j;
+                }
+            }
+        }
+        if (lo < j) _qsb(a, lo, j);
+        if (i < hi) _qsb(a, i, hi);
+    }
+
     function _hashAllocCanonical(
         uint256 weight,
         bytes32[] memory ids,
         uint32[] memory bps
     ) internal pure returns (bytes32) {
         _PairBps[] memory P = _pairsBps(ids, bps);
-        // simple in-place quicksort by id
-        if (P.length > 1) {
-            int256 lo = 0;
-            int256 hi = int256(P.length) - 1;
-            // non-recursive quicksort is overkill; recursion depth is small for typical N
-            _PairBps memory pivot;
-            int256 i;
-            int256 j;
-            while (lo < hi) {
-                i = lo;
-                j = hi;
-                pivot = P[uint256(lo + (hi - lo) / 2)];
-                while (i <= j) {
-                    while (P[uint256(i)].id < pivot.id) {
-                        unchecked {
-                            ++i;
-                        }
-                    }
-                    while (P[uint256(j)].id > pivot.id) {
-                        unchecked {
-                            --j;
-                        }
-                    }
-                    if (i <= j) {
-                        (_PairBps memory x, _PairBps memory y) = (P[uint256(i)], P[uint256(j)]);
-                        P[uint256(i)] = y;
-                        P[uint256(j)] = x;
-                        unchecked {
-                            ++i;
-                            --j;
-                        }
-                    }
-                }
-                if (lo < j) {
-                    hi = j;
-                } else {
-                    lo = i;
-                }
-            }
-        }
+        _sortBps(P);
         bytes32[] memory ids2 = new bytes32[](P.length);
         uint32[] memory bps2 = new uint32[](P.length);
         for (uint256 k; k < P.length; ) {

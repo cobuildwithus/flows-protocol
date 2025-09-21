@@ -66,6 +66,9 @@ library FlowInitialization {
                 }
             }
         }
+        // Inside FlowInitialization.checkAndSetInitializationParams after sanity checks:
+        if (_flowParams.bonusPoolQuorumBps > PERCENTAGE_SCALE) revert IFlow.INVALID_RATE_PERCENT();
+        fs.bonusPoolQuorumBps = _flowParams.bonusPoolQuorumBps;
 
         fs.sanctionsOracle = _sanctionsOracle;
 

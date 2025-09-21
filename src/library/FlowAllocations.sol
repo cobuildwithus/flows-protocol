@@ -23,8 +23,8 @@ library FlowAllocations {
      */
     function validateAllocations(
         FlowTypes.Storage storage fs,
-        bytes32[] memory recipientIds,
-        uint32[] memory percentAllocations
+        bytes32[] calldata recipientIds,
+        uint32[] calldata percentAllocations
     ) public view {
         // must have recipientIds
         if (recipientIds.length < 1) {

@@ -473,7 +473,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     /**
      * @notice Sets a new manager for the Flow contract
      * @param _newManager The address of the new manager
-     * @dev Only callable by the current owner
+     * @dev Only callable by the current owner or manager
      */
     function setManager(address _newManager) external onlyOwnerOrManager nonReentrant {
         if (_newManager == address(0)) revert ADDRESS_ZERO();

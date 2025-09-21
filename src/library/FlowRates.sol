@@ -394,8 +394,18 @@ library FlowRates {
         // 20x maximum multiplier * 105% extra buffer, rounded up
         uint256 maxApproval = Math.mulDiv(buf, 20 * (100 + EXTRA_BUFFER_PERCENT), 100, Math.Rounding.Up);
 
-        // Ask the child (trusted path today), then clamp
-        uint256 approvalAmount = IFlow(childAddress).getRequiredBufferAmount(netIncrease);
+        // Ask the child (trusted path today); tolerate failures to preserve liveness
+        uint256 approvalAmount;
+        bool childOk = true;
+        try IFlow(childAddress).getRequiredBufferAmount(netIncrease) returns (uint256 amt) {
+            approvalAmount = amt;
+        } catch {
+            childOk = false;
+        }
+        if (!childOk) {
+            // Fallback: proceed with a conservative upper bound when child is buggy
+            approvalAmount = maxApproval;
+        }
         if (approvalAmount > maxApproval) {
             approvalAmount = maxApproval;
         }

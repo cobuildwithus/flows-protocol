@@ -10,6 +10,7 @@ import { FlowTypes } from "../../../src/storage/FlowStorage.sol";
 import { RewardPool } from "../../../src/token-issuance/RewardPool.sol";
 import { IRewardPool } from "../../../src/interfaces/IRewardPool.sol";
 import { IAllocationStrategy } from "../../../src/interfaces/IAllocationStrategy.sol";
+import { WitnessCacheHelper } from "../../helpers/WitnessCacheHelper.sol";
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 // Superfluid helpers
@@ -21,7 +22,7 @@ import { SuperToken } from "@superfluid-finance/ethereum-contracts/contracts/sup
 
 import { IChainalysisSanctionsList } from "../../../src/interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
 
-contract SingleAllocatorFlowTestBase is Test {
+contract SingleAllocatorFlowTestBase is Test, WitnessCacheHelper {
     // ────────────── Addresses ──────────────
     address internal constant _manager = address(0x1998);
     address internal constant _allocator = address(0xA11C08);
@@ -182,5 +183,40 @@ contract SingleAllocatorFlowTestBase is Test {
         arr = new bytes[][](1);
         arr[0] = new bytes[](1);
         arr[0][0] = bytes("");
+    }
+
+    function allocateWithWitnessHelper(
+        address allocator,
+        bytes[][] memory allocationData,
+        bytes32[] memory recipientIds,
+        uint32[] memory percentAllocations
+    ) internal {
+        _allocateWithWitnessForStrategy(
+            allocator,
+            allocationData,
+            _strategyProxy,
+            address(_flow),
+            recipientIds,
+            percentAllocations
+        );
+    }
+
+    function allocateWithWitnessHelper(
+        address allocator,
+        bytes[][] memory allocationData,
+        bytes32[] memory recipientIds,
+        uint32[] memory percentAllocations,
+        bytes memory expectedRevert
+    ) internal {
+        if (allocationData.length == 0) allocationData = _buildEmptyWitnesses(allocationData);
+        _allocateWithWitnessForStrategyExpectRevert(
+            allocator,
+            allocationData,
+            _strategyProxy,
+            address(_flow),
+            recipientIds,
+            percentAllocations,
+            expectedRevert
+        );
     }
 }

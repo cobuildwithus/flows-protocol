@@ -95,163 +95,37 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         emit SanctionsOracleSet(address(_sanctionsOracle));
     }
 
+    // ========= Option C core: commitment + witness, delta updates (no per-recipient storage writes) =========
     /**
-     * @notice Cast a vote for a specific grant address.
-     * @param recipientId The id of the grant recipient.
-     * @param bps The basis points of the vote to be split with the recipient.
-     * @param strategy The strategy that is allocating.
-     * @param allocationKey The allocation key.
-     * @param allocator The address of the allocator.
-     * @param totalWeight The allocation weight.
-     * @dev Requires that the recipient is valid, and the weight is greater than the minimum vote weight.
-     * Emits a VoteCast event upon successful execution.
+     * @dev Applies allocation deltas for a single (strategy, allocationKey).
+     * - Verifies the witness against the stored commitment (order-independent).
+     * - On first use for a key, migrates from legacy storage,
+     * - using exact legacy memberUnits for deltas (no rounding drift).
+     * - Computes new per-recipient units from strategy.currentWeight(key) and new BPS.
+     * - Updates pool units by delta (one call per touched recipient).
+     * - Updates totalActiveAllocationWeight: subtract previous **sum-of-floors**, add **new strategy weight**.
+     * - Stores the new commitment.
      */
-    function _allocate(
-        bytes32 recipientId,
-        uint32 bps,
+    function _applyAllocationWithWitness(
         address strategy,
         uint256 allocationKey,
-        address allocator,
-        uint256 totalWeight
-    ) internal {
-        // calculate new member units for recipient and create vote
-        (uint128 memberUnits, address recipientAddress, ) = fs.setAllocation(
-            recipientId,
-            bps,
+        bytes32[] memory prevRecipientIds,
+        uint32[] memory prevBps,
+        uint256 prevWeight, // weight used to compute previous units (from last commit)
+        bytes32[] calldata newRecipientIds,
+        uint32[] calldata newBps
+    ) internal returns (uint256 childFlowsToUpdate, bool shouldUpdateFlowRate) {
+        (childFlowsToUpdate, shouldUpdateFlowRate) = fs.applyAllocationWithWitness(
+            _childFlows,
+            _childFlowsToUpdateFlowRate,
             strategy,
             allocationKey,
-            totalWeight,
-            allocator
+            prevRecipientIds,
+            prevBps,
+            prevWeight,
+            newRecipientIds,
+            newBps
         );
-
-        // store the previous flow rate for the child contract before we update any member units
-        // this is used to calculate the net increase in flow rate
-        _maybeTakeFlowRateSnapshot(recipientAddress);
-
-        // update member units
-        fs.updateBonusMemberUnits(recipientAddress, memberUnits);
-
-        // if recipient is a flow contract, set the flow rate for the child contract
-        // note - we now do this post-voting to avoid redundant setFlowRate calls on children
-        // in _afterAllocationSet
-
-        emit AllocationSet(recipientId, strategy, allocationKey, memberUnits, bps, totalWeight);
-    }
-
-    /**
-     * @notice Clears out units from previous allocations for a specific allocation key.
-     * @param strategy The strategy that is allocating.
-     * @param allocationKey The allocation key.
-     * @dev This function resets the member units for all recipients that the allocation key has previously allocated for.
-     * It should be called before setting new allocations to ensure accurate allocation allocations.
-     * Note - Important - only ever delete allocations for a key right before adding them back, otherwise you will have to
-     * manually update the total active allocation weight
-     */
-    function _clearPreviousAllocations(
-        address strategy,
-        uint256 allocationKey
-    ) internal returns (uint256 childFlowsToUpdate) {
-        Allocation[] memory allocations = fs.allocations[strategy][allocationKey];
-
-        for (uint256 i = 0; i < allocations.length; i++) {
-            bytes32 recipientId = allocations[i].recipientId;
-
-            // When clearing out allocations, we need to decrement the total active allocation weight
-            // even if the recipient has been removed in order to keep totalActiveAllocationWeight accurate
-            fs.totalActiveAllocationWeight -= allocations[i].allocationWeight;
-
-            // if recipient is removed, skip - don't want to update member units because they have been wiped to 0
-            // fine because this vote will be deleted in the next step
-            if (fs.recipients[recipientId].removed) continue;
-
-            address recipientAddress = fs.recipients[recipientId].recipient;
-
-            // even if we're decreasing the flow rate, we need to store the previous rate
-            // so we can calculate the net increase in flow rate
-            _maybeTakeFlowRateSnapshot(recipientAddress);
-
-            uint128 current = fs.bonusPool.getUnits(recipientAddress);
-            uint128 toSubtract = allocations[i].memberUnits;
-
-            if (current < toSubtract) {
-                // units were already reduced elsewhere; treat it as if the whole slice is already gone
-                toSubtract = current;
-                allocations[i].memberUnits = current;
-            }
-            uint128 newUnits = current - toSubtract;
-
-            // Update the member units in the pool
-            fs.updateBonusMemberUnits(recipientAddress, newUnits);
-
-            /// @notice - Does not update member units for baseline pool
-            /// voting is only for the bonus pool, to ensure all approved recipients get a baseline salary
-
-            // after updating member units, set the flow rate for the child contract
-            // if recipient is a flow contract, queue the contract for flow rate reset!
-            if (
-                fs.recipients[recipientId].recipientType == RecipientType.FlowContract &&
-                !_childFlowsToUpdateFlowRate.contains(recipientAddress)
-            ) {
-                _childFlowsToUpdateFlowRate.add(recipientAddress);
-                childFlowsToUpdate++;
-            }
-        }
-
-        // Clear out the allocations for the key
-        delete fs.allocations[strategy][allocationKey];
-    }
-
-    /**
-     * @notice Cast a vote for a set of grant addresses.
-     * @param strategy The strategy that is allocating.
-     * @param allocationKey The allocation key.
-     * @param recipientIds The recipientIds of the grant recipients to vote for.
-     * @param percentAllocations The basis points of the vote to be split with the recipients.
-     * @param allocator The address of the allocator.
-     * @param allocationWeight The weight of the allocation.
-     */
-    function _setAllocationForKey(
-        address strategy,
-        uint256 allocationKey,
-        bytes32[] memory recipientIds,
-        uint32[] memory percentAllocations,
-        address allocator,
-        uint256 allocationWeight
-    ) internal returns (uint256 childFlowsToUpdate, bool shouldUpdateFlowRate) {
-        // Get the old weight of the allocation
-        uint256 oldWeight = 0;
-        Allocation[] memory allocations = fs.allocations[strategy][allocationKey];
-        for (uint256 i = 0; i < allocations.length; i++) {
-            oldWeight += allocations[i].allocationWeight;
-        }
-
-        if (fs.allocations[strategy][allocationKey].length == 0) {
-            // this is a new vote, which means we're adding new member units
-            // so we need to reset child flow rates
-            childFlowsToUpdate = 10;
-            _setChildrenAsNeedingUpdates(address(0));
-
-            if (fs.bonusPoolQuorumBps > 0) {
-                // since new allocations affects quorum based bonus pool, we need to update the flow rate
-                shouldUpdateFlowRate = true;
-            }
-        }
-
-        // update member units for previous allocations
-        childFlowsToUpdate += _clearPreviousAllocations(strategy, allocationKey);
-
-        // update total active vote weight
-        fs.totalActiveAllocationWeight += allocationWeight;
-
-        // set new allocations
-        for (uint256 i = 0; i < recipientIds.length; i++) {
-            _allocate(recipientIds[i], percentAllocations[i], strategy, allocationKey, allocator, allocationWeight);
-        }
-
-        // If the total weight changed and quorum is enabled, trigger flow rate update
-        if (oldWeight != allocationWeight && fs.bonusPoolQuorumBps > 0) {
-            shouldUpdateFlowRate = true;
-        }
     }
 
     /**
@@ -599,7 +473,7 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     /**
      * @notice Sets a new manager for the Flow contract
      * @param _newManager The address of the new manager
-     * @dev Only callable by the current owner
+     * @dev Only callable by the current owner or manager
      */
     function setManager(address _newManager) external onlyOwnerOrManager nonReentrant {
         if (_newManager == address(0)) revert ADDRESS_ZERO();
@@ -859,6 +733,15 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
+     * @notice Read-only commitment (hash) for an allocation key
+     * @dev commit = keccak256(abi.encode(canonical(weight, recipientIds, percentAllocations)))
+     * Canonicalized by recipientId asc.
+     */
+    function getAllocationCommitment(address strategy, uint256 allocationKey) external view returns (bytes32) {
+        return fs.allocCommit[strategy][allocationKey];
+    }
+
+    /**
      * @notice Returns the maximum safe outflow rate allowed by the contract.
      * @dev Calculates the highest outflow rate permitted, capped as a percentage of the current incoming Superfluid stream.
      *      This ensures the contract never streams out more than a set fraction of what it receives.
@@ -1024,16 +907,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      */
     function strategies() external view returns (IAllocationStrategy[] memory) {
         return fs.strategies;
-    }
-
-    /**
-     * @notice Retrieves the allocations for a given allocation key
-     * @param strategy The address of the allocation strategy
-     * @param allocationKey The allocation key
-     * @return Allocation[] The allocations for the given allocation key
-     */
-    function getAllocationsForKey(address strategy, uint256 allocationKey) external view returns (Allocation[] memory) {
-        return fs.allocations[strategy][allocationKey];
     }
 
     /**

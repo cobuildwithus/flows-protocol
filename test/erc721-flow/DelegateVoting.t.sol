@@ -50,20 +50,16 @@ contract DelegateVotingTest is ERC721FlowTest {
 
         // Try to vote with tokenOwner (should succeed)
         vm.prank(tokenOwner);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
-
-        // Verify vote allocations
-        Flow.Allocation[] memory voteAllocations = getAllocationForTokenId(tokenId);
-        assertEq(voteAllocations.length, 2);
-        assertEq(voteAllocations[0].recipientId, recipientId1);
-        assertEq(voteAllocations[0].bps, 7e5);
-        assertEq(voteAllocations[1].recipientId, recipientId2);
-        assertEq(voteAllocations[1].bps, 3e5);
+        allocateTokensWithWitnessHelper(tokenOwner, tokenIds, recipientIds, percentAllocations);
 
         // Try to vote with delegate (should fail)
-        vm.prank(delegate);
-        vm.expectRevert(abi.encodeWithSignature("NOT_ABLE_TO_ALLOCATE()"));
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        allocateTokensWithWitnessHelper(
+            delegate,
+            tokenIds,
+            recipientIds,
+            percentAllocations,
+            abi.encodeWithSignature("NOT_ABLE_TO_ALLOCATE()")
+        );
 
         // Delegate voting power
         vm.prank(tokenOwner);
@@ -71,8 +67,13 @@ contract DelegateVotingTest is ERC721FlowTest {
 
         // Try to vote with tokenOwner (should now fail)
         vm.prank(tokenOwner);
-        vm.expectRevert(abi.encodeWithSignature("NOT_ABLE_TO_ALLOCATE()"));
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        allocateTokensWithWitnessHelper(
+            tokenOwner,
+            tokenIds,
+            recipientIds,
+            percentAllocations,
+            abi.encodeWithSignature("NOT_ABLE_TO_ALLOCATE()")
+        );
 
         // Change vote allocations
         percentAllocations[0] = 4e5; // 40%
@@ -80,15 +81,7 @@ contract DelegateVotingTest is ERC721FlowTest {
 
         // Vote with delegate (should now succeed)
         vm.prank(delegate);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
-
-        // Verify new vote allocations
-        voteAllocations = getAllocationForTokenId(tokenId);
-        assertEq(voteAllocations.length, 2);
-        assertEq(voteAllocations[0].recipientId, recipientId1);
-        assertEq(voteAllocations[0].bps, 4e5);
-        assertEq(voteAllocations[1].recipientId, recipientId2);
-        assertEq(voteAllocations[1].bps, 6e5);
+        allocateTokensWithWitnessHelper(delegate, tokenIds, recipientIds, percentAllocations);
     }
 
     function testMultiTokenDelegateVoting() public {
@@ -140,23 +133,7 @@ contract DelegateVotingTest is ERC721FlowTest {
 
         // Vote with delegate for both tokens
         vm.prank(delegate);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
-
-        // Verify vote allocations for both tokens
-        Flow.Allocation[] memory voteAllocations1 = getAllocationForTokenId(tokenId1);
-        Flow.Allocation[] memory voteAllocations2 = getAllocationForTokenId(tokenId2);
-
-        assertEq(voteAllocations1.length, 2);
-        assertEq(voteAllocations1[0].recipientId, recipientId1);
-        assertEq(voteAllocations1[0].bps, 5e5);
-        assertEq(voteAllocations1[1].recipientId, recipientId2);
-        assertEq(voteAllocations1[1].bps, 5e5);
-
-        assertEq(voteAllocations2.length, 2);
-        assertEq(voteAllocations2[0].recipientId, recipientId1);
-        assertEq(voteAllocations2[0].bps, 5e5);
-        assertEq(voteAllocations2[1].recipientId, recipientId2);
-        assertEq(voteAllocations2[1].bps, 5e5);
+        allocateTokensWithWitnessHelper(delegate, tokenIds, recipientIds, percentAllocations);
 
         // Check that the total units for each recipient reflect votes from both tokens
         uint128 recipient1Units = flow.bonusPool().getUnits(recipient1);

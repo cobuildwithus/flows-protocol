@@ -76,9 +76,7 @@ contract DynamicBonusPoolVotingTest is ERC721FlowTest {
         uint256[] memory tokens = new uint256[](1);
         tokens[0] = tokenId;
 
-        vm.startPrank(voter);
-        flow.allocate(_prepTokens(tokens), ids, allocs);
-        vm.stopPrank();
+        allocateTokensWithWitnessHelper(voter, tokens, ids, allocs);
     }
 
     /**

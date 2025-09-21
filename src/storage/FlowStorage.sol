@@ -104,6 +104,16 @@ interface FlowTypes {
         uint32 PERCENTAGE_SCALE;
         // The address of the address that can connect the pool
         address connectPoolAdmin;
+        /**
+         * @notice Commitment of the last allocation for (strategy, allocationKey).
+         * @dev commit = keccak256(abi.encode(canonical(weight, recipientIds[], percentAllocations[])))
+         * Canonical means sorted by recipientId asc. The contract canonicalizes both when verifying and when storing.
+         *
+         * First-time migration from legacy storage: if commit is zero but legacy
+         * fs.allocations[strategy][key] exists, the code derives the previous state on-the-fly
+         * (no separate migration needed).
+         */
+        mapping(address => mapping(uint256 => bytes32)) allocCommit;
     }
 }
 
@@ -116,7 +126,7 @@ contract FlowStorageV1 is FlowTypes {
     Storage public fs;
 
     // gap so that we can use the same storage layout
-    uint256[100] private __gap;
+    uint256[99] private __gap;
 
     /// The member units to assign to each recipient of the baseline salary pool
     /// @dev Heed warning above

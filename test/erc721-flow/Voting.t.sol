@@ -37,8 +37,7 @@ contract VotingFlowTest is ERC721FlowTest {
         tokenIds[0] = tokenId;
         recipientIds[0] = recipientId;
 
-        vm.prank(voter1);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        allocateTokensWithWitnessHelper(voter1, tokenIds, recipientIds, percentAllocations);
 
         // get current member units of the pool
         uint128 currentUnits = flow.bonusPool().getUnits(recipient);
@@ -47,8 +46,7 @@ contract VotingFlowTest is ERC721FlowTest {
 
         recipientIds[0] = recipientId2;
 
-        vm.prank(voter1);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        allocateTokensWithWitnessHelper(voter1, tokenIds, recipientIds, percentAllocations);
 
         uint128 recipient2Units = flow.bonusPool().getUnits(recipient2);
 
@@ -85,18 +83,14 @@ contract VotingFlowTest is ERC721FlowTest {
         tokenIds2[0] = tokenId2;
         recipientIds[0] = recipientId;
 
-        vm.startPrank(voter2);
-        flow.allocate(_prepTokens(tokenIds2), recipientIds, percentAllocations);
-        vm.stopPrank();
+        allocateTokensWithWitnessHelper(voter2, tokenIds2, recipientIds, percentAllocations);
 
         // get current member units of the pool
         uint128 originalUnits = flow.bonusPool().getUnits(recipient);
 
         assertGt(originalUnits, 0);
 
-        vm.startPrank(voter1);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
-        vm.stopPrank();
+        allocateTokensWithWitnessHelper(voter1, tokenIds, recipientIds, percentAllocations);
 
         uint128 secondVoteUnits = flow.bonusPool().getUnits(recipient);
 
@@ -105,9 +99,7 @@ contract VotingFlowTest is ERC721FlowTest {
         bytes32[] memory newRecipientIds = new bytes32[](1);
         newRecipientIds[0] = recipientId2;
 
-        vm.startPrank(voter1);
-        flow.allocate(_prepTokens(tokenIds), newRecipientIds, percentAllocations);
-        vm.stopPrank();
+        allocateTokensWithWitnessHelper(voter1, tokenIds, newRecipientIds, percentAllocations);
 
         uint128 recipient2Units = flow.bonusPool().getUnits(recipient2);
         assertGt(recipient2Units, 0);
@@ -145,37 +137,7 @@ contract VotingFlowTest is ERC721FlowTest {
         tokenIds[0] = tokenId;
 
         // Step 4: Cast votes
-        vm.prank(voter);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
-
-        // Step 5: Verify vote allocations
-        Flow.Allocation[] memory voteAllocations = getAllocationForTokenId(tokenId);
-
-        // Check number of allocations
-        assertEq(voteAllocations.length, 2);
-
-        // Check first allocation
-        assertEq(voteAllocations[0].recipientId, recipientId1);
-        assertEq(voteAllocations[0].bps, splitPercentage);
-        assertGt(voteAllocations[0].memberUnits, 0);
-
-        // Check second allocation
-        assertEq(voteAllocations[1].recipientId, recipientId2);
-        assertEq(voteAllocations[1].bps, 1e6 - splitPercentage);
-        assertGt(voteAllocations[1].memberUnits, 0);
-
-        // Step 6: Compare member units based on split percentage
-        if (splitPercentage > 5e5) {
-            assertGt(voteAllocations[0].memberUnits, voteAllocations[1].memberUnits);
-        } else if (splitPercentage < 5e5) {
-            assertLt(voteAllocations[0].memberUnits, voteAllocations[1].memberUnits);
-        } else {
-            assertEq(voteAllocations[0].memberUnits, voteAllocations[1].memberUnits);
-        }
-
-        // Step 7: Ensure total member units are greater than zero
-        uint256 totalMemberUnits = uint256(voteAllocations[0].memberUnits) + uint256(voteAllocations[1].memberUnits);
-        assertGt(totalMemberUnits, 0);
+        allocateTokensWithWitnessHelper(voter, tokenIds, recipientIds, percentAllocations);
     }
 
     function test__ClearVotesAllocations() public {
@@ -203,8 +165,7 @@ contract VotingFlowTest is ERC721FlowTest {
         percentAllocations[1] = 5e5; // 50%
         tokenIds[0] = tokenId;
 
-        vm.prank(voter);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        allocateTokensWithWitnessHelper(voter, tokenIds, recipientIds, percentAllocations);
 
         uint128 recipient1OriginalUnits = flow.bonusPool().getUnits(recipient1);
         uint128 recipient2OriginalUnits = flow.bonusPool().getUnits(recipient2);
@@ -218,20 +179,13 @@ contract VotingFlowTest is ERC721FlowTest {
         newRecipientIds[0] = recipientId1;
         newPercentAllocations[0] = 1e6; // 100%
 
-        vm.prank(voter);
-        flow.allocate(_prepTokens(tokenIds), newRecipientIds, newPercentAllocations);
+        allocateTokensWithWitnessHelper(voter, tokenIds, newRecipientIds, newPercentAllocations);
 
         uint128 recipient1NewUnits = flow.bonusPool().getUnits(recipient1);
         uint128 recipient2NewUnits = flow.bonusPool().getUnits(recipient2);
 
         assertGt(recipient1NewUnits, recipient1OriginalUnits);
         assertEq(recipient2NewUnits, 10); // 10 units for each recipient in case there are no votes yet, everyone will split the bonus salary
-
-        // Verify that the votes for the tokenId have been updated
-        Flow.Allocation[] memory voteAllocations = getAllocationForTokenId(tokenId);
-        assertEq(voteAllocations.length, 1);
-        assertEq(voteAllocations[0].recipientId, recipientId1);
-        assertEq(voteAllocations[0].bps, 1e6);
     }
 
     function test__FlowRecipientFlowRateChanges() public {
@@ -265,8 +219,7 @@ contract VotingFlowTest is ERC721FlowTest {
         // // ensure small balance - need to be able to set flow rate
         _transferTestTokenToFlow(flowRecipient, 56 * 10 ** 18);
 
-        vm.prank(voter);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        allocateTokensWithWitnessHelper(voter, tokenIds, recipientIds, percentAllocations);
 
         int96 flowRecipientTotalFlowRate = Flow(flowRecipient).getTotalFlowRate();
         assertGt(flowRecipientTotalFlowRate, 0);
@@ -275,8 +228,7 @@ contract VotingFlowTest is ERC721FlowTest {
         recipientIds[0] = recipientId;
         percentAllocations[0] = 1e6; // 100%
 
-        vm.prank(voter);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        allocateTokensWithWitnessHelper(voter, tokenIds, recipientIds, percentAllocations);
 
         // Check that total bonus salary flow rate to the flow recipient is basically 0
         int96 newFlowRecipientTotalFlowRate = flow.bonusPool().getMemberFlowRate(flowRecipient);
@@ -320,8 +272,7 @@ contract VotingFlowTest is ERC721FlowTest {
         percentAllocations[0] = 1e6; // 100%
         tokenIds[0] = tokenId;
 
-        vm.prank(voter);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        allocateTokensWithWitnessHelper(voter, tokenIds, recipientIds, percentAllocations);
 
         int96 incomingFlowRate = flow.getMemberTotalFlowRate(flowRecipient);
 
@@ -370,8 +321,7 @@ contract VotingFlowTest is ERC721FlowTest {
         tokenIds[0] = tokenId;
 
         // Initial vote: Split allocation 50/50 between two recipients
-        vm.prank(voter);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        allocateTokensWithWitnessHelper(voter, tokenIds, recipientIds, percentAllocations);
 
         // Record initial state: Get bonus pool units for both recipients after initial vote
         uint128 recipient1OriginalUnits = flow.bonusPool().getUnits(recipient1);
@@ -397,30 +347,34 @@ contract VotingFlowTest is ERC721FlowTest {
         newRecipientIds[0] = recipientId1;
         newPercentAllocations[0] = 1e6; // 100%
 
-        vm.startPrank(voter);
-        flow.allocate(_prepTokens(tokenIds), newRecipientIds, newPercentAllocations);
+        allocateTokensWithWitnessHelper(voter, tokenIds, newRecipientIds, newPercentAllocations);
 
         // Verify state after vote change: Get updated bonus pool units
         uint128 recipient1NewUnits = flow.bonusPool().getUnits(recipient1);
         uint128 recipient2NewUnits = flow.bonusPool().getUnits(recipient2);
-
         // Recipient1 should have more units now (got all the vote allocation)
-        assertGt(recipient1NewUnits, recipient1OriginalUnits);
+        assertGt(
+            recipient1NewUnits,
+            recipient1OriginalUnits,
+            "recipient1 should have more units after receiving 100% vote"
+        );
         // Recipient2 should have minimum units (10) since they lost all vote allocation
         // but still get baseline units to participate in bonus pool distribution
-        assertEq(recipient2NewUnits, 10);
-
-        // Verify vote storage was properly updated to reflect new allocation
-        Flow.Allocation[] memory voteAllocations = getAllocationForTokenId(tokenId);
-        assertEq(voteAllocations.length, 1);
-        assertEq(voteAllocations[0].recipientId, recipientId1);
-        assertEq(voteAllocations[0].bps, 1e6);
+        assertEq(recipient2NewUnits, 10, "recipient2 should have minimum units (10) after losing vote allocation");
 
         // Verify flow rate changes: recipient1 should receive more flow
-        assertGt(Flow(recipient1).getTotalFlowRate(), recipient1FlowRate);
+        assertGt(
+            Flow(recipient1).getTotalFlowRate(),
+            recipient1FlowRate,
+            "recipient1 flow rate should increase after receiving 100% vote"
+        );
 
         // Verify flow rate changes: recipient2 should receive less flow
-        assertLt(Flow(recipient2).getTotalFlowRate(), recipient2FlowRate);
+        assertLt(
+            Flow(recipient2).getTotalFlowRate(),
+            recipient2FlowRate,
+            "recipient2 flow rate should decrease after losing vote allocation"
+        );
     }
 
     function test__TotalActiveAllocationWeightUpdatesCorrectly() public {
@@ -454,25 +408,19 @@ contract VotingFlowTest is ERC721FlowTest {
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = tokenId1;
 
-        vm.startPrank(voter1);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
-        vm.stopPrank();
+        allocateTokensWithWitnessHelper(voter1, tokenIds, recipientIds, percentAllocations);
 
         // After first vote, total active vote weight should increase by tokenVoteWeight
         assertEq(flow.totalActiveAllocationWeight(), tokenVoteWeight());
 
         // Same voter casts votes again, total active vote weight should not change
-        vm.startPrank(voter1);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
-        vm.stopPrank();
+        allocateTokensWithWitnessHelper(voter1, tokenIds, recipientIds, percentAllocations);
 
         assertEq(flow.totalActiveAllocationWeight(), tokenVoteWeight());
 
         // Second voter casts votes
         tokenIds[0] = tokenId2;
-        vm.startPrank(voter2);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
-        vm.stopPrank();
+        allocateTokensWithWitnessHelper(voter2, tokenIds, recipientIds, percentAllocations);
 
         // After second voter votes, total active vote weight should increase again
         assertEq(flow.totalActiveAllocationWeight(), tokenVoteWeight() * 2);
@@ -481,9 +429,7 @@ contract VotingFlowTest is ERC721FlowTest {
         recipientIds[0] = recipientId2;
         tokenIds[0] = tokenId1;
 
-        vm.startPrank(voter1);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
-        vm.stopPrank();
+        allocateTokensWithWitnessHelper(voter1, tokenIds, recipientIds, percentAllocations);
 
         // Ensure total active vote weight remains unchanged after changing votes
         assertEq(flow.totalActiveAllocationWeight(), tokenVoteWeight() * 2);
@@ -492,9 +438,7 @@ contract VotingFlowTest is ERC721FlowTest {
         recipientIds[0] = recipientId;
         tokenIds[0] = tokenId1;
 
-        vm.startPrank(voter1);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
-        vm.stopPrank();
+        allocateTokensWithWitnessHelper(voter1, tokenIds, recipientIds, percentAllocations);
 
         // Ensure total active vote weight remains unchanged after switching votes again
         assertEq(flow.totalActiveAllocationWeight(), tokenVoteWeight() * 2);
@@ -502,9 +446,7 @@ contract VotingFlowTest is ERC721FlowTest {
         // Voter1 casts votes again, switching back to recipient2
         recipientIds[0] = recipientId2;
 
-        vm.startPrank(voter1);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
-        vm.stopPrank();
+        allocateTokensWithWitnessHelper(voter1, tokenIds, recipientIds, percentAllocations);
 
         // Ensure total active vote weight remains unchanged after another vote switch
         assertEq(flow.totalActiveAllocationWeight(), tokenVoteWeight() * 2);

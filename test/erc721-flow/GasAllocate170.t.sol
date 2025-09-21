@@ -38,7 +38,10 @@ contract GasAllocate170Test is ERC721FlowTest {
 
         // First allocation (establishes previous allocations for the key)
         bytes[][] memory allocationData = _prepTokens(tokenIds);
-        flow.allocate(allocationData, recipientIds, percentAllocations);
+        bytes[][] memory witnesses = _buildWitnessesForStrategies(voter, allocationData, strategies);
+        flow.allocate(allocationData, witnesses, recipientIds, percentAllocations);
+        // update witness cache so the second call has the correct previous witness
+        _updateWitnessCacheForStrategies(voter, allocationData, strategies, recipientIds, percentAllocations);
 
         // Second allocation to the SAME key (tweak the split slightly)
         uint32[] memory percentAllocations2 = new uint32[](170);
@@ -48,18 +51,18 @@ contract GasAllocate170Test is ERC721FlowTest {
             percentAllocations2[1] += 1;
         }
 
-        // Measure only the second allocate gas (where optimization matters)
         vm.pauseGasMetering();
         allocationData = _prepTokens(tokenIds);
+        witnesses = _buildWitnessesForStrategies(voter, allocationData, strategies);
         vm.resumeGasMetering();
 
         uint256 gasBefore = gasleft();
-        flow.allocate(allocationData, recipientIds, percentAllocations2);
-        uint256 gasUsed = gasBefore - gasleft();
+        flow.allocate(allocationData, witnesses, recipientIds, percentAllocations2);
+        uint256 witnessGasUsed = gasBefore - gasleft();
 
         vm.pauseGasMetering();
         vm.stopPrank();
 
-        emit log_named_uint("2nd allocate(170 recipients) gas", gasUsed);
+        emit log_named_uint("Witness allocate(170 recipients) gas", witnessGasUsed);
     }
 }

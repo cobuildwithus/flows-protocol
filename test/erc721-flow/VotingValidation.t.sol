@@ -34,13 +34,22 @@ contract VotingValidationTest is ERC721FlowTest {
         vm.prank(voter1);
         bytes4 selector = bytes4(keccak256("RECIPIENTS_ALLOCATIONS_MISMATCH(uint256,uint256)"));
 
-        vm.expectRevert(abi.encodeWithSelector(selector, 1, 0));
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        allocateTokensWithWitnessHelper(
+            voter1,
+            tokenIds,
+            recipientIds,
+            percentAllocations,
+            abi.encodeWithSelector(selector, 1, 0)
+        );
 
         uint32[] memory percentAllocationsTwo = new uint32[](2);
-        vm.prank(voter1);
-        vm.expectRevert(abi.encodeWithSelector(selector, 1, 2));
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocationsTwo);
+        allocateTokensWithWitnessHelper(
+            voter1,
+            tokenIds,
+            recipientIds,
+            percentAllocationsTwo,
+            abi.encodeWithSelector(selector, 1, 2)
+        );
 
         // add new recipient
         address recipient2 = address(23);
@@ -52,15 +61,23 @@ contract VotingValidationTest is ERC721FlowTest {
         recipientIdsTwo[0] = recipientId;
         recipientIdsTwo[1] = recipientId2;
 
-        vm.expectRevert(IFlow.ALLOCATION_MUST_BE_POSITIVE.selector);
-        vm.prank(voter1);
-        flow.allocate(_prepTokens(tokenIds), recipientIdsTwo, percentAllocationsTwo);
+        allocateTokensWithWitnessHelper(
+            voter1,
+            tokenIds,
+            recipientIdsTwo,
+            percentAllocationsTwo,
+            abi.encodeWithSelector(IFlow.ALLOCATION_MUST_BE_POSITIVE.selector)
+        );
 
         percentAllocationsTwo[0] = 1e6;
         percentAllocationsTwo[1] = 1e6;
-        vm.prank(voter1);
-        vm.expectRevert(IFlow.INVALID_BPS_SUM.selector);
-        flow.allocate(_prepTokens(tokenIds), recipientIdsTwo, percentAllocationsTwo);
+        allocateTokensWithWitnessHelper(
+            voter1,
+            tokenIds,
+            recipientIdsTwo,
+            percentAllocationsTwo,
+            abi.encodeWithSelector(IFlow.INVALID_BPS_SUM.selector)
+        );
     }
 
     function test__InvalidRecipients() public {
@@ -81,9 +98,13 @@ contract VotingValidationTest is ERC721FlowTest {
         percentAllocations[0] = 1e6;
         tokenIds[0] = tokenId;
 
-        vm.prank(voter1);
-        vm.expectRevert(IFlow.TOO_FEW_RECIPIENTS.selector);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        allocateTokensWithWitnessHelper(
+            voter1,
+            tokenIds,
+            recipientIds,
+            percentAllocations,
+            abi.encodeWithSelector(IFlow.TOO_FEW_RECIPIENTS.selector)
+        );
 
         address recipient2 = address(4);
         bytes32 recipientId2 = keccak256(abi.encodePacked(recipient2));
@@ -96,9 +117,13 @@ contract VotingValidationTest is ERC721FlowTest {
         bytes32[] memory recipientIds2 = new bytes32[](1);
         recipientIds2[0] = recipientId2;
 
-        vm.prank(voter1);
-        vm.expectRevert(IFlow.NOT_APPROVED_RECIPIENT.selector);
-        flow.allocate(_prepTokens(tokenIds), recipientIds2, percentAllocations);
+        allocateTokensWithWitnessHelper(
+            voter1,
+            tokenIds,
+            recipientIds2,
+            percentAllocations,
+            abi.encodeWithSelector(IFlow.NOT_APPROVED_RECIPIENT.selector)
+        );
     }
 
     function test__RecipientInvalidId() public {
@@ -120,8 +145,12 @@ contract VotingValidationTest is ERC721FlowTest {
         tokenIds[0] = tokenId;
         recipientIds[0] = bytes32(type(uint256).max); // Use an invalid recipient ID
 
-        vm.prank(voter1);
-        vm.expectRevert(IFlow.INVALID_RECIPIENT_ID.selector);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        allocateTokensWithWitnessHelper(
+            voter1,
+            tokenIds,
+            recipientIds,
+            percentAllocations,
+            abi.encodeWithSelector(IFlow.INVALID_RECIPIENT_ID.selector)
+        );
     }
 }

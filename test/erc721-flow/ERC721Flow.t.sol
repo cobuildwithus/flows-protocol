@@ -13,6 +13,7 @@ import { IRewardPool } from "../../src/interfaces/IRewardPool.sol";
 import { IAllocationStrategy } from "../../src/interfaces/IAllocationStrategy.sol";
 import { IERC721Votes } from "../../src/interfaces/IERC721Votes.sol";
 import { IChainalysisSanctionsList } from "../../src/interfaces/external/chainalysis/IChainalysisSanctionsList.sol";
+import { WitnessCacheHelper } from "../helpers/WitnessCacheHelper.sol";
 
 import { ERC1967Proxy } from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import { ISuperfluid, ISuperToken, ISuperfluidPool } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
@@ -21,7 +22,7 @@ import { SuperfluidFrameworkDeployer } from "@superfluid-finance/ethereum-contra
 import { TestToken } from "@superfluid-finance/ethereum-contracts/contracts/utils/TestToken.sol";
 import { SuperToken } from "@superfluid-finance/ethereum-contracts/contracts/superfluid/SuperToken.sol";
 
-contract ERC721FlowTest is Test {
+contract ERC721FlowTest is Test, WitnessCacheHelper {
     SuperfluidFrameworkDeployer.Framework internal sf;
     SuperfluidFrameworkDeployer internal deployer;
     SuperToken internal superToken;
@@ -100,8 +101,66 @@ contract ERC721FlowTest is Test {
         return allocationData;
     }
 
-    function getAllocationForTokenId(uint256 tokenId) internal view returns (FlowTypes.Allocation[] memory) {
-        return flow.getAllocationsForKey(address(votingStrategyProxy), tokenId);
+    function allocateWithWitnessHelper(
+        address allocator,
+        bytes[][] memory allocationData,
+        bytes32[] memory recipientIds,
+        uint32[] memory percentAllocations
+    ) internal {
+        _allocateWithWitnessForStrategies(
+            allocator,
+            allocationData,
+            strategies,
+            address(flow),
+            recipientIds,
+            percentAllocations
+        );
+    }
+
+    function allocateWithWitnessHelper(
+        address allocator,
+        bytes[][] memory allocationData,
+        bytes32[] memory recipientIds,
+        uint32[] memory percentAllocations,
+        bytes memory expectedRevert
+    ) internal {
+        _allocateWithWitnessForStrategiesExpectRevert(
+            allocator,
+            allocationData,
+            strategies,
+            address(flow),
+            recipientIds,
+            percentAllocations,
+            expectedRevert
+        );
+    }
+
+    function allocateTokensWithWitnessHelper(
+        address allocator,
+        uint256[] memory tokenIds,
+        bytes32[] memory recipientIds,
+        uint32[] memory percentAllocations
+    ) internal {
+        bytes[][] memory allocationData = _prepTokens(tokenIds);
+        bytes[][] memory witnesses = _buildWitnessesForStrategies(allocator, allocationData, strategies);
+        vm.prank(allocator);
+        flow.allocate(allocationData, witnesses, recipientIds, percentAllocations);
+        _updateWitnessCacheForStrategies(allocator, allocationData, strategies, recipientIds, percentAllocations);
+    }
+
+    function allocateTokensWithWitnessHelper(
+        address allocator,
+        uint256[] memory tokenIds,
+        bytes32[] memory recipientIds,
+        uint32[] memory percentAllocations,
+        bytes memory expectedRevert
+    ) internal {
+        bytes[][] memory allocationData = _prepTokens(tokenIds);
+        bytes[][] memory witnesses = _buildWitnessesForStrategies(allocator, allocationData, strategies);
+        if (expectedRevert.length > 0) vm.expectRevert(expectedRevert);
+        vm.prank(allocator);
+        flow.allocate(allocationData, witnesses, recipientIds, percentAllocations);
+        _updateWitnessCacheForStrategies(allocator, allocationData, strategies, recipientIds, percentAllocations);
     }
 
     function tokenVoteWeight() internal view returns (uint256) {

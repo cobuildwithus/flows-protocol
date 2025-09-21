@@ -29,6 +29,9 @@ interface IFlowEvents {
         uint256 totalWeight
     );
 
+    /// @notice Emitted when an allocation commitment is updated for a strategy/key
+    event AllocationCommitted(address indexed strategy, uint256 indexed allocationKey, bytes32 commit, uint256 weight);
+
     /**
      * @dev Emitted when the manager reward flow rate percentage is updated
      * @param oldManagerRewardFlowRatePercent The old manager reward flow rate percentage
@@ -252,6 +255,9 @@ interface IFlow is IFlowEvents, IManagedFlow {
 
     /// @dev Reverts if recipient is sanctioned
     error SANCTIONED_RECIPIENT();
+
+    /// @dev Reverts if the provided previous allocation witness does not match the stored commitment
+    error INVALID_PREV_ALLOCATION();
 
     ///                                                          ///
     ///                         STRUCTS                          ///

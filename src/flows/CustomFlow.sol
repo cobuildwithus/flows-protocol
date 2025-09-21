@@ -45,40 +45,68 @@ contract CustomFlow is ICustomFlow, Flow {
     }
 
     /**
-     * @notice Cast a vote for a set of grant addresses.
-     * @param allocationData The allocation data to use. 2D array of bytes, where each inner array is the set of allocation data to be parsed for a given strategy.
-     * @param recipientIds The recpientIds of the grant recipients.
-     * @param percentAllocations The basis points of the allocation to be split with the recipients.
+     * @notice Cast a vote for a set of grant addresses, using commitment + witness.
+     * @param allocationData Per-strategy opaque data used to derive allocation keys (same shape as before).
+     * @param prevAllocationWitnesses A 2D array of ABI-encoded witnesses per key, same shape as allocationData.
+     *        Each witness MUST be bytes-encoded as: abi.encode(uint256 prevWeight, bytes32[] prevRecipientIds, uint32[] prevBps).
+     *        For the first call after upgrade (or a new key), you may pass empty bytes; the implementation
+     *        will derive previous allocations from legacy storage if present, otherwise assume none.
+     * @param recipientIds The new recipientIds for this allocation (applies to all keys in this call).
+     * @param percentAllocations The new BPS per recipient (applies to all keys in this call).
      */
     function allocate(
         bytes[][] calldata allocationData,
+        bytes[][] calldata prevAllocationWitnesses,
         bytes32[] calldata recipientIds,
         uint32[] calldata percentAllocations
     ) external nonReentrant {
         fs.validateAllocations(recipientIds, percentAllocations);
 
         if (allocationData.length != fs.strategies.length) revert ALLOCATION_LENGTH_MISMATCH();
+        if (prevAllocationWitnesses.length != allocationData.length) revert ALLOCATION_LENGTH_MISMATCH();
 
         uint256 totalFlowsToUpdate = 0;
         bool shouldUpdateFlowRate = false;
 
-        for (uint256 i = 0; i < fs.strategies.length; i++) {
+        for (uint256 i = 0; i < fs.strategies.length; ) {
             IAllocationStrategy strategy = fs.strategies[i];
-            for (uint256 j = 0; j < allocationData[i].length; j++) {
-                uint256 localKey = strategy.allocationKey(msg.sender, allocationData[i][j]);
+            if (prevAllocationWitnesses[i].length != allocationData[i].length) revert ALLOCATION_LENGTH_MISMATCH();
 
+            for (uint256 j = 0; j < allocationData[i].length; ) {
+                uint256 localKey = strategy.allocationKey(msg.sender, allocationData[i][j]);
                 if (!strategy.canAllocate(localKey, msg.sender)) revert NOT_ABLE_TO_ALLOCATE();
 
-                (uint256 flowsToUpdate, bool updateFlowRate) = _setAllocationForKey(
+                // Decode per-key previous allocation witness (if any)
+                bytes memory w = prevAllocationWitnesses[i][j];
+                uint256 prevWeight;
+                bytes32[] memory prevIds;
+                uint32[] memory prevBps;
+                if (w.length == 0) {
+                    prevWeight = 0;
+                    prevIds = new bytes32[](0);
+                    prevBps = new uint32[](0);
+                } else {
+                    (prevWeight, prevIds, prevBps) = abi.decode(w, (uint256, bytes32[], uint32[]));
+                }
+
+                (uint256 flowsToUpdate, bool updateFlowRate) = _applyAllocationWithWitness(
                     address(strategy),
                     localKey,
+                    prevIds,
+                    prevBps,
+                    prevWeight,
                     recipientIds,
-                    percentAllocations,
-                    msg.sender,
-                    strategy.currentWeight(localKey)
+                    percentAllocations
                 );
                 totalFlowsToUpdate += flowsToUpdate;
-                shouldUpdateFlowRate = shouldUpdateFlowRate || updateFlowRate;
+                if (updateFlowRate) shouldUpdateFlowRate = true;
+
+                unchecked {
+                    ++j;
+                }
+            }
+            unchecked {
+                ++i;
             }
         }
 

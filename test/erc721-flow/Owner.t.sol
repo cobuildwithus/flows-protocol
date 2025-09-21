@@ -113,7 +113,7 @@ contract OwnerFlowTest is ERC721FlowTest {
         vm.prank(tokenOwner);
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = tokenId;
-        CustomFlow(flow).allocate(_prepTokens(tokenIds), recipientIds, bps);
+        allocateTokensWithWitnessHelper(tokenOwner, tokenIds, recipientIds, bps);
 
         // Check updated flow rates
         int96 expectedManagerRewardFlowRate = int96(
@@ -148,8 +148,7 @@ contract OwnerFlowTest is ERC721FlowTest {
             uint32[] memory newBps = new uint32[](1);
             newBps[0] = flow.PERCENTAGE_SCALE(); // 100%
 
-            vm.prank(tokenOwner);
-            CustomFlow(flow).allocate(_prepTokens(tokenIds), newRecipientIds, newBps);
+            allocateTokensWithWitnessHelper(tokenOwner, tokenIds, newRecipientIds, newBps);
 
             // Remove the recipient
             vm.prank(manager);
@@ -208,7 +207,7 @@ contract OwnerFlowTest is ERC721FlowTest {
         vm.prank(tokenOwner);
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = tokenId;
-        CustomFlow(flow).allocate(_prepTokens(tokenIds), recipientIds, bps);
+        allocateTokensWithWitnessHelper(tokenOwner, tokenIds, recipientIds, bps);
 
         // Check that manager reward flow rate is equal to total flow rate
         assertEq(CustomFlow(flow).getManagerRewardPoolFlowRate(), CustomFlow(flow).getTotalFlowRate());
@@ -253,7 +252,7 @@ contract OwnerFlowTest is ERC721FlowTest {
         vm.prank(tokenOwner);
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = tokenId;
-        CustomFlow(flow).allocate(_prepTokens(tokenIds), recipientIds, bps);
+        allocateTokensWithWitnessHelper(tokenOwner, tokenIds, recipientIds, bps);
 
         // Check that manager reward flow rate is zero
         assertEq(CustomFlow(flow).getManagerRewardPoolFlowRate(), 0);
@@ -285,7 +284,7 @@ contract OwnerFlowTest is ERC721FlowTest {
         vm.prank(tokenOwner);
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = tokenId;
-        CustomFlow(flow).allocate(_prepTokens(tokenIds), recipientIds, bps);
+        allocateTokensWithWitnessHelper(tokenOwner, tokenIds, recipientIds, bps);
 
         // Set manager reward percentage to zero
         uint32 zeroManagerRewardPercent = 0; // 0%

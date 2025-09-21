@@ -101,8 +101,6 @@ contract ERC721FlowTest is Test, WitnessCacheHelper {
         return allocationData;
     }
 
-    
-
     function allocateWithWitnessHelper(
         address allocator,
         bytes[][] memory allocationData,

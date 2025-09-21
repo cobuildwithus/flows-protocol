@@ -54,7 +54,7 @@ contract CustomFlow is ICustomFlow, Flow {
      * @param recipientIds The new recipientIds for this allocation (applies to all keys in this call).
      * @param percentAllocations The new BPS per recipient (applies to all keys in this call).
      */
-    function allocateWithWitness(
+    function allocate(
         bytes[][] calldata allocationData,
         bytes[][] calldata prevAllocationWitnesses,
         bytes32[] calldata recipientIds,

@@ -191,10 +191,14 @@ contract SingleAllocatorFlowTestBase is Test, WitnessCacheHelper {
         bytes32[] memory recipientIds,
         uint32[] memory percentAllocations
     ) internal {
-        bytes[][] memory witnesses = _buildWitnessesForStrategy(allocator, allocationData, _strategyProxy);
-        vm.prank(allocator);
-        _flow.allocateWithWitness(allocationData, witnesses, recipientIds, percentAllocations);
-        _updateWitnessCacheForStrategy(allocator, allocationData, _strategyProxy, recipientIds, percentAllocations);
+        _allocateWithWitnessForStrategy(
+            allocator,
+            allocationData,
+            _strategyProxy,
+            address(_flow),
+            recipientIds,
+            percentAllocations
+        );
     }
 
     function allocateWithWitnessHelper(
@@ -204,12 +208,15 @@ contract SingleAllocatorFlowTestBase is Test, WitnessCacheHelper {
         uint32[] memory percentAllocations,
         bytes memory expectedRevert
     ) internal {
-        bytes[][] memory witnesses = allocationData.length == 0
-            ? _buildEmptyWitnesses(allocationData)
-            : _buildWitnessesForStrategy(allocator, allocationData, _strategyProxy);
-        if (expectedRevert.length > 0) vm.expectRevert(expectedRevert);
-        vm.prank(allocator);
-        _flow.allocateWithWitness(allocationData, witnesses, recipientIds, percentAllocations);
-        _updateWitnessCacheForStrategy(allocator, allocationData, _strategyProxy, recipientIds, percentAllocations);
+        if (allocationData.length == 0) allocationData = _buildEmptyWitnesses(allocationData);
+        _allocateWithWitnessForStrategyExpectRevert(
+            allocator,
+            allocationData,
+            _strategyProxy,
+            address(_flow),
+            recipientIds,
+            percentAllocations,
+            expectedRevert
+        );
     }
 }

@@ -107,10 +107,14 @@ contract ERC721FlowTest is Test, WitnessCacheHelper {
         bytes32[] memory recipientIds,
         uint32[] memory percentAllocations
     ) internal {
-        bytes[][] memory witnesses = _buildWitnessesForStrategies(allocator, allocationData, strategies);
-        vm.prank(allocator);
-        flow.allocateWithWitness(allocationData, witnesses, recipientIds, percentAllocations);
-        _updateWitnessCacheForStrategies(allocator, allocationData, strategies, recipientIds, percentAllocations);
+        _allocateWithWitnessForStrategies(
+            allocator,
+            allocationData,
+            strategies,
+            address(flow),
+            recipientIds,
+            percentAllocations
+        );
     }
 
     function allocateWithWitnessHelper(
@@ -120,11 +124,15 @@ contract ERC721FlowTest is Test, WitnessCacheHelper {
         uint32[] memory percentAllocations,
         bytes memory expectedRevert
     ) internal {
-        bytes[][] memory witnesses = _buildWitnessesForStrategies(allocator, allocationData, strategies);
-        if (expectedRevert.length > 0) vm.expectRevert(expectedRevert);
-        vm.prank(allocator);
-        flow.allocateWithWitness(allocationData, witnesses, recipientIds, percentAllocations);
-        _updateWitnessCacheForStrategies(allocator, allocationData, strategies, recipientIds, percentAllocations);
+        _allocateWithWitnessForStrategiesExpectRevert(
+            allocator,
+            allocationData,
+            strategies,
+            address(flow),
+            recipientIds,
+            percentAllocations,
+            expectedRevert
+        );
     }
 
     function allocateTokensWithWitnessHelper(
@@ -136,7 +144,7 @@ contract ERC721FlowTest is Test, WitnessCacheHelper {
         bytes[][] memory allocationData = _prepTokens(tokenIds);
         bytes[][] memory witnesses = _buildWitnessesForStrategies(allocator, allocationData, strategies);
         vm.prank(allocator);
-        flow.allocateWithWitness(allocationData, witnesses, recipientIds, percentAllocations);
+        flow.allocate(allocationData, witnesses, recipientIds, percentAllocations);
         _updateWitnessCacheForStrategies(allocator, allocationData, strategies, recipientIds, percentAllocations);
     }
 
@@ -151,7 +159,7 @@ contract ERC721FlowTest is Test, WitnessCacheHelper {
         bytes[][] memory witnesses = _buildWitnessesForStrategies(allocator, allocationData, strategies);
         if (expectedRevert.length > 0) vm.expectRevert(expectedRevert);
         vm.prank(allocator);
-        flow.allocateWithWitness(allocationData, witnesses, recipientIds, percentAllocations);
+        flow.allocate(allocationData, witnesses, recipientIds, percentAllocations);
         _updateWitnessCacheForStrategies(allocator, allocationData, strategies, recipientIds, percentAllocations);
     }
 

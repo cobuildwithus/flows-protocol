@@ -8,9 +8,9 @@ import { Test } from "forge-std/Test.sol";
  * @title WitnessCacheHelper
  * @dev Shared test helper for building and caching allocation witnesses across strategies.
  */
-// Minimal interface to call allocateWithWitness on flow contracts
-interface IAllocateWithWitness {
-    function allocateWithWitness(
+// Minimal interface to call allocate on flow contracts
+interface IFlowAllocate {
+    function allocate(
         bytes[][] calldata allocationData,
         bytes[][] calldata prevAllocationWitnesses,
         bytes32[] calldata recipientIds,
@@ -104,7 +104,7 @@ abstract contract WitnessCacheHelper is Test {
     ) internal {
         bytes[][] memory witnesses = _buildWitnessesForStrategies(allocator, allocationData, strategies);
         vm.prank(allocator);
-        IAllocateWithWitness(flowAddr).allocateWithWitness(allocationData, witnesses, recipientIds, percentAllocations);
+        IFlowAllocate(flowAddr).allocate(allocationData, witnesses, recipientIds, percentAllocations);
         _updateWitnessCacheForStrategies(allocator, allocationData, strategies, recipientIds, percentAllocations);
     }
 
@@ -120,7 +120,7 @@ abstract contract WitnessCacheHelper is Test {
         bytes[][] memory witnesses = _buildWitnessesForStrategies(allocator, allocationData, strategies);
         if (expectedRevert.length > 0) vm.expectRevert(expectedRevert);
         vm.prank(allocator);
-        IAllocateWithWitness(flowAddr).allocateWithWitness(allocationData, witnesses, recipientIds, percentAllocations);
+        IFlowAllocate(flowAddr).allocate(allocationData, witnesses, recipientIds, percentAllocations);
         _updateWitnessCacheForStrategies(allocator, allocationData, strategies, recipientIds, percentAllocations);
     }
 
@@ -175,7 +175,7 @@ abstract contract WitnessCacheHelper is Test {
     ) internal {
         bytes[][] memory witnesses = _buildWitnessesForStrategy(allocator, allocationData, strategyAddr);
         vm.prank(allocator);
-        IAllocateWithWitness(flowAddr).allocateWithWitness(allocationData, witnesses, recipientIds, percentAllocations);
+        IFlowAllocate(flowAddr).allocate(allocationData, witnesses, recipientIds, percentAllocations);
         _updateWitnessCacheForStrategy(allocator, allocationData, strategyAddr, recipientIds, percentAllocations);
     }
 
@@ -191,7 +191,7 @@ abstract contract WitnessCacheHelper is Test {
         bytes[][] memory witnesses = _buildWitnessesForStrategy(allocator, allocationData, strategyAddr);
         if (expectedRevert.length > 0) vm.expectRevert(expectedRevert);
         vm.prank(allocator);
-        IAllocateWithWitness(flowAddr).allocateWithWitness(allocationData, witnesses, recipientIds, percentAllocations);
+        IFlowAllocate(flowAddr).allocate(allocationData, witnesses, recipientIds, percentAllocations);
         _updateWitnessCacheForStrategy(allocator, allocationData, strategyAddr, recipientIds, percentAllocations);
     }
 }

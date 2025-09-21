@@ -157,8 +157,13 @@ library FlowAllocations {
             }
         }
         // weight changed => quorum-sensitive recompute (matches original logic)
-        if (prevWeight != newWeight && fs.bonusPoolQuorumBps > 0) {
-            shouldUpdateFlowRate = true;
+        if (fs.bonusPoolQuorumBps > 0) {
+            if (migratingFromLegacy) {
+                if (oldSumFloors != newWeight) shouldUpdateFlowRate = true;
+            } else if (oldCommit != bytes32(0)) {
+                if (prevWeight != newWeight) shouldUpdateFlowRate = true;
+            }
+            // isBrandNewKey still handled above
         }
 
         // --- merge/deltas ---

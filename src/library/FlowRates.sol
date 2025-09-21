@@ -388,7 +388,17 @@ library FlowRates {
             return;
         }
 
+        // Compute a hard upper bound for approval that does NOT trust the child.
+        // It matches the child’s own internal formula: buffer * multiplier (max 20) * (100+5)/100.
+        uint256 buf = fs.superToken.getBufferAmountByFlowRate(netIncrease);
+        // 20x maximum multiplier * 105% extra buffer, rounded up
+        uint256 maxApproval = Math.mulDiv(buf, 20 * (100 + EXTRA_BUFFER_PERCENT), 100, Math.Rounding.Up);
+
+        // Ask the child (trusted path today), then clamp
         uint256 approvalAmount = IFlow(childAddress).getRequiredBufferAmount(netIncrease);
+        if (approvalAmount > maxApproval) {
+            approvalAmount = maxApproval;
+        }
 
         // ensure the parent has enough balance to cover the safe approval amount
         bool insufficientBalance = fs.superToken.balanceOf(flowAddress) < approvalAmount;

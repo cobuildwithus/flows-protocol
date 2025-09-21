@@ -16,42 +16,6 @@ library FlowAllocations {
     using FlowPools for FlowTypes.Storage;
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    function setAllocation(
-        FlowTypes.Storage storage fs,
-        bytes32 recipientId,
-        uint32 bps,
-        address strategy,
-        uint256 allocationKey,
-        uint256 totalWeight,
-        address allocator
-    ) public returns (uint128 memberUnits, address recipientAddress, FlowTypes.RecipientType recipientType) {
-        recipientAddress = fs.recipients[recipientId].recipient;
-        recipientType = fs.recipients[recipientId].recipientType;
-        uint128 currentUnits = fs.bonusPool.getUnits(recipientAddress);
-
-        // double check for overflow before casting
-        // and scale back by 1e15
-        // per https://docs.superfluid.finance/docs/protocol/distributions/guides/pools#about-member-units
-        // gives someone with 1 vote at least 1e3 units to work with
-        uint256 weightForRecipient = _scaleAmountByPercentage(fs, totalWeight, bps);
-        uint256 scaledUnits = weightForRecipient / 1e15;
-        if (scaledUnits > type(uint128).max) revert IFlow.OVERFLOW();
-        uint128 newUnits = uint128(scaledUnits);
-
-        memberUnits = currentUnits + newUnits;
-
-        // update votes, track recipient, bps, and total member units assigned
-        fs.allocations[strategy][allocationKey].push(
-            FlowTypes.Allocation({
-                recipientId: recipientId,
-                bps: bps,
-                memberUnits: newUnits,
-                allocationWeight: weightForRecipient
-            })
-        );
-        fs.allocators[strategy][allocationKey] = allocator;
-    }
-
     /**
      * @notice Checks that the recipients and percentAllocations are valid
      * @param recipientIds The recipientIds of the grant recipients.
@@ -113,7 +77,10 @@ library FlowAllocations {
      * - using exact legacy memberUnits for deltas (no rounding drift).
      * - Computes new per-recipient units from strategy.currentWeight(key) and new BPS.
      * - Updates pool units by delta (one call per touched recipient).
-     * - Updates totalActiveAllocationWeight: subtract previous **sum-of-floors**, add **new strategy weight**.
+     * - Updates totalActiveAllocationWeight:
+     *   - if migrating from legacy storage, subtract previous sum-of-floors;
+     *   - otherwise, subtract the previous exact weight (from the witness);
+     *   - add the new strategy weight.
      * - Stores the new commitment.
      */
     function applyAllocationWithWitness(
@@ -280,10 +247,12 @@ library FlowAllocations {
             }
         }
 
-        // total active allocation weight delta (match original semantics):
-        // - subtract previous sum-of-floors (from legacy or from prev commit)
-        // - add new strategy weight
-        fs.totalActiveAllocationWeight = fs.totalActiveAllocationWeight - oldSumFloors + newWeight;
+        // total active allocation weight delta:
+        // - legacy -> commit migration: subtract old sum-of-floors
+        // - subsequent updates (commit -> commit): subtract previous exact weight
+        // - always add new strategy weight
+        uint256 prevComponent = migratingFromLegacy ? oldSumFloors : (oldCommit != bytes32(0) ? prevWeight : 0);
+        fs.totalActiveAllocationWeight = fs.totalActiveAllocationWeight - prevComponent + newWeight;
 
         // Store canonical commitment for the new state
         fs.allocCommit[strategy][allocationKey] = _hashAllocCanonical(newWeight, newIdsMem, newBpsMem);

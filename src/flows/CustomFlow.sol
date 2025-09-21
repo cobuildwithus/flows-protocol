@@ -45,47 +45,6 @@ contract CustomFlow is ICustomFlow, Flow {
     }
 
     /**
-     * @notice Cast a vote for a set of grant addresses.
-     * @param allocationData The allocation data to use. 2D array of bytes, where each inner array is the set of allocation data to be parsed for a given strategy.
-     * @param recipientIds The recpientIds of the grant recipients.
-     * @param percentAllocations The basis points of the allocation to be split with the recipients.
-     */
-    function allocate(
-        bytes[][] calldata allocationData,
-        bytes32[] calldata recipientIds,
-        uint32[] calldata percentAllocations
-    ) external nonReentrant {
-        fs.validateAllocations(recipientIds, percentAllocations);
-
-        if (allocationData.length != fs.strategies.length) revert ALLOCATION_LENGTH_MISMATCH();
-
-        uint256 totalFlowsToUpdate = 0;
-        bool shouldUpdateFlowRate = false;
-
-        for (uint256 i = 0; i < fs.strategies.length; i++) {
-            IAllocationStrategy strategy = fs.strategies[i];
-            for (uint256 j = 0; j < allocationData[i].length; j++) {
-                uint256 localKey = strategy.allocationKey(msg.sender, allocationData[i][j]);
-
-                if (!strategy.canAllocate(localKey, msg.sender)) revert NOT_ABLE_TO_ALLOCATE();
-
-                (uint256 flowsToUpdate, bool updateFlowRate) = _setAllocationForKey(
-                    address(strategy),
-                    localKey,
-                    recipientIds,
-                    percentAllocations,
-                    msg.sender,
-                    strategy.currentWeight(localKey)
-                );
-                totalFlowsToUpdate += flowsToUpdate;
-                shouldUpdateFlowRate = shouldUpdateFlowRate || updateFlowRate;
-            }
-        }
-
-        _afterAllocationSet(recipientIds, totalFlowsToUpdate, shouldUpdateFlowRate);
-    }
-
-    /**
      * @notice Cast a vote for a set of grant addresses, using commitment + witness.
      * @param allocationData Per-strategy opaque data used to derive allocation keys (same shape as before).
      * @param prevAllocationWitnesses A 2D array of ABI-encoded witnesses per key, same shape as allocationData.

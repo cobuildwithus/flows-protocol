@@ -149,8 +149,7 @@ contract RemoveRecipientsTest is ERC721FlowTest {
         vm.prank(address(this));
         nounsToken.mint(address(this), tokenId);
 
-        vm.prank(address(this));
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        allocateTokensWithWitnessHelper(address(this), tokenIds, recipientIds, percentAllocations);
 
         // Check initial member units
         uint128 initialUnits = flow.bonusPool().getUnits(recipient);
@@ -189,12 +188,13 @@ contract RemoveRecipientsTest is ERC721FlowTest {
         vm.prank(address(this));
         nounsToken.mint(address(this), tokenId);
 
-        vm.expectRevert(IFlow.NOT_APPROVED_RECIPIENT.selector);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
-
-        // Verify that no votes were cast
-        FlowTypes.Allocation[] memory votes = getAllocationForTokenId(tokenId);
-        assertEq(votes.length, 0);
+        allocateTokensWithWitnessHelper(
+            address(this),
+            tokenIds,
+            recipientIds,
+            percentAllocations,
+            abi.encodeWithSelector(IFlow.NOT_APPROVED_RECIPIENT.selector)
+        );
 
         // Verify that member units remain at 0
         uint128 finalUnits = flow.bonusPool().getUnits(recipient);
@@ -226,13 +226,7 @@ contract RemoveRecipientsTest is ERC721FlowTest {
         uint256[] memory tokenIds = new uint256[](1);
         tokenIds[0] = tokenId;
 
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
-
-        // Verify the vote was cast
-        FlowTypes.Allocation[] memory votes = getAllocationForTokenId(tokenId);
-        assertEq(votes.length, 1);
-        assertEq(votes[0].recipientId, recipientId1);
-        assertEq(votes[0].bps, 1e6);
+        allocateTokensWithWitnessHelper(address(this), tokenIds, recipientIds, percentAllocations);
 
         // Remove the first recipient
         vm.prank(flow.owner());
@@ -240,13 +234,7 @@ contract RemoveRecipientsTest is ERC721FlowTest {
 
         // Vote for the second recipient
         recipientIds[0] = recipientId2;
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
-
-        // Verify the new vote was cast
-        votes = getAllocationForTokenId(tokenId);
-        assertEq(votes.length, 1);
-        assertEq(votes[0].recipientId, recipientId2);
-        assertEq(votes[0].bps, 1e6);
+        allocateTokensWithWitnessHelper(address(this), tokenIds, recipientIds, percentAllocations);
 
         // Verify member units
         uint128 units1 = flow.bonusPool().getUnits(recipient1);

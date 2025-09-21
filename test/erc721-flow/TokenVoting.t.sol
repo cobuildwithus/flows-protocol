@@ -36,8 +36,7 @@ contract TokenVotingFlowTest is ERC721FlowTest {
         recipientIds[0] = recipientId;
         tokenIds[0] = tokenId;
 
-        vm.prank(voter1);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        allocateTokensWithWitnessHelper(voter1, tokenIds, recipientIds, percentAllocations);
 
         // get current member units of the pool
         uint128 currentUnits = flow.bonusPool().getUnits(recipient);
@@ -47,8 +46,7 @@ contract TokenVotingFlowTest is ERC721FlowTest {
         vm.prank(voter1);
         nounsToken.transferFrom(voter1, voter2, tokenId);
 
-        vm.prank(voter2);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        allocateTokensWithWitnessHelper(voter2, tokenIds, recipientIds, percentAllocations);
 
         uint128 newUnits = flow.bonusPool().getUnits(recipient);
 
@@ -74,8 +72,7 @@ contract TokenVotingFlowTest is ERC721FlowTest {
         recipientIds[0] = recipientId;
         tokenIds[0] = tokenId;
 
-        vm.prank(voter1);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        allocateTokensWithWitnessHelper(voter1, tokenIds, recipientIds, percentAllocations);
 
         // get current member units of the pool
         uint128 currentUnits = flow.bonusPool().getUnits(recipient);
@@ -86,9 +83,7 @@ contract TokenVotingFlowTest is ERC721FlowTest {
         twoTokenIds[0] = tokenId;
         twoTokenIds[1] = tokenId;
 
-        vm.startPrank(voter1);
-        flow.allocate(_prepTokens(twoTokenIds), recipientIds, percentAllocations);
-        vm.stopPrank();
+        allocateTokensWithWitnessHelper(voter1, twoTokenIds, recipientIds, percentAllocations);
 
         uint128 newUnits = flow.bonusPool().getUnits(recipient);
 
@@ -115,15 +110,18 @@ contract TokenVotingFlowTest is ERC721FlowTest {
         recipientIds[0] = recipientId;
         tokenIds[0] = tokenId;
 
-        vm.prank(voter1);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        allocateTokensWithWitnessHelper(voter1, tokenIds, recipientIds, percentAllocations);
 
         vm.prank(voter1);
         nounsToken.transferFrom(voter1, voter2, tokenId);
 
-        vm.prank(voter1);
-        vm.expectRevert(IFlow.NOT_ABLE_TO_ALLOCATE.selector);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        allocateTokensWithWitnessHelper(
+            voter1,
+            tokenIds,
+            recipientIds,
+            percentAllocations,
+            abi.encodeWithSelector(IFlow.NOT_ABLE_TO_ALLOCATE.selector)
+        );
     }
 
     function test__NotTokenOwner_MultiTokens() public {
@@ -149,14 +147,23 @@ contract TokenVotingFlowTest is ERC721FlowTest {
         tokenIds[1] = 1;
 
         vm.prank(voter1);
-        vm.expectRevert(IFlow.NOT_ABLE_TO_ALLOCATE.selector);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        allocateTokensWithWitnessHelper(
+            voter1,
+            tokenIds,
+            recipientIds,
+            percentAllocations,
+            abi.encodeWithSelector(IFlow.NOT_ABLE_TO_ALLOCATE.selector)
+        );
 
         vm.prank(voter1);
         nounsToken.transferFrom(voter1, voter2, tokenId);
 
-        vm.prank(voter1);
-        vm.expectRevert(IFlow.NOT_ABLE_TO_ALLOCATE.selector);
-        flow.allocate(_prepTokens(tokenIds), recipientIds, percentAllocations);
+        allocateTokensWithWitnessHelper(
+            voter1,
+            tokenIds,
+            recipientIds,
+            percentAllocations,
+            abi.encodeWithSelector(IFlow.NOT_ABLE_TO_ALLOCATE.selector)
+        );
     }
 }

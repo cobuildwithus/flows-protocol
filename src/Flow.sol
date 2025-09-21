@@ -201,6 +201,39 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         delete fs.allocations[strategy][allocationKey];
     }
 
+    // ========= Option C core: commitment + witness, delta updates (no per-recipient storage writes) =========
+    /**
+     * @dev Applies allocation deltas for a single (strategy, allocationKey).
+     * - Verifies the witness against the stored commitment (order-independent).
+     * - On first use for a key, migrates from legacy storage,
+     * - using exact legacy memberUnits for deltas (no rounding drift).
+     * - Computes new per-recipient units from strategy.currentWeight(key) and new BPS.
+     * - Updates pool units by delta (one call per touched recipient).
+     * - Updates totalActiveAllocationWeight: subtract previous **sum-of-floors**, add **new strategy weight**.
+     * - Stores the new commitment.
+     */
+    function _applyAllocationWithWitness(
+        address strategy,
+        uint256 allocationKey,
+        bytes32[] memory prevRecipientIds,
+        uint32[] memory prevBps,
+        uint256 prevWeight, // weight used to compute previous units (from last commit)
+        bytes32[] calldata newRecipientIds,
+        uint32[] calldata newBps
+    ) internal returns (uint256 childFlowsToUpdate, bool shouldUpdateFlowRate) {
+        (childFlowsToUpdate, shouldUpdateFlowRate) = fs.applyAllocationWithWitness(
+            _childFlows,
+            _childFlowsToUpdateFlowRate,
+            strategy,
+            allocationKey,
+            prevRecipientIds,
+            prevBps,
+            prevWeight,
+            newRecipientIds,
+            newBps
+        );
+    }
+
     /**
      * @notice Cast a vote for a set of grant addresses.
      * @param strategy The strategy that is allocating.
@@ -859,6 +892,15 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
+     * @notice Read-only commitment (hash) for an allocation key
+     * @dev commit = keccak256(abi.encode(canonical(weight, recipientIds, percentAllocations)))
+     * Canonicalized by recipientId asc.
+     */
+    function getAllocationCommitment(address strategy, uint256 allocationKey) external view returns (bytes32) {
+        return fs.allocCommit[strategy][allocationKey];
+    }
+
+    /**
      * @notice Returns the maximum safe outflow rate allowed by the contract.
      * @dev Calculates the highest outflow rate permitted, capped as a percentage of the current incoming Superfluid stream.
      *      This ensures the contract never streams out more than a set fraction of what it receives.
@@ -1024,16 +1066,6 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
      */
     function strategies() external view returns (IAllocationStrategy[] memory) {
         return fs.strategies;
-    }
-
-    /**
-     * @notice Retrieves the allocations for a given allocation key
-     * @param strategy The address of the allocation strategy
-     * @param allocationKey The allocation key
-     * @return Allocation[] The allocations for the given allocation key
-     */
-    function getAllocationsForKey(address strategy, uint256 allocationKey) external view returns (Allocation[] memory) {
-        return fs.allocations[strategy][allocationKey];
     }
 
     /**

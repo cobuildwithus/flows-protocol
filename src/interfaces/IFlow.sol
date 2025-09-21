@@ -253,6 +253,9 @@ interface IFlow is IFlowEvents, IManagedFlow {
     /// @dev Reverts if recipient is sanctioned
     error SANCTIONED_RECIPIENT();
 
+    /// @dev Reverts if the provided previous allocation witness does not match the stored commitment
+    error INVALID_PREV_ALLOCATION();
+
     ///                                                          ///
     ///                         STRUCTS                          ///
     ///                                                          ///

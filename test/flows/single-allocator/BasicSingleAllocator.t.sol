@@ -29,11 +29,8 @@ contract BasicSingleAllocator is SingleAllocatorFlowTestBase {
 
         bytes[][] memory allocData = _defaultAllocationData();
 
-        vm.prank(_allocator);
-        _flow.allocate(allocData, ids, bps);
+        allocateWithWitnessHelper(_allocator, allocData, ids, bps);
 
-        FlowTypes.Allocation[] memory stored = _flow.getAllocationsForKey(_strategyProxy, 0);
-        assertEq(stored.length, 2);
         assertEq(_flow.totalActiveAllocationWeight(), SingleAllocatorStrategy(_strategyProxy).VIRTUAL_WEIGHT());
     }
 
@@ -48,9 +45,13 @@ contract BasicSingleAllocator is SingleAllocatorFlowTestBase {
         ids[0] = id1;
         bytes[][] memory allocData = _defaultAllocationData();
 
-        vm.prank(_attacker);
-        vm.expectRevert(IFlow.NOT_ABLE_TO_ALLOCATE.selector);
-        _flow.allocate(allocData, ids, bps);
+        allocateWithWitnessHelper(
+            _attacker,
+            allocData,
+            ids,
+            bps,
+            abi.encodeWithSelector(IFlow.NOT_ABLE_TO_ALLOCATE.selector)
+        );
     }
 
     function testAllocatorChangeEffects() public {
@@ -66,15 +67,15 @@ contract BasicSingleAllocator is SingleAllocatorFlowTestBase {
         vm.prank(_manager);
         SingleAllocatorStrategy(_strategyProxy).changeAllocator(_newAllocator);
 
-        vm.prank(_allocator);
-        vm.expectRevert(IFlow.NOT_ABLE_TO_ALLOCATE.selector);
-        _flow.allocate(allocData, ids, bps);
+        allocateWithWitnessHelper(
+            _allocator,
+            allocData,
+            ids,
+            bps,
+            abi.encodeWithSelector(IFlow.NOT_ABLE_TO_ALLOCATE.selector)
+        );
 
-        vm.prank(_newAllocator);
-        _flow.allocate(allocData, ids, bps);
-
-        FlowTypes.Allocation[] memory stored = _flow.getAllocationsForKey(_strategyProxy, 0);
-        assertEq(stored.length, 1);
+        allocateWithWitnessHelper(_newAllocator, allocData, ids, bps);
     }
 
     function testTotalAllocationWeightView() public {
@@ -89,8 +90,7 @@ contract BasicSingleAllocator is SingleAllocatorFlowTestBase {
         ids[0] = id;
         bytes[][] memory allocData = _defaultAllocationData();
 
-        vm.prank(_allocator);
-        _flow.allocate(allocData, ids, bps);
+        allocateWithWitnessHelper(_allocator, allocData, ids, bps);
 
         assertEq(_flow.totalAllocationWeight(), 0);
     }
@@ -107,8 +107,12 @@ contract BasicSingleAllocator is SingleAllocatorFlowTestBase {
         // Make allocationData 0 length → mismatch with strategies length (1)
         bytes[][] memory badAllocData = new bytes[][](0);
 
-        vm.prank(_allocator);
-        vm.expectRevert(IFlow.ALLOCATION_LENGTH_MISMATCH.selector);
-        _flow.allocate(badAllocData, ids, bps);
+        allocateWithWitnessHelper(
+            _allocator,
+            badAllocData,
+            ids,
+            bps,
+            abi.encodeWithSelector(IFlow.ALLOCATION_LENGTH_MISMATCH.selector)
+        );
     }
 }

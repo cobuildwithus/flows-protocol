@@ -115,6 +115,7 @@ contract GasAllocateBaseForkNewFlowTest is Test, WitnessCacheHelper {
 
         // First allocation (establish previous commit)
         bytes[][] memory witnesses = _buildWitnessesForStrategy(manager, allocationData, stratProxy);
+        _sortAllocPairs(recipientIds, percentAllocations);
         vm.prank(manager);
         CustomFlow(flowProxy).allocate(allocationData, witnesses, recipientIds, percentAllocations);
         _updateWitnessCacheForStrategy(manager, allocationData, stratProxy, recipientIds, percentAllocations);
@@ -133,6 +134,7 @@ contract GasAllocateBaseForkNewFlowTest is Test, WitnessCacheHelper {
 
         uint256 gasBefore = gasleft();
         vm.prank(manager);
+        _sortAllocPairs(recipientIds, percentAllocations2);
         CustomFlow(flowProxy).allocate(allocationData, witnesses, recipientIds, percentAllocations2);
         uint256 gasUsed1 = gasBefore - gasleft();
         _updateWitnessCacheForStrategy(manager, allocationData, stratProxy, recipientIds, percentAllocations2);
@@ -153,6 +155,7 @@ contract GasAllocateBaseForkNewFlowTest is Test, WitnessCacheHelper {
 
         gasBefore = gasleft();
         vm.prank(manager);
+        _sortAllocPairs(recipientIds, percentAllocations3);
         CustomFlow(flowProxy).allocate(allocationData, witnesses, recipientIds, percentAllocations3);
         uint256 gasUsed2 = gasBefore - gasleft();
 

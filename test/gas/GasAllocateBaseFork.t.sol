@@ -42,6 +42,17 @@ contract GasAllocateBaseForkTest is Test {
 
         bytes[][] memory prevAllocationWitnesses = new bytes[][](1);
         prevAllocationWitnesses[0] = new bytes[](1);
+        // Normalize witness to sorted ids/bps as required by FlowAllocations
+        {
+            (uint256 w, bytes32[] memory ids, uint32[] memory bps) = abi.decode(
+                prevWitness,
+                (uint256, bytes32[], uint32[])
+            );
+            if (ids.length > 1) {
+                _qsortPairs(ids, bps, int256(0), int256(ids.length - 1));
+            }
+            prevWitness = abi.encode(w, ids, bps);
+        }
         prevAllocationWitnesses[0][0] = prevWitness;
 
         // Compute expected commit from provided witness and roll fork if needed
@@ -86,6 +97,15 @@ contract GasAllocateBaseForkTest is Test {
 
         vm.pauseGasMetering();
         vm.resumeGasMetering();
+
+        // Ensure sorted & unique, as required by FlowAllocations
+        {
+            // sort ids/bps in tandem by ids asc
+            require(recipientIds.length == percentAllocations.length, "ids/bps mismatch");
+            if (recipientIds.length > 1) {
+                _qsortPairs(recipientIds, percentAllocations, int256(0), int256(recipientIds.length - 1));
+            }
+        }
 
         uint256 gasBefore = gasleft();
         bool ok;
@@ -145,5 +165,23 @@ contract GasAllocateBaseForkTest is Test {
         }
         if (lo < j) _qsort(ids, bps, lo, j);
         if (i < hi) _qsort(ids, bps, i, hi);
+    }
+
+    function _qsortPairs(bytes32[] memory ids, uint32[] memory bps, int256 lo, int256 hi) private pure {
+        int256 i = lo;
+        int256 j = hi;
+        bytes32 p = ids[uint256(lo + (hi - lo) / 2)];
+        while (i <= j) {
+            while (ids[uint256(i)] < p) i++;
+            while (ids[uint256(j)] > p) j--;
+            if (i <= j) {
+                (ids[uint256(i)], ids[uint256(j)]) = (ids[uint256(j)], ids[uint256(i)]);
+                (bps[uint256(i)], bps[uint256(j)]) = (bps[uint256(j)], bps[uint256(i)]);
+                i++;
+                j--;
+            }
+        }
+        if (lo < j) _qsortPairs(ids, bps, lo, j);
+        if (i < hi) _qsortPairs(ids, bps, i, hi);
     }
 }

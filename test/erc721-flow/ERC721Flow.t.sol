@@ -143,6 +143,7 @@ contract ERC721FlowTest is Test, WitnessCacheHelper {
     ) internal {
         bytes[][] memory allocationData = _prepTokens(tokenIds);
         bytes[][] memory witnesses = _buildWitnessesForStrategies(allocator, allocationData, strategies);
+        _sortAllocPairs(recipientIds, percentAllocations);
         vm.prank(allocator);
         flow.allocate(allocationData, witnesses, recipientIds, percentAllocations);
         _updateWitnessCacheForStrategies(allocator, allocationData, strategies, recipientIds, percentAllocations);
@@ -157,6 +158,7 @@ contract ERC721FlowTest is Test, WitnessCacheHelper {
     ) internal {
         bytes[][] memory allocationData = _prepTokens(tokenIds);
         bytes[][] memory witnesses = _buildWitnessesForStrategies(allocator, allocationData, strategies);
+        _sortAllocPairs(recipientIds, percentAllocations);
         if (expectedRevert.length > 0) vm.expectRevert(expectedRevert);
         vm.prank(allocator);
         flow.allocate(allocationData, witnesses, recipientIds, percentAllocations);

@@ -71,6 +71,31 @@ abstract contract WitnessCacheHelper is Test {
         return witnesses;
     }
 
+    // Sort ids and bps in tandem by ids asc
+    function _sortAllocPairs(bytes32[] memory ids, uint32[] memory bps) internal pure {
+        // If lengths mismatch or trivial length, skip sorting and let contract handle validation
+        if (ids.length != bps.length || ids.length < 2) return;
+        _qsortPairs(ids, bps, int256(0), int256(ids.length - 1));
+    }
+
+    function _qsortPairs(bytes32[] memory ids, uint32[] memory bps, int256 lo, int256 hi) private pure {
+        int256 i = lo;
+        int256 j = hi;
+        bytes32 p = ids[uint256(lo + (hi - lo) / 2)];
+        while (i <= j) {
+            while (ids[uint256(i)] < p) i++;
+            while (ids[uint256(j)] > p) j--;
+            if (i <= j) {
+                (ids[uint256(i)], ids[uint256(j)]) = (ids[uint256(j)], ids[uint256(i)]);
+                (bps[uint256(i)], bps[uint256(j)]) = (bps[uint256(j)], bps[uint256(i)]);
+                i++;
+                j--;
+            }
+        }
+        if (lo < j) _qsortPairs(ids, bps, lo, j);
+        if (i < hi) _qsortPairs(ids, bps, i, hi);
+    }
+
     function _updateWitnessCacheForStrategies(
         address allocator,
         bytes[][] memory allocationData,
@@ -102,6 +127,7 @@ abstract contract WitnessCacheHelper is Test {
         bytes32[] memory recipientIds,
         uint32[] memory percentAllocations
     ) internal {
+        _sortAllocPairs(recipientIds, percentAllocations);
         bytes[][] memory witnesses = _buildWitnessesForStrategies(allocator, allocationData, strategies);
         vm.prank(allocator);
         IFlowAllocate(flowAddr).allocate(allocationData, witnesses, recipientIds, percentAllocations);
@@ -117,6 +143,7 @@ abstract contract WitnessCacheHelper is Test {
         uint32[] memory percentAllocations,
         bytes memory expectedRevert
     ) internal {
+        _sortAllocPairs(recipientIds, percentAllocations);
         bytes[][] memory witnesses = _buildWitnessesForStrategies(allocator, allocationData, strategies);
         if (expectedRevert.length > 0) vm.expectRevert(expectedRevert);
         vm.prank(allocator);
@@ -173,6 +200,7 @@ abstract contract WitnessCacheHelper is Test {
         bytes32[] memory recipientIds,
         uint32[] memory percentAllocations
     ) internal {
+        _sortAllocPairs(recipientIds, percentAllocations);
         bytes[][] memory witnesses = _buildWitnessesForStrategy(allocator, allocationData, strategyAddr);
         vm.prank(allocator);
         IFlowAllocate(flowAddr).allocate(allocationData, witnesses, recipientIds, percentAllocations);
@@ -188,6 +216,7 @@ abstract contract WitnessCacheHelper is Test {
         uint32[] memory percentAllocations,
         bytes memory expectedRevert
     ) internal {
+        _sortAllocPairs(recipientIds, percentAllocations);
         bytes[][] memory witnesses = _buildWitnessesForStrategy(allocator, allocationData, strategyAddr);
         if (expectedRevert.length > 0) vm.expectRevert(expectedRevert);
         vm.prank(allocator);

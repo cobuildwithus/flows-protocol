@@ -40,11 +40,6 @@ library FlowAllocations {
 
         // ensure recipients are not 0 address and allocations are > 0
         for (uint256 i = 0; i < recipientIds.length; i++) {
-            // Check for duplicate recipient IDs to prevent allocation lock-up
-            for (uint256 j = i + 1; j < recipientIds.length; j++) {
-                if (recipientIds[i] == recipientIds[j]) revert IFlow.DUPLICATE_RECIPIENT_ID();
-            }
-
             bytes32 recipientId = recipientIds[i];
             if (fs.recipients[recipientId].recipient == address(0)) revert IFlow.INVALID_RECIPIENT_ID();
             if (fs.recipients[recipientId].removed == true) revert IFlow.NOT_APPROVED_RECIPIENT();
@@ -280,7 +275,17 @@ library FlowAllocations {
         fs.totalActiveAllocationWeight = fs.totalActiveAllocationWeight - prevComponent + newWeight;
 
         // Store canonical commitment for the new state and emit commit-level event
-        bytes32 commit = _hashAllocCanonical(newWeight, newIdsMem, newBpsMem);
+        // Reuse the already-sorted newPairs to avoid an extra sort/allocation
+        bytes32[] memory idsSorted = new bytes32[](newPairs.length);
+        uint32[] memory bpsSorted = new uint32[](newPairs.length);
+        for (uint256 k; k < newPairs.length; ) {
+            idsSorted[k] = newPairs[k].id;
+            bpsSorted[k] = newPairs[k].bps;
+            unchecked {
+                ++k;
+            }
+        }
+        bytes32 commit = keccak256(abi.encode(newWeight, idsSorted, bpsSorted));
         fs.allocCommit[strategy][allocationKey] = commit;
         emit IFlowEvents.AllocationCommitted(strategy, allocationKey, commit, newWeight);
     }

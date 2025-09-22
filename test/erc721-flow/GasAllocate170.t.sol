@@ -39,21 +39,27 @@ contract GasAllocate170Test is ERC721FlowTest {
         // First allocation (establishes previous allocations for the key)
         bytes[][] memory allocationData = _prepTokens(tokenIds);
         bytes[][] memory witnesses = _buildWitnessesForStrategies(voter, allocationData, strategies);
+        _sortAllocPairs(recipientIds, percentAllocations);
         flow.allocate(allocationData, witnesses, recipientIds, percentAllocations);
         // update witness cache so the second call has the correct previous witness
         _updateWitnessCacheForStrategies(voter, allocationData, strategies, recipientIds, percentAllocations);
 
-        // Second allocation to the SAME key (tweak the split slightly)
+        // Second allocation to the SAME key: change every recipient while keeping total constant
         uint32[] memory percentAllocations2 = new uint32[](170);
-        for (uint256 i = 0; i < 170; i++) percentAllocations2[i] = percentAllocations[i];
-        if (percentAllocations2[0] > 0) {
-            percentAllocations2[0] -= 1;
-            percentAllocations2[1] += 1;
+        for (uint256 i = 0; i < 170; i++) {
+            uint32 prev = percentAllocations[i];
+            if (i % 2 == 0) {
+                percentAllocations2[i] = prev + 1;
+            } else {
+                percentAllocations2[i] = prev - 1;
+            }
         }
 
         vm.pauseGasMetering();
         allocationData = _prepTokens(tokenIds);
         witnesses = _buildWitnessesForStrategies(voter, allocationData, strategies);
+
+        _sortAllocPairs(recipientIds, percentAllocations2);
         vm.resumeGasMetering();
 
         uint256 gasBefore = gasleft();
@@ -64,5 +70,37 @@ contract GasAllocate170Test is ERC721FlowTest {
         vm.stopPrank();
 
         emit log_named_uint("Witness allocate(170 recipients) gas", witnessGasUsed);
+
+        // Third allocation to log a second gas measurement
+        // Update witness cache so the third call has the correct previous witness
+        _updateWitnessCacheForStrategies(voter, allocationData, strategies, recipientIds, percentAllocations2);
+
+        // Third allocation: again change every recipient relative to the second
+        uint32[] memory percentAllocations3 = new uint32[](170);
+        for (uint256 i = 0; i < 170; i++) {
+            uint32 prev = percentAllocations2[i];
+            if (i % 2 == 0) {
+                percentAllocations3[i] = prev + 1;
+            } else {
+                percentAllocations3[i] = prev - 1;
+            }
+        }
+
+        vm.startPrank(voter);
+        vm.pauseGasMetering();
+        allocationData = _prepTokens(tokenIds);
+        witnesses = _buildWitnessesForStrategies(voter, allocationData, strategies);
+
+        _sortAllocPairs(recipientIds, percentAllocations3);
+        vm.resumeGasMetering();
+
+        gasBefore = gasleft();
+        flow.allocate(allocationData, witnesses, recipientIds, percentAllocations3);
+        uint256 witnessGasUsed2 = gasBefore - gasleft();
+
+        vm.pauseGasMetering();
+        vm.stopPrank();
+
+        emit log_named_uint("Witness allocate(170 recipients) gas (second)", witnessGasUsed2);
     }
 }

@@ -26,10 +26,7 @@ library FlowAllocations {
         bytes32[] calldata recipientIds,
         uint32[] calldata percentAllocations
     ) public view {
-        // must have recipientIds
-        if (recipientIds.length < 1) {
-            revert IFlow.TOO_FEW_RECIPIENTS();
-        }
+        _assertSortedUnique(recipientIds);
 
         // recipientIds & percentAllocations must be equal length
         if (recipientIds.length != percentAllocations.length) {
@@ -40,11 +37,6 @@ library FlowAllocations {
 
         // ensure recipients are not 0 address and allocations are > 0
         for (uint256 i = 0; i < recipientIds.length; i++) {
-            // Check for duplicate recipient IDs to prevent allocation lock-up
-            for (uint256 j = i + 1; j < recipientIds.length; j++) {
-                if (recipientIds[i] == recipientIds[j]) revert IFlow.DUPLICATE_RECIPIENT_ID();
-            }
-
             bytes32 recipientId = recipientIds[i];
             if (fs.recipients[recipientId].recipient == address(0)) revert IFlow.INVALID_RECIPIENT_ID();
             if (fs.recipients[recipientId].removed == true) revert IFlow.NOT_APPROVED_RECIPIENT();
@@ -98,6 +90,9 @@ library FlowAllocations {
         uint256 scale = fs.PERCENTAGE_SCALE;
         uint256 newWeight = IAllocationStrategy(strategy).currentWeight(allocationKey); // on-chain source of truth
 
+        // New inputs must be strictly sorted and unique for canonical hashing and linear merge
+        _assertSortedUnique(newRecipientIds);
+
         // --- determine prior state: commitment or legacy migration ---
         bytes32 oldCommit = fs.allocCommit[strategy][allocationKey];
         FlowTypes.Allocation[] memory legacy = oldCommit == bytes32(0)
@@ -108,24 +103,11 @@ library FlowAllocations {
 
         if (oldCommit != bytes32(0)) {
             // Verify the provided previous witness against stored commitment (canonical, order-independent).
+            if (prevRecipientIds.length > 0) {
+                _assertSortedUniqueMemory(prevRecipientIds);
+            }
             if (_hashAllocCanonical(prevWeight, prevRecipientIds, prevBps) != oldCommit) {
                 revert IFlow.INVALID_PREV_ALLOCATION();
-            }
-        }
-
-        // --- copy new arrays once (reuse for hashing & computation) ---
-        bytes32[] memory newIdsMem = new bytes32[](newRecipientIds.length);
-        uint32[] memory newBpsMem = new uint32[](newBps.length);
-        for (uint256 idIndex; idIndex < newRecipientIds.length; ) {
-            newIdsMem[idIndex] = newRecipientIds[idIndex];
-            unchecked {
-                ++idIndex;
-            }
-        }
-        for (uint256 bpsIndex; bpsIndex < newBps.length; ) {
-            newBpsMem[bpsIndex] = newBps[bpsIndex];
-            unchecked {
-                ++bpsIndex;
             }
         }
 
@@ -142,14 +124,16 @@ library FlowAllocations {
             oldSumFloors = 0; // truly new
         }
         // new units + new sum-of-floors (not stored)
-        (_PairUnits[] memory newPairs, ) = _pairsUnitsFromComputed(newIdsMem, newBpsMem, newWeight, scale);
+        (_PairUnits[] memory newPairs, ) = _pairsUnitsFromComputedCalldata(newRecipientIds, newBps, newWeight, scale);
 
-        // --- sorting for O(n log n) + O(n) merge ---
-        _sortUnits(oldPairs);
-        _sortUnits(newPairs);
+        // --- sorting for merge ---
+        // Require witness arrays sorted/unique; sort only legacy-derived pairs.
+        if (migratingFromLegacy) {
+            _sortUnits(oldPairs);
+        }
 
         // --- new-key behavior (mirrors legacy: when there were previously no allocations for this key) ---
-        if (isBrandNewKey && newIdsMem.length > 0) {
+        if (isBrandNewKey && newRecipientIds.length > 0) {
             childFlowsToUpdate = 10;
             fs.setChildrenAsNeedingUpdates(_childFlows, _childFlowsToUpdateFlowRate, address(0));
             if (fs.bonusPoolQuorumBps > 0) {
@@ -280,7 +264,8 @@ library FlowAllocations {
         fs.totalActiveAllocationWeight = fs.totalActiveAllocationWeight - prevComponent + newWeight;
 
         // Store canonical commitment for the new state and emit commit-level event
-        bytes32 commit = _hashAllocCanonical(newWeight, newIdsMem, newBpsMem);
+        // Inputs are strictly sorted/unique in calldata; hash directly without sorting/copying
+        bytes32 commit = keccak256(abi.encode(newWeight, newRecipientIds, newBps));
         fs.allocCommit[strategy][allocationKey] = commit;
         emit IFlowEvents.AllocationCommitted(strategy, allocationKey, commit, newWeight);
     }
@@ -295,6 +280,26 @@ library FlowAllocations {
         bytes32 id;
         uint128 units;
         uint32 bps; // kept for event emission
+    }
+
+    function _assertSortedUnique(bytes32[] calldata ids) internal pure {
+        if (ids.length == 0) revert IFlow.TOO_FEW_RECIPIENTS();
+        bytes32 prev = ids[0];
+        for (uint256 i = 1; i < ids.length; ++i) {
+            bytes32 cur = ids[i];
+            if (cur <= prev) revert IFlow.NOT_SORTED_OR_DUPLICATE();
+            prev = cur;
+        }
+    }
+
+    function _assertSortedUniqueMemory(bytes32[] memory ids) internal pure {
+        if (ids.length == 0) return; // empty witness allowed for brand-new keys
+        bytes32 prev = ids[0];
+        for (uint256 i = 1; i < ids.length; ++i) {
+            bytes32 cur = ids[i];
+            if (cur <= prev) revert IFlow.NOT_SORTED_OR_DUPLICATE();
+            prev = cur;
+        }
     }
 
     function _pairsBps(bytes32[] memory ids, uint32[] memory bps) internal pure returns (_PairBps[] memory pairs) {
@@ -325,6 +330,23 @@ library FlowAllocations {
             unchecked {
                 ++i;
             }
+        }
+    }
+
+    function _pairsUnitsFromComputedCalldata(
+        bytes32[] calldata ids,
+        uint32[] calldata bps,
+        uint256 weight,
+        uint256 scale
+    ) internal pure returns (_PairUnits[] memory pairs, uint256 sumFloors) {
+        require(ids.length == bps.length, "ids/bps mismatch");
+        pairs = new _PairUnits[](ids.length);
+        for (uint256 i; i < ids.length; ++i) {
+            uint256 w = Math.mulDiv(weight, bps[i], scale);
+            sumFloors += w;
+            uint256 u = w / 1e15;
+            if (u > type(uint128).max) revert IFlow.OVERFLOW();
+            pairs[i] = _PairUnits({ id: ids[i], units: uint128(u), bps: bps[i] });
         }
     }
 
@@ -414,17 +436,8 @@ library FlowAllocations {
         bytes32[] memory ids,
         uint32[] memory bps
     ) internal pure returns (bytes32) {
-        _PairBps[] memory pairsBps = _pairsBps(ids, bps);
-        _sortBps(pairsBps);
-        bytes32[] memory ids2 = new bytes32[](pairsBps.length);
-        uint32[] memory bps2 = new uint32[](pairsBps.length);
-        for (uint256 k; k < pairsBps.length; ) {
-            ids2[k] = pairsBps[k].id;
-            bps2[k] = pairsBps[k].bps;
-            unchecked {
-                ++k;
-            }
-        }
-        return keccak256(abi.encode(weight, ids2, bps2));
+        if (ids.length != bps.length) revert IFlow.ARRAY_LENGTH_MISMATCH();
+        // Inputs must already be sorted and unique in ascending order
+        return keccak256(abi.encode(weight, ids, bps));
     }
 }

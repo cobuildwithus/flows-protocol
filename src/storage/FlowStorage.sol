@@ -46,6 +46,15 @@ interface FlowTypes {
         RecipientMetadata metadata;
     }
 
+    // Input shape for adding flow recipients in bulk
+    struct FlowRecipientInput {
+        bytes32 id;
+        RecipientMetadata metadata;
+        address flowManager;
+        address managerRewardPool;
+        IAllocationStrategy[] strategies;
+    }
+
     struct Storage {
         /// The proportion of the total flow rate (minus rewards) that is allocated to the baseline salary pool in BPS
         uint32 baselinePoolFlowRatePercent;

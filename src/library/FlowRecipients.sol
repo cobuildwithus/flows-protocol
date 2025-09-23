@@ -172,7 +172,7 @@ library FlowRecipients {
         FlowTypes.RecipientMetadata[] calldata metadatas,
         uint128 baselineUnits,
         uint128 bonusUnits
-    ) external returns (address[] memory addedAddrs) {
+    ) public returns (address[] memory addedAddrs) {
         uint256 n = recipientIds.length;
         if (n == 0) revert IFlow.TOO_FEW_RECIPIENTS();
         if (recipients.length != n || metadatas.length != n) revert IFlow.ARRAY_LENGTH_MISMATCH();
@@ -225,7 +225,7 @@ library FlowRecipients {
         EnumerableSet.AddressSet storage _childFlows,
         EnumerableSet.AddressSet storage _childFlowsToUpdateFlowRate,
         bytes32[] calldata recipientIds
-    ) external {
+    ) public {
         uint256 n = recipientIds.length;
         if (n == 0) revert IFlow.TOO_FEW_RECIPIENTS();
 

@@ -134,6 +134,103 @@ contract AddRecipientsTest is ERC721FlowTest {
         assertEq(storedRecipient2.metadata.title, metadata2.title);
     }
 
+    function testBulkAddRecipients() public {
+        address recipient1 = address(0x111);
+        address recipient2 = address(0x222);
+        bytes32 id1 = keccak256(abi.encodePacked(recipient1));
+        bytes32 id2 = keccak256(abi.encodePacked(recipient2));
+
+        FlowTypes.RecipientMetadata[] memory metas = new FlowTypes.RecipientMetadata[](2);
+        metas[0] = FlowTypes.RecipientMetadata("R1", "D1", "ipfs://1", "T1", "https://r1");
+        metas[1] = FlowTypes.RecipientMetadata("R2", "D2", "ipfs://2", "T2", "https://r2");
+
+        bytes32[] memory ids = new bytes32[](2);
+        ids[0] = id1;
+        ids[1] = id2;
+        address[] memory recips = new address[](2);
+        recips[0] = recipient1;
+        recips[1] = recipient2;
+
+        vm.startPrank(flow.owner());
+        vm.expectEmit(true, true, true, true);
+        emit IFlowEvents.RecipientCreated(
+            id1,
+            FlowTypes.FlowRecipient({
+                recipientType: FlowTypes.RecipientType.ExternalAccount,
+                removed: false,
+                recipient: recipient1,
+                metadata: metas[0]
+            }),
+            flow.owner()
+        );
+        vm.expectEmit(true, true, true, true);
+        emit IFlowEvents.RecipientCreated(
+            id2,
+            FlowTypes.FlowRecipient({
+                recipientType: FlowTypes.RecipientType.ExternalAccount,
+                removed: false,
+                recipient: recipient2,
+                metadata: metas[1]
+            }),
+            flow.owner()
+        );
+
+        (bytes32[] memory returnedIds, address[] memory addedAddrs) = flow.bulkAddRecipients(ids, recips, metas);
+        vm.stopPrank();
+
+        assertEq(returnedIds.length, 2);
+        assertEq(addedAddrs.length, 2);
+        assertEq(flow.activeRecipientCount(), 2);
+
+        // Baseline and bonus units assigned
+        uint128 baselineUnits1 = flow.baselinePool().getUnits(recipient1);
+        uint128 baselineUnits2 = flow.baselinePool().getUnits(recipient2);
+        assertEq(baselineUnits1, flow.BASELINE_MEMBER_UNITS());
+        assertEq(baselineUnits2, flow.BASELINE_MEMBER_UNITS());
+        assertEq(flow.bonusPool().getUnits(recipient1), 10);
+        assertEq(flow.bonusPool().getUnits(recipient2), 10);
+    }
+
+    function testBulkAddRecipients_ArrayLengthMismatch() public {
+        bytes32[] memory ids = new bytes32[](2);
+        ids[0] = keccak256(abi.encodePacked(address(0x1)));
+        ids[1] = keccak256(abi.encodePacked(address(0x2)));
+
+        address[] memory recips = new address[](1);
+        recips[0] = address(0x1);
+
+        FlowTypes.RecipientMetadata[] memory metas = new FlowTypes.RecipientMetadata[](2);
+        metas[0] = recipientMetadata;
+        metas[1] = recipientMetadata;
+
+        vm.prank(flow.owner());
+        vm.expectRevert(IFlow.ARRAY_LENGTH_MISMATCH.selector);
+        flow.bulkAddRecipients(ids, recips, metas);
+    }
+
+    function testBulkAddRecipients_TooFewRecipients() public {
+        bytes32[] memory ids = new bytes32[](0);
+        address[] memory recips = new address[](0);
+        FlowTypes.RecipientMetadata[] memory metas = new FlowTypes.RecipientMetadata[](0);
+
+        vm.prank(flow.owner());
+        vm.expectRevert(IFlow.TOO_FEW_RECIPIENTS.selector);
+        flow.bulkAddRecipients(ids, recips, metas);
+    }
+
+    function testBulkAddRecipients_NonManager() public {
+        bytes32[] memory ids = new bytes32[](1);
+        ids[0] = keccak256(abi.encodePacked(address(0x1)));
+        address[] memory recips = new address[](1);
+        recips[0] = address(0x1);
+        FlowTypes.RecipientMetadata[] memory metas = new FlowTypes.RecipientMetadata[](1);
+        metas[0] = recipientMetadata;
+
+        vm.prank(address(0xABC));
+        vm.expectRevert(IFlow.SENDER_NOT_MANAGER.selector);
+        flow.bulkAddRecipients(ids, recips, metas);
+    }
+
     function testBaselineMemberUnitsAfterAddingRecipients() public {
         address externalRecipient = address(0x123);
         bytes32 externalRecipientId = keccak256(abi.encodePacked(externalRecipient));

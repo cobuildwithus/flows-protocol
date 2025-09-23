@@ -195,6 +195,34 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
     }
 
     /**
+     * @notice Adds many EOA recipients in one transaction
+     * @dev Delegates logic to FlowRecipients library to minimize contract size
+     * @param recipientIds The IDs for the recipients. Must be unique and not already in use.
+     * @param recipients The EOA addresses to be added as approved recipients
+     * @param metadatas The metadata for each recipient
+     * @return bytes32[] The recipientIds of the newly created recipients
+     * @return address[] The addresses of the newly created recipients
+     */
+    function bulkAddRecipients(
+        bytes32[] calldata recipientIds,
+        address[] calldata recipients,
+        RecipientMetadata[] calldata metadatas
+    ) external onlyManager nonReentrant returns (bytes32[] memory, address[] memory) {
+        address[] memory addedAddrs = fs.bulkAddRecipients(
+            _childFlows,
+            _childFlowsToUpdateFlowRate,
+            address(this),
+            recipientIds,
+            recipients,
+            metadatas,
+            BASELINE_MEMBER_UNITS,
+            10
+        );
+
+        return (recipientIds, addedAddrs);
+    }
+
+    /**
      * @notice Adds a new Flow contract as a recipient
      * @dev This function creates a new Flow contract and adds it as a recipient
      * @param _recipientId The ID of the recipient. Must be unique and not already in use.
@@ -357,6 +385,15 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         emit RecipientRemoved(recipientAddress, recipientId);
 
         fs.removeFromPools(recipientAddress);
+        _setFlowRate(getTotalFlowRate());
+    }
+
+    /**
+     * @notice Removes many recipients in one transaction
+     * @param recipientIds The IDs of the recipients to remove
+     */
+    function bulkRemoveRecipients(bytes32[] calldata recipientIds) external onlyManager nonReentrant {
+        fs.bulkRemoveRecipients(_childFlows, _childFlowsToUpdateFlowRate, recipientIds);
         _setFlowRate(getTotalFlowRate());
     }
 

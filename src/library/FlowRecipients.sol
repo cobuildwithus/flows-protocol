@@ -66,7 +66,8 @@ library FlowRecipients {
 
         if (recipient == address(0)) revert IFlow.ADDRESS_ZERO();
         if (fs.recipientExists[recipient]) revert IFlow.RECIPIENT_ALREADY_EXISTS();
-        if (fs.recipients[recipientId].recipient != address(0)) revert IFlow.RECIPIENT_ALREADY_EXISTS();
+        FlowTypes.FlowRecipient storage prev = fs.recipients[recipientId];
+        if (prev.recipient != address(0) && !prev.removed) revert IFlow.RECIPIENT_ALREADY_EXISTS();
 
         fs.recipientExists[recipient] = true;
 
@@ -97,7 +98,8 @@ library FlowRecipients {
         FlowTypes.RecipientMetadata memory metadata
     ) public returns (bytes32) {
         if (fs.recipientExists[recipient]) revert IFlow.RECIPIENT_ALREADY_EXISTS();
-        if (fs.recipients[recipientId].recipient != address(0)) revert IFlow.RECIPIENT_ALREADY_EXISTS();
+        FlowTypes.FlowRecipient storage prev = fs.recipients[recipientId];
+        if (prev.recipient != address(0) && !prev.removed) revert IFlow.RECIPIENT_ALREADY_EXISTS();
 
         fs.recipients[recipientId] = FlowTypes.FlowRecipient({
             recipientType: FlowTypes.RecipientType.FlowContract,

@@ -331,6 +331,66 @@ contract FlowDeployer is IFlowDeployer, Ownable2StepUpgradeable, UUPSUpgradeable
         return ISuperfluid(h);
     }
 
+    // ---- Owner setters ----
+
+    /// @notice Update the shared `CustomFlow` implementation used for new deployments
+    /// @param newImplementation Address of the new `CustomFlow` implementation
+    function setCustomFlowImpl(address newImplementation) external onlyOwner {
+        if (newImplementation == address(0)) revert CustomFlowImplZeroAddress();
+        if (newImplementation.code.length == 0) revert CustomFlowImplNotContract(newImplementation);
+        address old = customFlowImpl;
+        customFlowImpl = newImplementation;
+        emit CustomFlowImplUpdated(old, newImplementation);
+    }
+
+    /// @notice Update the shared `SingleAllocatorStrategy` implementation used for new deployments
+    /// @param newImplementation Address of the new `SingleAllocatorStrategy` implementation
+    function setSingleAllocatorStrategyImpl(address newImplementation) external onlyOwner {
+        if (newImplementation == address(0)) revert StrategyImplZeroAddress();
+        if (newImplementation.code.length == 0) revert StrategyImplNotContract(newImplementation);
+        address old = singleAllocatorStrategyImpl;
+        singleAllocatorStrategyImpl = newImplementation;
+        emit SingleAllocatorStrategyImplUpdated(old, newImplementation);
+    }
+
+    /// @notice Update the fixed connect pool admin address applied to new flows
+    /// @param newConnectPoolAdmin New connect pool admin
+    function setConnectPoolAdmin(address newConnectPoolAdmin) external onlyOwner {
+        if (newConnectPoolAdmin == address(0)) revert ConnectPoolAdminZeroAddress();
+        address old = connectPoolAdmin;
+        connectPoolAdmin = newConnectPoolAdmin;
+        emit ConnectPoolAdminUpdated(old, newConnectPoolAdmin);
+    }
+
+    /// @notice Update the fixed manager reward pool address applied to new flows
+    /// @param newManagerRewardPool New manager reward pool address
+    function setManagerRewardPool(address newManagerRewardPool) external onlyOwner {
+        if (newManagerRewardPool == address(0)) revert ManagerRewardPoolZeroAddress();
+        address old = managerRewardPool;
+        managerRewardPool = newManagerRewardPool;
+        emit ManagerRewardPoolUpdated(old, newManagerRewardPool);
+    }
+
+    /// @notice Update the fixed manager reward pool flow rate percent (PPM scale)
+    /// @param newManagerRewardPoolFlowRatePercent New percent in PPM (<= 1e6)
+    function setManagerRewardFlowRatePercent(uint32 newManagerRewardPoolFlowRatePercent) external onlyOwner {
+        if (newManagerRewardPoolFlowRatePercent > 1_000_000) revert InvalidManagerRewardPercent();
+        uint32 old = managerRewardPoolFlowRatePercent;
+        managerRewardPoolFlowRatePercent = newManagerRewardPoolFlowRatePercent;
+        emit ManagerRewardFlowRatePercentUpdated(old, newManagerRewardPoolFlowRatePercent);
+    }
+
+    /// @notice Update the fixed sanctions oracle applied to new flows
+    /// @param newSanctionsOracle New sanctions oracle contract
+    function setSanctionsOracle(IChainalysisSanctionsList newSanctionsOracle) external onlyOwner {
+        if (address(newSanctionsOracle) == address(0)) revert SanctionsOracleZeroAddress();
+        if (address(newSanctionsOracle).code.length == 0)
+            revert SanctionsOracleNotContract(address(newSanctionsOracle));
+        address old = address(sanctionsOracle);
+        sanctionsOracle = newSanctionsOracle;
+        emit SanctionsOracleUpdated(old, address(newSanctionsOracle));
+    }
+
     // ---- UUPS ----
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 }

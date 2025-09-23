@@ -60,6 +60,27 @@ interface IFlowDeployer {
     );
     event WrapperRecorded(address indexed underlying, address indexed superToken);
 
+    /// @notice Emitted when the shared CustomFlow implementation is updated
+    event CustomFlowImplUpdated(address oldImplementation, address newImplementation);
+
+    /// @notice Emitted when the shared SingleAllocatorStrategy implementation is updated
+    event SingleAllocatorStrategyImplUpdated(address oldImplementation, address newImplementation);
+
+    /// @notice Emitted when the manager reward pool address is updated
+    event ManagerRewardPoolUpdated(address indexed oldManagerRewardPool, address indexed newManagerRewardPool);
+
+    /// @notice Emitted when the manager reward pool flow rate percent is updated
+    event ManagerRewardFlowRatePercentUpdated(
+        uint32 oldManagerRewardFlowRatePercent,
+        uint32 newManagerRewardFlowRatePercent
+    );
+
+    /// @notice Emitted when the sanctions oracle is updated
+    event SanctionsOracleUpdated(address oldOracle, address newOracle);
+
+    /// @notice Emitted when the connect pool admin is updated
+    event ConnectPoolAdminUpdated(address indexed oldConnectPoolAdmin, address indexed newConnectPoolAdmin);
+
     // ---- API ----
     function initialize(
         IResolver _resolver,
@@ -82,4 +103,28 @@ interface IFlowDeployer {
 
     /// NEW: record an already deployed non-canonical wrapper (owner only)
     function recordWrapper(address underlying, address superToken) external;
+
+    /// @notice Update the shared `CustomFlow` implementation used for new deployments
+    /// @param newImplementation Address of the new `CustomFlow` implementation
+    function setCustomFlowImpl(address newImplementation) external;
+
+    /// @notice Update the shared `SingleAllocatorStrategy` implementation used for new deployments
+    /// @param newImplementation Address of the new `SingleAllocatorStrategy` implementation
+    function setSingleAllocatorStrategyImpl(address newImplementation) external;
+
+    /// @notice Update the fixed connect pool admin address applied to new flows
+    /// @param newConnectPoolAdmin New connect pool admin
+    function setConnectPoolAdmin(address newConnectPoolAdmin) external;
+
+    /// @notice Update the fixed manager reward pool address applied to new flows
+    /// @param newManagerRewardPool New manager reward pool address
+    function setManagerRewardPool(address newManagerRewardPool) external;
+
+    /// @notice Update the fixed manager reward pool flow rate percent (PPM scale)
+    /// @param newManagerRewardPoolFlowRatePercent New percent in PPM (<= 1e6)
+    function setManagerRewardFlowRatePercent(uint32 newManagerRewardPoolFlowRatePercent) external;
+
+    /// @notice Update the fixed sanctions oracle applied to new flows
+    /// @param newSanctionsOracle New sanctions oracle contract
+    function setSanctionsOracle(IChainalysisSanctionsList newSanctionsOracle) external;
 }

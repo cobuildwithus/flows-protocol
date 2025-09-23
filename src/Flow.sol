@@ -194,44 +194,30 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         return (_recipientId, recipientAddress);
     }
 
-    /// @notice Adds many EOA recipients in one transaction
-    /// @dev Reuses existing invariants (sanctions, metadata validation, uniqueness)
+    /**
+     * @notice Adds many EOA recipients in one transaction
+     * @dev Delegates logic to FlowRecipients library to minimize contract size
+     * @param recipientIds The IDs for the recipients. Must be unique and not already in use.
+     * @param recipients The EOA addresses to be added as approved recipients
+     * @param metadatas The metadata for each recipient
+     * @return bytes32[] The recipientIds of the newly created recipients
+     * @return address[] The addresses of the newly created recipients
+     */
     function bulkAddRecipients(
         bytes32[] calldata recipientIds,
         address[] calldata recipients,
         RecipientMetadata[] calldata metadatas
     ) external onlyManager nonReentrant returns (bytes32[] memory, address[] memory) {
-        uint256 n = recipientIds.length;
-        if (n == 0) revert TOO_FEW_RECIPIENTS();
-        if (recipients.length != n || metadatas.length != n) revert ARRAY_LENGTH_MISMATCH();
-
-        address[] memory addedAddrs = new address[](n);
-        for (uint256 i = 0; i < n; ) {
-            (, address recipientAddr) = fs.addRecipient(recipientIds[i], recipients[i], metadatas[i]);
-
-            _requireNotSanctioned(recipients[i]);
-
-            emit RecipientCreated(recipientIds[i], fs.recipients[recipientIds[i]], msg.sender);
-            addedAddrs[i] = recipientAddr;
-
-            unchecked {
-                ++i;
-            }
-        }
-
-        // Snapshot once before any unit changes
-        _setChildrenAsNeedingUpdates(address(0));
-
-        // Grant baseline/bonus units
-        for (uint256 i = 0; i < n; ) {
-            fs.updateBaselineMemberUnits(addedAddrs[i], BASELINE_MEMBER_UNITS);
-            fs.updateBonusMemberUnits(addedAddrs[i], 10);
-            unchecked {
-                ++i;
-            }
-        }
-
-        _workOnChildFlowsToUpdate(10);
+        address[] memory addedAddrs = fs.bulkAddRecipients(
+            _childFlows,
+            _childFlowsToUpdateFlowRate,
+            address(this),
+            recipientIds,
+            recipients,
+            metadatas,
+            BASELINE_MEMBER_UNITS,
+            10
+        );
 
         return (recipientIds, addedAddrs);
     }
@@ -402,44 +388,12 @@ abstract contract Flow is IFlow, UUPSUpgradeable, Ownable2StepUpgradeable, Reent
         _setFlowRate(getTotalFlowRate());
     }
 
-    /// @notice Removes many recipients in one transaction
+    /**
+     * @notice Removes many recipients in one transaction
+     * @param recipientIds The IDs of the recipients to remove
+     */
     function bulkRemoveRecipients(bytes32[] calldata recipientIds) external onlyManager nonReentrant {
-        uint256 n = recipientIds.length;
-        if (n == 0) revert TOO_FEW_RECIPIENTS();
-
-        address[] memory removedAddrs = new address[](n);
-        RecipientType[] memory removedTypes = new RecipientType[](n);
-        for (uint256 i = 0; i < n; ) {
-            (address recipientAddr, RecipientType rType) = fs.removeRecipient(
-                _childFlows,
-                _childFlowsToUpdateFlowRate,
-                recipientIds[i]
-            );
-            removedAddrs[i] = recipientAddr;
-            removedTypes[i] = rType;
-
-            if (rType == RecipientType.FlowContract) {
-                fs.clearFlowRateSnapshot(recipientAddr);
-            }
-
-            unchecked {
-                ++i;
-            }
-        }
-
-        // Snapshot surviving children once before unit changes
-        _setChildrenAsNeedingUpdates(address(0));
-
-        // Zero units and emit events
-        for (uint256 i = 0; i < n; ) {
-            emit RecipientRemoved(removedAddrs[i], recipientIds[i]);
-            fs.removeFromPools(removedAddrs[i]);
-            unchecked {
-                ++i;
-            }
-        }
-
-        // Recompute + redistribute once
+        fs.bulkRemoveRecipients(_childFlows, _childFlowsToUpdateFlowRate, recipientIds);
         _setFlowRate(getTotalFlowRate());
     }
 

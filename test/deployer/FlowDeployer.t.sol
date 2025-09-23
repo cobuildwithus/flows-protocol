@@ -188,4 +188,169 @@ contract FlowDeployerTest is Test {
         assertTrue(s1 != address(0) && s2 != address(0));
         assertTrue(s1 != s2, "different allocator should create different strategy");
     }
+
+    function test_setCustomFlowImpl_updatesImplementation() public {
+        vm.startPrank(owner);
+        address oldImpl = flowDeployer.customFlowImpl();
+        address newImpl = address(new CustomFlow());
+
+        vm.expectEmit(false, false, false, true, address(flowDeployer));
+        emit IFlowDeployer.CustomFlowImplUpdated(oldImpl, newImpl);
+
+        flowDeployer.setCustomFlowImpl(newImpl);
+
+        vm.stopPrank();
+
+        assertEq(flowDeployer.customFlowImpl(), newImpl);
+    }
+
+    function test_setCustomFlowImpl_zeroAddress_reverts() public {
+        vm.startPrank(owner);
+        vm.expectRevert(IFlowDeployer.CustomFlowImplZeroAddress.selector);
+        flowDeployer.setCustomFlowImpl(address(0));
+        vm.stopPrank();
+    }
+
+    function test_setCustomFlowImpl_notContract_reverts() public {
+        vm.startPrank(owner);
+        address nonContract = address(0xB0B);
+        vm.expectRevert(abi.encodeWithSelector(IFlowDeployer.CustomFlowImplNotContract.selector, nonContract));
+        flowDeployer.setCustomFlowImpl(nonContract);
+        vm.stopPrank();
+    }
+
+    function test_setCustomFlowImpl_nonOwner_reverts() public {
+        address newImpl = address(new CustomFlow());
+        address caller = manager;
+        vm.startPrank(caller);
+        vm.expectRevert(bytes("Ownable: caller is not the owner"));
+        flowDeployer.setCustomFlowImpl(newImpl);
+        vm.stopPrank();
+    }
+
+    function test_setSingleAllocatorStrategyImpl_updatesImplementation() public {
+        vm.startPrank(owner);
+        address oldImpl = flowDeployer.singleAllocatorStrategyImpl();
+        address newImpl = address(new SingleAllocatorStrategy());
+
+        vm.expectEmit(false, false, false, true, address(flowDeployer));
+        emit IFlowDeployer.SingleAllocatorStrategyImplUpdated(oldImpl, newImpl);
+
+        flowDeployer.setSingleAllocatorStrategyImpl(newImpl);
+
+        vm.stopPrank();
+
+        assertEq(flowDeployer.singleAllocatorStrategyImpl(), newImpl);
+    }
+
+    function test_setSingleAllocatorStrategyImpl_zeroAddress_reverts() public {
+        vm.startPrank(owner);
+        vm.expectRevert(IFlowDeployer.StrategyImplZeroAddress.selector);
+        flowDeployer.setSingleAllocatorStrategyImpl(address(0));
+        vm.stopPrank();
+    }
+
+    function test_setSingleAllocatorStrategyImpl_notContract_reverts() public {
+        vm.startPrank(owner);
+        address nonContract = address(0xC0FFEE);
+        vm.expectRevert(abi.encodeWithSelector(IFlowDeployer.StrategyImplNotContract.selector, nonContract));
+        flowDeployer.setSingleAllocatorStrategyImpl(nonContract);
+        vm.stopPrank();
+    }
+
+    function test_setConnectPoolAdmin_updatesAdmin() public {
+        vm.startPrank(owner);
+        address oldAdmin = flowDeployer.connectPoolAdmin();
+        address newAdmin = address(0xC0FF);
+
+        vm.expectEmit(true, true, false, false, address(flowDeployer));
+        emit IFlowDeployer.ConnectPoolAdminUpdated(oldAdmin, newAdmin);
+
+        flowDeployer.setConnectPoolAdmin(newAdmin);
+
+        vm.stopPrank();
+
+        assertEq(flowDeployer.connectPoolAdmin(), newAdmin);
+    }
+
+    function test_setConnectPoolAdmin_zeroAddress_reverts() public {
+        vm.startPrank(owner);
+        vm.expectRevert(IFlowDeployer.ConnectPoolAdminZeroAddress.selector);
+        flowDeployer.setConnectPoolAdmin(address(0));
+        vm.stopPrank();
+    }
+
+    function test_setManagerRewardPool_updatesPool() public {
+        vm.startPrank(owner);
+        address oldPool = flowDeployer.managerRewardPool();
+        address newPool = address(0xFEED1234);
+
+        vm.expectEmit(true, true, false, false, address(flowDeployer));
+        emit IFlowDeployer.ManagerRewardPoolUpdated(oldPool, newPool);
+
+        flowDeployer.setManagerRewardPool(newPool);
+
+        vm.stopPrank();
+
+        assertEq(flowDeployer.managerRewardPool(), newPool);
+    }
+
+    function test_setManagerRewardPool_zeroAddress_reverts() public {
+        vm.startPrank(owner);
+        vm.expectRevert(IFlowDeployer.ManagerRewardPoolZeroAddress.selector);
+        flowDeployer.setManagerRewardPool(address(0));
+        vm.stopPrank();
+    }
+
+    function test_setManagerRewardFlowRatePercent_updatesPercent() public {
+        vm.startPrank(owner);
+        uint32 oldPercent = flowDeployer.managerRewardPoolFlowRatePercent();
+        uint32 newPercent = 250_000;
+
+        vm.expectEmit(false, false, false, true, address(flowDeployer));
+        emit IFlowDeployer.ManagerRewardFlowRatePercentUpdated(oldPercent, newPercent);
+
+        flowDeployer.setManagerRewardFlowRatePercent(newPercent);
+
+        vm.stopPrank();
+
+        assertEq(flowDeployer.managerRewardPoolFlowRatePercent(), newPercent);
+    }
+
+    function test_setManagerRewardFlowRatePercent_invalid_reverts() public {
+        vm.startPrank(owner);
+        vm.expectRevert(IFlowDeployer.InvalidManagerRewardPercent.selector);
+        flowDeployer.setManagerRewardFlowRatePercent(1_000_001);
+        vm.stopPrank();
+    }
+
+    function test_setSanctionsOracle_updatesOracle() public {
+        vm.startPrank(owner);
+        address oldOracle = address(flowDeployer.sanctionsOracle());
+        IChainalysisSanctionsList newOracle = new MockSanctionsOracle();
+
+        vm.expectEmit(false, false, false, true, address(flowDeployer));
+        emit IFlowDeployer.SanctionsOracleUpdated(oldOracle, address(newOracle));
+
+        flowDeployer.setSanctionsOracle(newOracle);
+
+        vm.stopPrank();
+
+        assertEq(address(flowDeployer.sanctionsOracle()), address(newOracle));
+    }
+
+    function test_setSanctionsOracle_zeroAddress_reverts() public {
+        vm.startPrank(owner);
+        vm.expectRevert(IFlowDeployer.SanctionsOracleZeroAddress.selector);
+        flowDeployer.setSanctionsOracle(IChainalysisSanctionsList(address(0)));
+        vm.stopPrank();
+    }
+
+    function test_setSanctionsOracle_notContract_reverts() public {
+        vm.startPrank(owner);
+        address nonContract = address(0xDEADBEEF);
+        vm.expectRevert(abi.encodeWithSelector(IFlowDeployer.SanctionsOracleNotContract.selector, nonContract));
+        flowDeployer.setSanctionsOracle(IChainalysisSanctionsList(nonContract));
+        vm.stopPrank();
+    }
 }

@@ -51,26 +51,26 @@ contract DeployGnarsFlow is DeployScript {
 
         // // TCR params (hardcoded sensible defaults)
         // // Coin costs $0.05 each -> $5 application fee = 100 tokens
-        // uint256 submissionBaseDeposit = 100e18; // 100 tokens (~$5)
-        // uint256 removalBaseDeposit = 100e18; // same as submission
-        // uint256 submissionChallengeBaseDeposit = 100e18; // challenger stake
-        // uint256 removalChallengeBaseDeposit = 100e18; // challenger stake
-        // uint256 challengePeriodDuration = 3 days; // time to challenge requests
-        // uint256 votingPeriod = 3 days; // commit phase duration
-        // uint256 votingDelay = 12 hours; // delay before voting starts
-        // uint256 revealPeriod = 1 days; // reveal phase duration
-        // uint256 arbitrationCost = 1e14; // minimal non-zero cost (0.0001 token)
+        uint256 submissionBaseDeposit = 100e18; // 100 tokens (~$5)
+        uint256 removalBaseDeposit = 100e18; // same as submission
+        uint256 submissionChallengeBaseDeposit = 100e18; // challenger stake
+        uint256 removalChallengeBaseDeposit = 100e18; // challenger stake
+        uint256 challengePeriodDuration = 3 days; // time to challenge requests
+        uint256 votingPeriod = 3 days; // commit phase duration
+        uint256 votingDelay = 12 hours; // delay before voting starts
+        uint256 revealPeriod = 1 days; // reveal phase duration
+        uint256 arbitrationCost = 1e14; // minimal non-zero cost (0.0001 token)
         // TCR params (test-friendly: low costs and short timelines)
         // Deposits set to ~0.01 token, all windows ~2 minutes for quick iteration
-        uint256 submissionBaseDeposit = 1e16; // 0.01 token
-        uint256 removalBaseDeposit = 1e16; // 0.01 token
-        uint256 submissionChallengeBaseDeposit = 1e16; // 0.01 token
-        uint256 removalChallengeBaseDeposit = 1e16; // 0.01 token
-        uint256 challengePeriodDuration = 2 minutes; // quick challenge window for testing
-        uint256 votingPeriod = 2 minutes; // short commit/vote duration
-        uint256 votingDelay = 2 minutes; // short delay before voting starts
-        uint256 revealPeriod = 2 minutes; // short reveal phase
-        uint256 arbitrationCost = 1e16; // ~0.01 token arbitration cost
+        // uint256 submissionBaseDeposit = 1e16; // 0.01 token
+        // uint256 removalBaseDeposit = 1e16; // 0.01 token
+        // uint256 submissionChallengeBaseDeposit = 1e16; // 0.01 token
+        // uint256 removalChallengeBaseDeposit = 1e16; // 0.01 token
+        // uint256 challengePeriodDuration = 2 minutes; // quick challenge window for testing
+        // uint256 votingPeriod = 2 minutes; // short commit/vote duration
+        // uint256 votingDelay = 2 minutes; // short delay before voting starts
+        // uint256 revealPeriod = 2 minutes; // short reveal phase
+        // uint256 arbitrationCost = 1e16; // ~0.01 token arbitration cost
 
         // ------------------------------------------------------------------
         // Strategy (SingleAllocatorStrategy implementation + proxy)

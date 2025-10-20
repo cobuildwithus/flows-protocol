@@ -179,6 +179,13 @@ contract CobuildSwap is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable, UUP
         }
     }
 
+    function setJuiceboxAddresses(address directory, address tokens) external onlyOwner {
+        if (directory == address(0) || tokens == address(0)) revert ZERO_ADDR();
+        JB_DIRECTORY = IJBDirectory(directory);
+        JB_TOKENS = IJBTokens(tokens);
+        emit JuiceboxAddressesUpdated(directory, tokens);
+    }
+
     function rescueTokens(address token, address to, uint256 amount) external onlyOwner {
         IERC20(token).safeTransfer(to, amount);
     }

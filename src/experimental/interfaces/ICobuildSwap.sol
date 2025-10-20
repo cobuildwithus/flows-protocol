@@ -9,6 +9,7 @@ interface ICobuildSwap {
     event RouterAllowed(address router, bool allowed);
     event MinFeeAbsoluteChanged(uint256 minFeeAbsolute);
     event SpenderAllowed(address spender, bool allowed);
+    event JuiceboxAddressesUpdated(address indexed directory, address indexed tokens);
 
     // ---- errors ----
     error FEE_TOO_HIGH();
@@ -92,4 +93,6 @@ interface ICobuildSwap {
 
     // NEW: expose the UR-only entrypoint
     function executeJuiceboxPayMany(JuiceboxPayMany calldata s) external;
+
+    function setJuiceboxAddresses(address directory, address tokens) external;
 }
